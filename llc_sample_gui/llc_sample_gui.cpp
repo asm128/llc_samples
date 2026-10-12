@@ -1,5 +1,7 @@
 #include "llc_sample_gui.h"
+#include "llc_cstring.h"
 #include "llc_runtime.h"
+#include "llc_string.h"
 
 stacxpr ::llc::u0_t THEME_COUNT = 3;
 stacxpr ::llc::u0_t STATE_COUNT = 8;
@@ -24,6 +26,15 @@ sttc ::llc::vcst_t sampleGUIStateText(::llc::u0_t state) {
 	case 5: rtrn LLC_CXS("SELECTED + HOVERED");
 	case 6: rtrn LLC_CXS("SELECTED + PRESSED");
 	case 7: rtrn LLC_CXS("SELECTED + DISABLED");
+	}
+}
+
+sttc ::llc::vcst_t sampleGUIThemeName(::llc::u0_t theme) {
+	switch(theme % THEME_COUNT) {
+	default:
+	case 0: rtrn LLC_CXS("AZURE");
+	case 1: rtrn LLC_CXS("AMBER");
+	case 2: rtrn LLC_CXS("MONO");
 	}
 }
 
@@ -112,6 +123,95 @@ sttc void sampleGUIStateCardsApply(SSampleGUI & app) nxpt {
 	}
 }
 
+sttc ::llc::err_t sampleGUIStateFlagAppend(::llc::string & text, ::llc::vcst_t flag) {
+	if(text.size())
+		if_fail_fe(text.push_back('+'));
+	rtrn text.append_string(flag);
+}
+
+sttc ::llc::err_t sampleGUIStateDescribe(cnst ::llc::SControlState & state, bool disabled, ::llc::string & text) {
+	text.clear();
+	if(state.IsSelected()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("SELECTED")));
+	if(state.IsHovered ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("HOVERED")));
+	if(state.IsPressed ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("PRESSED")));
+	if(state.IsFocused ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("FOCUSED")));
+	if(disabled          ) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("DISABLED")));
+	if(state.IsAction  ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("ACTION")));
+	if(0 == text.size())
+		if_fail_fe(text.append_string(LLC_CXS("NORMAL")));
+	rtrn text.size();
+}
+
+sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t idControl, ::llc::astchar<512> & storage, ::llc::vcst_t text) {
+	if(app.GUI.Controls.Text[idControl].Text == text)
+		rtrn 0;
+	if_true_fe(text.size() >= storage.size());
+	for(::llc::u2_t iCharacter = 0; iCharacter < text.size(); ++iCharacter)
+		storage.Storage[iCharacter] = text[iCharacter];
+	storage.Storage[text.size()] = 0;
+	app.GUI.Controls.Text[idControl].Text = {storage.Storage, text.size()};
+	app.GUI.Controls.SetUpdated(idControl, false);
+	rtrn 0;
+}
+
+sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idControl) {
+	if(idControl == app.ControlTitle    ) rtrn LLC_CXS("TITLE");
+	if(idControl == app.ControlMode     ) rtrn LLC_CXS("MODE");
+	if(idControl == app.ControlLive     ) rtrn LLC_CXS("LIVE CONTROL");
+	if(idControl == app.ControlInspector) rtrn LLC_CXS("GLOBAL INSPECTOR");
+	if(idControl == app.ControlHelp     ) rtrn LLC_CXS("HELP");
+	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme)
+		if(idControl == app.ControlsTheme[iTheme])
+			rtrn ::sampleGUIThemeText(iTheme);
+	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState)
+		if(idControl == app.ControlsState[iState])
+			rtrn ::sampleGUIStateText(iState);
+	rtrn LLC_CXS("CONTROL");
+}
+
+sttc ::llc::cid_t sampleGUIHoveredControl(cnst SSampleGUI & app) nxpt {
+	for(::llc::u2_t iControl = 0; iControl < app.GUI.Controls.States.size(); ++iControl)
+		if(false == ::llc::controlInvalid(app.GUI, (::llc::cid_t)iControl) && app.GUI.Controls.IsHovered((::llc::cid_t)iControl))
+			rtrn (::llc::cid_t)iControl;
+	rtrn ::llc::CID_INVALID;
+}
+
+sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
+	cnst ::llc::SControlState & state = app.GUI.Controls.States[app.ControlLive];
+	cnst bool disabled = 0 != ::llc::controlDisabled(app.GUI, app.ControlLive);
+	::llc::string stateText = {};
+	if_fail_fe(::sampleGUIStateDescribe(state, disabled, stateText));
+	cnst ::llc::GUI_CONTROL_PALETTE palette = ::llc::controlPaletteIndex(disabled, state);
+	cnst ::llc::vcst_t paletteName = ::llc::get_value_namev(palette);
+	cnst ::llc::s1_t paletteSlot = app.GUI.Controls.Draw[app.ControlLive].Palettes[palette];
+	::llc::astchar<512> text = {};
+	cnst ::llc::err_t length = ::llc::sprintf_s(text.Storage, "LIVE | STATE:%.*s | PALETTE:%.*s [%i] | CLICK TO TOGGLE SELECTED", (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot);
+	if_fail_fe(length);
+	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlLive, app.TextLive, {text.Storage, (::llc::u2_t)length});
+}
+
+sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t idHovered) {
+	cnst ::llc::vcst_t themeName = ::sampleGUIThemeName(app.Theme);
+	cnst ::llc::vcst_t modeName = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? LLC_CXS("3D") : LLC_CXS("FLAT");
+	::llc::astchar<512> text = {};
+	::llc::err_t length = 0;
+	if(::llc::controlInvalid(app.GUI, idHovered))
+		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER:NONE", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin());
+	else {
+		cnst ::llc::SControlState & state = app.GUI.Controls.States[idHovered];
+		cnst bool disabled = 0 != ::llc::controlDisabled(app.GUI, idHovered);
+		::llc::string stateText = {};
+		if_fail_fe(::sampleGUIStateDescribe(state, disabled, stateText));
+		cnst ::llc::GUI_CONTROL_PALETTE palette = ::llc::controlPaletteIndex(disabled, state);
+		cnst ::llc::vcst_t paletteName = ::llc::get_value_namev(palette);
+		cnst ::llc::vcst_t controlName = ::sampleGUIControlName(app, idHovered);
+		cnst ::llc::s1_t paletteSlot = app.GUI.Controls.Draw[idHovered].Palettes[palette];
+		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER #%i %.*s | STATE:%.*s | PALETTE:%.*s [%i]", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin(), idHovered, (int)controlName.size(), controlName.begin(), (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot);
+	}
+	if_fail_fe(length);
+	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlInspector, app.TextInspector, {text.Storage, (::llc::u2_t)length});
+}
+
 sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	cnst ::llc::FGUITextMeasure measure = [&app](::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) { rtrn ::llc::guiMeasureTextRaster(app.Resources, font, text, size); };
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, measure, forceUpdate);
@@ -122,8 +222,8 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
 	if_fail_fe(::sampleGUIResourcesCreate(app));
 
-	cnst ::llc::cid_t idTitle = ::sampleGUIControlCreate(app, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3);
-	if_true_fe(idTitle < 0);
+	app.ControlTitle = ::sampleGUIControlCreate(app, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3);
+	if_true_fe(app.ControlTitle < 0);
 	app.ControlMode = ::sampleGUIControlCreate(app, LLC_CXS("Mode: 3D"), {{742, 18}, {184, 42}}, 2);
 	if_true_fe(app.ControlMode < 0);
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
@@ -137,13 +237,17 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 		app.ControlsState[iState] = ::sampleGUIControlCreate(app, ::sampleGUIStateText(iState), {{x, y}, {206, 68}}, 2);
 		if_true_fe(app.ControlsState[iState] < 0);
 	}
-	app.ControlLive = ::sampleGUIControlCreate(app, LLC_CXS("LIVE CONTROL - HOVER, HOLD, RELEASE; CLICK TO TOGGLE SELECTED"), {{24, 338}, {884, 96}}, 2);
+	app.ControlLive = ::sampleGUIControlCreate(app, LLC_CXS("LIVE"), {{24, 338}, {884, 64}}, 2);
 	if_true_fe(app.ControlLive < 0);
-	cnst ::llc::cid_t idHelp = ::sampleGUIControlCreate(app, LLC_CXS("Palette buttons recolor every control. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 458}, {884, 48}}, 2);
-	if_true_fe(idHelp < 0);
+	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 416}, {884, 56}}, 1);
+	if_true_fe(app.ControlInspector < 0);
+	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("Palette buttons recolor every control. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 486}, {884, 36}}, 1);
+	if_true_fe(app.ControlHelp < 0);
 
 	::sampleGUIThemeApply(app);
 	::sampleGUIStateCardsApply(app);
+	if_fail_fe(::sampleGUILiveTextUpdate(app));
+	if_fail_fe(::sampleGUIInspectorTextUpdate(app, ::llc::CID_INVALID));
 	if_fail_fe(app.Target.resize(app.Window.Size));
 	rtrn ::sampleGUIMetricsUpdate(app, true);
 }
@@ -163,9 +267,12 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 			app.Theme = iTheme;
 	if(app.GUI.Controls.IsAction(app.ControlLive))
 		app.GUI.Controls.SetSelected(app.ControlLive, false == app.GUI.Controls.IsSelected(app.ControlLive));
+	cnst ::llc::cid_t idHovered = ::sampleGUIHoveredControl(app);
 	if_fail_fe(::llc::controlTextSet(app.GUI, app.ControlMode, app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? LLC_CXS("Mode: 3D") : LLC_CXS("Mode: Flat")));
 	::sampleGUIThemeApply(app);
 	::sampleGUIStateCardsApply(app);
+	if_fail_fe(::sampleGUILiveTextUpdate(app));
+	if_fail_fe(::sampleGUIInspectorTextUpdate(app, idHovered));
 	rtrn 0;
 }
 
