@@ -1,8 +1,17 @@
 #include "llc_app_impl.h"
 #include "llc_grid_color.h"
-#include "llc_sample_window.h"
 #include "llc_string.h"
 #include "llc_sync.h"
+
+#if defined(LLC_SAMPLE_GUI)
+#	include "llc_sample_gui.h"
+	typedef SSampleGUI SSampleContent;
+#	define LLC_SAMPLE_TITLE "LLC GUI palettes and states"
+#else
+#	include "llc_sample_window.h"
+	typedef SSampleWindow SSampleContent;
+#	define LLC_SAMPLE_TITLE "LLC engine window sample"
+#endif
 
 #if defined(LLC_WINDOWS)
 #	include <Windowsx.h>
@@ -22,7 +31,7 @@ stct SGDIApplication {
 };
 
 stct SApplication {
-	SSampleWindow		Sample		= {};
+	SSampleContent		Sample		= {};
 	SWindowRuntimeWin32	Runtime		= {};
 	SGDIApplication		Presentation	= {};
 
@@ -297,10 +306,15 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 }
 
 ::llc::err_t setup(SApplication& app) {
-	if_fail_fe(::windowCreate(app, "LLC engine window sample", {960, 540}));
+	if_fail_fe(::windowCreate(app, LLC_SAMPLE_TITLE, {960, 540}));
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
-	if(::llc::not_failed(result))
+	if(::llc::not_failed(result)) {
+#if defined(LLC_SAMPLE_GUI)
+		result = ::sampleGUISetup(app.Sample);
+#else
 		result = ::sampleWindowSetup(app.Sample);
+#endif
+	}
 	if(::llc::failed(result)) {
 		app.Presentation.Shutdown();
 		::windowDestroy(app);
@@ -319,18 +333,27 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 	if(::llc::APPLICATION_STATE_EXIT == resultWindow)
 		rtrn resultWindow;
 	if_fail_fe(resultWindow);
-	cnst ::llc::err_t resultSample = ::sampleWindowUpdate(app.Sample, systemRequestedExit);
+	cnst ::llc::err_t resultSample =
+#if defined(LLC_SAMPLE_GUI)
+		::sampleGUIUpdate(app.Sample, systemRequestedExit);
+#else
+		::sampleWindowUpdate(app.Sample, systemRequestedExit);
+#endif
 	::llc::sleep(8);
 	rtrn resultSample;
 }
 
 ::llc::err_t draw(SApplication& app) {
+#if defined(LLC_SAMPLE_GUI)
+	if_fail_fe(::sampleGUIDraw(app.Sample));
+#else
 	if_fail_fe(::sampleWindowDraw(app.Sample));
+#endif
 	if(app.Sample.Window.NoDraw)
 		rtrn 0;
 	rtrn app.Presentation.Present(app.Sample.Target.View);
 }
 
-LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, "LLC engine window sample")
+LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_TITLE)
 
 #endif // LLC_WINDOWS
