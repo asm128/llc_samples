@@ -15,8 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="llc_samples.cpp">
+	<ClCompile Include="llc_sample_window.cpp">
+	  <Filter>Source Files</Filter>
+	</ClCompile>
+	<ClCompile Include="llc_sample_window_win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+	<ItemGroup>
+	  <ClInclude Include="llc_sample_window.h">
+		<Filter>Header Files</Filter>
+	  </ClInclude>
+	</ItemGroup>
 </Project>
