@@ -16,6 +16,9 @@ stct SSampleGUI {
 	::llc::cid_t			ControlLive		= ::llc::CID_INVALID;
 	::llc::cid_t			ControlInspector= ::llc::CID_INVALID;
 	::llc::cid_t			ControlHelp		= ::llc::CID_INVALID;
+	::llc::cid_t			ControlAlignmentTitle	= ::llc::CID_INVALID;
+	::llc::cid_t			ControlAlignmentRoot	= ::llc::CID_INVALID;
+	::llc::astcid<9>		ControlsAlignment	= {};
 	::llc::astchar<512>	TextLive		= {};
 	::llc::astchar<512>	TextInspector	= {};
 	::llc::u0_t			Theme			= 0;

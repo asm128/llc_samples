@@ -6,11 +6,13 @@
 #if defined(LLC_SAMPLE_GUI)
 #	include "llc_sample_gui.h"
 	typedef SSampleGUI SSampleContent;
-#	define LLC_SAMPLE_TITLE "LLC GUI palettes and states"
+#	define LLC_SAMPLE_TITLE "LLC GUI palettes, states and alignment"
+#	define LLC_SAMPLE_WINDOW_SIZE {1280, 540}
 #else
 #	include "llc_sample_window.h"
 	typedef SSampleWindow SSampleContent;
 #	define LLC_SAMPLE_TITLE "LLC engine window sample"
+#	define LLC_SAMPLE_WINDOW_SIZE {960, 540}
 #endif
 
 #if defined(LLC_WINDOWS)
@@ -306,7 +308,7 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 }
 
 ::llc::err_t setup(SApplication& app) {
-	if_fail_fe(::windowCreate(app, LLC_SAMPLE_TITLE, {960, 540}));
+	if_fail_fe(::windowCreate(app, LLC_SAMPLE_TITLE, LLC_SAMPLE_WINDOW_SIZE));
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
 	if(::llc::not_failed(result)) {
 #if defined(LLC_SAMPLE_GUI)

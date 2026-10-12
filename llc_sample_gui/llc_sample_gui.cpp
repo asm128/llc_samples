@@ -5,6 +5,7 @@
 
 stacxpr ::llc::u0_t THEME_COUNT = 3;
 stacxpr ::llc::u0_t STATE_COUNT = 8;
+stacxpr ::llc::u0_t ALIGNMENT_COUNT = 9;
 
 sttc ::llc::vcst_t sampleGUIThemeText(::llc::u0_t theme) {
 	switch(theme % THEME_COUNT) {
@@ -35,6 +36,51 @@ sttc ::llc::vcst_t sampleGUIThemeName(::llc::u0_t theme) {
 	case 0: rtrn LLC_CXS("AZURE");
 	case 1: rtrn LLC_CXS("AMBER");
 	case 2: rtrn LLC_CXS("MONO");
+	}
+}
+
+sttc ::llc::ALIGN sampleGUIControlAlignment(::llc::u0_t alignment) nxpt {
+	switch(alignment % ALIGNMENT_COUNT) {
+	default:
+	case 0: rtrn ::llc::ALIGN_TOP_LEFT;
+	case 1: rtrn ::llc::ALIGN_CENTER_TOP;
+	case 2: rtrn ::llc::ALIGN_TOP_RIGHT;
+	case 3: rtrn ::llc::ALIGN_CENTER_LEFT;
+	case 4: rtrn ::llc::ALIGN_CENTER;
+	case 5: rtrn ::llc::ALIGN_CENTER_RIGHT;
+	case 6: rtrn ::llc::ALIGN_BOTTOM_LEFT;
+	case 7: rtrn ::llc::ALIGN_CENTER_BOTTOM;
+	case 8: rtrn ::llc::ALIGN_BOTTOM_RIGHT;
+	}
+}
+
+sttc ::llc::ALIGN sampleGUITextAlignment(::llc::u0_t alignment) nxpt {
+	switch(alignment % ALIGNMENT_COUNT) {
+	default:
+	case 0: rtrn ::llc::ALIGN_BOTTOM_RIGHT;
+	case 1: rtrn ::llc::ALIGN_CENTER_BOTTOM;
+	case 2: rtrn ::llc::ALIGN_BOTTOM_LEFT;
+	case 3: rtrn ::llc::ALIGN_CENTER_RIGHT;
+	case 4: rtrn ::llc::ALIGN_CENTER;
+	case 5: rtrn ::llc::ALIGN_CENTER_LEFT;
+	case 6: rtrn ::llc::ALIGN_TOP_RIGHT;
+	case 7: rtrn ::llc::ALIGN_CENTER_TOP;
+	case 8: rtrn ::llc::ALIGN_TOP_LEFT;
+	}
+}
+
+sttc ::llc::vcst_t sampleGUIAlignmentText(::llc::u0_t alignment) {
+	switch(alignment % ALIGNMENT_COUNT) {
+	default:
+	case 0: rtrn LLC_CXS("TOP_LEFT");
+	case 1: rtrn LLC_CXS("CENTER_TOP");
+	case 2: rtrn LLC_CXS("TOP_RIGHT");
+	case 3: rtrn LLC_CXS("CENTER_LEFT");
+	case 4: rtrn LLC_CXS("CENTER");
+	case 5: rtrn LLC_CXS("CENTER_RIGHT");
+	case 6: rtrn LLC_CXS("BOTTOM_LEFT");
+	case 7: rtrn LLC_CXS("CENTER_BOTTOM");
+	case 8: rtrn LLC_CXS("BOTTOM_RIGHT");
 	}
 }
 
@@ -160,12 +206,17 @@ sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idCo
 	if(idControl == app.ControlLive     ) rtrn LLC_CXS("LIVE CONTROL");
 	if(idControl == app.ControlInspector) rtrn LLC_CXS("GLOBAL INSPECTOR");
 	if(idControl == app.ControlHelp     ) rtrn LLC_CXS("HELP");
+	if(idControl == app.ControlAlignmentTitle) rtrn LLC_CXS("ALIGNMENT TITLE");
+	if(idControl == app.ControlAlignmentRoot ) rtrn LLC_CXS("ALIGNMENT STAGE");
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme)
 		if(idControl == app.ControlsTheme[iTheme])
 			rtrn ::sampleGUIThemeText(iTheme);
 	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState)
 		if(idControl == app.ControlsState[iState])
 			rtrn ::sampleGUIStateText(iState);
+	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment)
+		if(idControl == app.ControlsAlignment[iAlignment])
+			rtrn ::sampleGUIAlignmentText(iAlignment);
 	rtrn LLC_CXS("CONTROL");
 }
 
@@ -205,8 +256,10 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 		cnst ::llc::GUI_CONTROL_PALETTE palette = ::llc::controlPaletteIndex(disabled, state);
 		cnst ::llc::vcst_t paletteName = ::llc::get_value_namev(palette);
 		cnst ::llc::vcst_t controlName = ::sampleGUIControlName(app, idHovered);
+		cnst ::llc::vcst_t controlAlignName = ::llc::get_value_namev(app.GUI.Controls.Placement[idHovered].Align);
+		cnst ::llc::vcst_t textAlignName = ::llc::get_value_namev(app.GUI.Controls.Text[idHovered].Align);
 		cnst ::llc::s1_t paletteSlot = app.GUI.Controls.Draw[idHovered].Palettes[palette];
-		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER #%i %.*s | STATE:%.*s | PALETTE:%.*s [%i]", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin(), idHovered, (int)controlName.size(), controlName.begin(), (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot);
+		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER #%i %.*s | STATE:%.*s | PALETTE:%.*s [%i] | ALIGN:%.*s / TEXT:%.*s", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin(), idHovered, (int)controlName.size(), controlName.begin(), (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot, (int)controlAlignName.size(), controlAlignName.begin(), (int)textAlignName.size(), textAlignName.begin());
 	}
 	if_fail_fe(length);
 	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlInspector, app.TextInspector, {text.Storage, (::llc::u2_t)length});
@@ -243,6 +296,19 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	if_true_fe(app.ControlInspector < 0);
 	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("Palette buttons recolor every control. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 486}, {884, 36}}, 1);
 	if_true_fe(app.ControlHelp < 0);
+	app.ControlAlignmentTitle = ::sampleGUIControlCreate(app, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1);
+	if_true_fe(app.ControlAlignmentTitle < 0);
+	app.GUI.Controls.Placement[app.ControlAlignmentTitle].Align = ::llc::ALIGN_TOP_RIGHT;
+	app.ControlAlignmentRoot = ::sampleGUIControlCreate(app, LLC_CXS(""), {{24, 76}, {332, 446}});
+	if_true_fe(app.ControlAlignmentRoot < 0);
+	app.GUI.Controls.Placement[app.ControlAlignmentRoot].Align = ::llc::ALIGN_TOP_RIGHT;
+	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment) {
+		app.ControlsAlignment[iAlignment] = ::sampleGUIControlCreate(app, ::sampleGUIAlignmentText(iAlignment), {{0, 0}, {108, 58}}, 1);
+		if_true_fe(app.ControlsAlignment[iAlignment] < 0);
+		app.GUI.Controls.Placement[app.ControlsAlignment[iAlignment]].Align = ::sampleGUIControlAlignment(iAlignment);
+		app.GUI.Controls.Text[app.ControlsAlignment[iAlignment]].Align = ::sampleGUITextAlignment(iAlignment);
+		if_fail_fe(::llc::controlSetParent(app.GUI, app.ControlsAlignment[iAlignment], app.ControlAlignmentRoot));
+	}
 
 	::sampleGUIThemeApply(app);
 	::sampleGUIStateCardsApply(app);
