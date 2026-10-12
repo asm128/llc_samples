@@ -114,13 +114,44 @@ sttc ::llc::cid_t sampleGUIControlCreate(SSampleGUI & app, ::llc::vcst_t text, c
 	rtrn idControl;
 }
 
-sttc ::llc::SColorBGRA sampleGUIBaseColor(::llc::u0_t theme, ::llc::u0_t state) nxpt {
-	stacxpr ::llc::SColorBGRA colors[THEME_COUNT][::llc::GUI_CONTROL_PALETTE_COUNT] =
-		{ { { 72,  54,  34}, { 54,  54,  54}, {112,  82,  36}, { 42,  96, 150}, { 48, 110,  42}, { 58,  70,  58}, { 72, 154,  58}, { 36, 100,  32}, {130,  38, 144}, { 32, 100, 170} }
-		, { { 28,  70, 120}, { 50,  50,  50}, { 32, 112, 186}, { 24,  58, 112}, { 34,  96, 150}, { 54,  62,  70}, { 40, 132, 210}, { 24,  72, 124}, {120,  34, 170}, { 24,  76, 122} }
-		, { { 58,  58,  58}, { 42,  42,  42}, { 92,  92,  92}, { 34,  34,  34}, {116, 116, 116}, { 56,  56,  56}, {154, 154, 154}, { 80,  80,  80}, {190, 190, 190}, { 24,  24,  24} }
+stacxpr ::llc::u0_t PALETTE_SHADE_COUNT = 16;
+
+sttc ::llc::SColorBGRA sampleGUIThemeColor(::llc::u0_t theme) nxpt {
+	stacxpr ::llc::SColorBGRA colors[THEME_COUNT] =
+		{ {248, 208,  72}
+		, { 32, 176, 248}
+		, {232, 232, 232}
 		};
-	rtrn colors[theme % THEME_COUNT][state % ::llc::GUI_CONTROL_PALETTE_COUNT];
+	rtrn colors[theme % THEME_COUNT];
+}
+
+sttc ::llc::SColorBGRA sampleGUIShade(::llc::SColorBGRA color, ::llc::u0_t shade) nxpt {
+	shade = ::llc::min(shade, (::llc::u0_t)(PALETTE_SHADE_COUNT - 1));
+	rtrn color * ((PALETTE_SHADE_COUNT - (::llc::f2_t)shade) / PALETTE_SHADE_COUNT);
+}
+
+sttc ::llc::SColorBGRA sampleGUIDesaturate(::llc::SColorBGRA color) nxpt {
+	cnst ::llc::u0_t gray = (::llc::u0_t)(((::llc::u2_t)color.r + color.g + color.b) / 3);
+	rtrn
+		{ (::llc::u0_t)((color.b + (::llc::u1_t)gray * 2) / 3)
+		, (::llc::u0_t)((color.g + (::llc::u1_t)gray * 2) / 3)
+		, (::llc::u0_t)((color.r + (::llc::u1_t)gray * 2) / 3)
+		};
+}
+
+sttc ::llc::u0_t sampleGUIStateShade(::llc::u0_t state) nxpt {
+	stacxpr ::llc::u0_t shades[::llc::GUI_CONTROL_PALETTE_COUNT] = {8, 10, 5, 11, 4, 7, 2, 7, 1, 13};
+	rtrn shades[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
+}
+
+sttc ::llc::u0_t sampleGUIStateBorderOffset(::llc::u0_t state) nxpt {
+	stacxpr ::llc::u0_t offsets[::llc::GUI_CONTROL_PALETTE_COUNT] = {5, 1, 7, 3, 0, 1, 7, 3, 5, 5};
+	rtrn offsets[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
+}
+
+sttc ::llc::SColorBGRA sampleGUITextColor(::llc::SColorBGRA background) nxpt {
+	cnst ::llc::u2_t luminance = (::llc::u2_t)background.r * 299 + (::llc::u2_t)background.g * 587 + (::llc::u2_t)background.b * 114;
+	rtrn ::sampleGUIShade({255, 255, 255}, luminance > 150000 ? 15 : 1);
 }
 
 sttc ::llc::err_t sampleGUIResourcesCreate(SSampleGUI & app) {
@@ -129,17 +160,26 @@ sttc ::llc::err_t sampleGUIResourcesCreate(SSampleGUI & app) {
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme)
 	for(::llc::u0_t iState = 0; iState < ::llc::GUI_CONTROL_PALETTE_COUNT; ++iState) {
 		::llc::astatic<::llc::bgra, ::llc::UI_CONTROL_AREA_COUNT> & palette = app.Resources.Colors->Palettes[iTheme * ::llc::GUI_CONTROL_PALETTE_COUNT + iState];
-		cnst ::llc::SColorBGRA base = ::sampleGUIBaseColor(iTheme, iState);
+		::llc::SColorBGRA tone = ::sampleGUIThemeColor(iTheme);
+		if(iState == ::llc::GUI_CONTROL_PALETTE_DISABLED || iState == ::llc::GUI_CONTROL_PALETTE_SELECTED_DISABLED)
+			tone = ::sampleGUIDesaturate(tone);
+		cnst ::llc::u0_t shade = ::sampleGUIStateShade(iState);
+		cnst ::llc::SColorBGRA base = ::sampleGUIShade(tone, shade);
+		cnst ::llc::u0_t borderOffset = ::sampleGUIStateBorderOffset(iState);
+		cnst ::llc::u0_t borderShade = shade > 7
+			? (::llc::u0_t)(shade > borderOffset ? shade - borderOffset : 0)
+			: (::llc::u0_t)::llc::min((::llc::u2_t)shade + borderOffset, (::llc::u2_t)PALETTE_SHADE_COUNT - 1);
+		cnst ::llc::SColorBGRA borderColor = ::sampleGUIShade(tone, borderShade);
 		for(::llc::u2_t iArea = 0; iArea < palette.size(); ++iArea)
-			palette[iArea] = base * 0.35;
-		palette[::llc::UI_CONTROL_AREA_BACKGROUND] = base * 0.18;
+			palette[iArea] = ::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 5, (::llc::u2_t)PALETTE_SHADE_COUNT - 1));
+		palette[::llc::UI_CONTROL_AREA_BACKGROUND] = ::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 6, (::llc::u2_t)PALETTE_SHADE_COUNT - 1));
 		palette[::llc::UI_CONTROL_AREA_CLIENT] = base;
-		palette[::llc::UI_CONTROL_AREA_BORDER_LEFT] = base * 1.20;
-		palette[::llc::UI_CONTROL_AREA_BORDER_TOP] = base * 1.20;
-		palette[::llc::UI_CONTROL_AREA_BORDER_RIGHT] = base * 0.70;
-		palette[::llc::UI_CONTROL_AREA_BORDER_BOTTOM] = base * 0.70;
-		palette[::llc::UI_CONTROL_AREA_TEXT_BACKGROUND] = base * 0.45;
-		palette[::llc::UI_CONTROL_AREA_TEXT_FACE] = iTheme == 2 && iState >= 4 ? ::llc::SColorBGRA{20, 20, 20} : ::llc::SColorBGRA{242, 246, 250};
+		palette[::llc::UI_CONTROL_AREA_BORDER_LEFT] = borderColor;
+		palette[::llc::UI_CONTROL_AREA_BORDER_TOP] = borderColor;
+		palette[::llc::UI_CONTROL_AREA_BORDER_RIGHT] = borderColor;
+		palette[::llc::UI_CONTROL_AREA_BORDER_BOTTOM] = borderColor;
+		palette[::llc::UI_CONTROL_AREA_TEXT_BACKGROUND] = ::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 2, (::llc::u2_t)PALETTE_SHADE_COUNT - 1));
+		palette[::llc::UI_CONTROL_AREA_TEXT_FACE] = ::sampleGUITextColor(base);
 	}
 	::llc::SRasterFontManager fonts = {};
 	if_fail_fe(::llc::rasterFontDefaults(fonts));
@@ -294,7 +334,7 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	if_true_fe(app.ControlLive < 0);
 	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 416}, {884, 56}}, 1);
 	if_true_fe(app.ControlInspector < 0);
-	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("Palette buttons recolor every control. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 486}, {884, 36}}, 1);
+	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("Each palette derives every state from one 16-shade tone. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 486}, {884, 36}}, 1);
 	if_true_fe(app.ControlHelp < 0);
 	app.ControlAlignmentTitle = ::sampleGUIControlCreate(app, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1);
 	if_true_fe(app.ControlAlignmentTitle < 0);
