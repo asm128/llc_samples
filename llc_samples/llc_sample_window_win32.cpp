@@ -3,7 +3,12 @@
 #include "llc_string.h"
 #include "llc_sync.h"
 
-#if defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#	include "llc_sample_gui_viewport.h"
+	typedef SSampleGUIViewport SSampleContent;
+#	define LLC_SAMPLE_TITLE "LLC GUI viewport"
+#	define LLC_SAMPLE_WINDOW_SIZE {1280, 720}
+#elif defined(LLC_SAMPLE_GUI)
 #	include "llc_sample_gui.h"
 	typedef SSampleGUI SSampleContent;
 #	define LLC_SAMPLE_TITLE "LLC GUI palettes, states and alignment"
@@ -311,7 +316,9 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 	if_fail_fe(::windowCreate(app, LLC_SAMPLE_TITLE, LLC_SAMPLE_WINDOW_SIZE));
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
 	if(::llc::not_failed(result)) {
-#if defined(LLC_SAMPLE_GUI)
+	#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+		result = ::sampleGUIViewportSetup(app.Sample);
+	#elif defined(LLC_SAMPLE_GUI)
 		result = ::sampleGUISetup(app.Sample);
 #else
 		result = ::sampleWindowSetup(app.Sample);
@@ -336,7 +343,9 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 		rtrn resultWindow;
 	if_fail_fe(resultWindow);
 	cnst ::llc::err_t resultSample =
-#if defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+		::sampleGUIViewportUpdate(app.Sample, systemRequestedExit);
+#elif defined(LLC_SAMPLE_GUI)
 		::sampleGUIUpdate(app.Sample, systemRequestedExit);
 #else
 		::sampleWindowUpdate(app.Sample, systemRequestedExit);
@@ -346,7 +355,9 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 }
 
 ::llc::err_t draw(SApplication& app) {
-#if defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+	if_fail_fe(::sampleGUIViewportDraw(app.Sample));
+#elif defined(LLC_SAMPLE_GUI)
 	if_fail_fe(::sampleGUIDraw(app.Sample));
 #else
 	if_fail_fe(::sampleWindowDraw(app.Sample));

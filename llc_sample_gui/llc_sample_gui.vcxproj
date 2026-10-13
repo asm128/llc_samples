@@ -66,9 +66,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_gui.cpp" />
+    <ClCompile Include="..\llc_samples\llc_sample_gui_resources.cpp" />
     <ClCompile Include="..\llc_samples\llc_sample_window_win32.cpp" />
   </ItemGroup>
-  <ItemGroup><ClInclude Include="llc_sample_gui.h" /></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="llc_sample_gui.h" />
+    <ClInclude Include="..\llc_samples\llc_sample_gui_resources.h" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\llc\llc\llc.vcxproj"><Project>{830ab681-b788-47d4-9767-ba4e0792f682}</Project></ProjectReference>
     <ProjectReference Include="..\..\llc_engine\llc_engine\llc_engine.vcxproj"><Project>{741112f8-7e79-49a2-ad8a-c91a3d3af594}</Project></ProjectReference>

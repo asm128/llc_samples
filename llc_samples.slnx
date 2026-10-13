@@ -7,5 +7,6 @@
   <Project Path="../llc/llc/llc.vcxproj" Id="830ab681-b788-47d4-9767-ba4e0792f682" />
   <Project Path="../llc_engine/llc_engine/llc_engine.vcxproj" Id="741112f8-7e79-49a2-ad8a-c91a3d3af594" />
   <Project Path="llc_sample_gui/llc_sample_gui.vcxproj" Id="f9b91237-3152-47c0-8f9d-5a9d45f34d94" />
+  <Project Path="llc_sample_gui_viewport/llc_sample_gui_viewport.vcxproj" Id="2a71dc41-2f04-48a5-8ccd-8bc79fc48f76" />
   <Project Path="llc_samples/llc_samples.vcxproj" Id="bcd0ae0f-970c-4c64-bee0-d57bd0ba1142" />
 </Solution>
