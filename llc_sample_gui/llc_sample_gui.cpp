@@ -207,15 +207,9 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlInspector, app.TextInspector, {text.Storage, (::llc::u2_t)length});
 }
 
-sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
-	cnst ::llc::FGUITextMeasure measure = [&app](::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) { rtrn ::llc::guiMeasureTextRaster(app.Resources, font, text, size); };
-	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, measure, forceUpdate);
-}
-
 ::llc::err_t sampleGUISetup(SSampleGUI & app) {
 	app.GUI.SelectedFont = 2;
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
-	if_fail_fe(::sampleGUIResourcesCreate(app.Resources));
 
 	app.ControlTitle = ::sampleGUIControlCreate(app, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3);
 	if_true_fe(app.ControlTitle < 0);
@@ -256,17 +250,17 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	::sampleGUIStateCardsApply(app);
 	if_fail_fe(::sampleGUILiveTextUpdate(app));
 	if_fail_fe(::sampleGUIInspectorTextUpdate(app, ::llc::CID_INVALID));
-	if_fail_fe(app.Target.resize(app.Window.Size));
-	rtrn ::sampleGUIMetricsUpdate(app, true);
+	rtrn 0;
+}
+
+::llc::err_t sampleGUIRenderResourcesSetup(cnst SSampleGUI & app, ::llc::SGUIRenderResources & resources) {
+	if_fail_fe(::sampleGUIResourcesCreate(resources));
+	rtrn ::llc::guiRenderResourcesSync(resources, app.GUI);
 }
 
 ::llc::err_t sampleGUIUpdate(SSampleGUI & app, bool systemRequestedExit) {
 	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(0x1B))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if(app.Target.metrics() != app.Window.Size.u2()) {
-		if_fail_fe(app.Target.resize(app.Window.Size));
-		if_fail_fe(::sampleGUIMetricsUpdate(app, true));
-	}
 	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input));
 	if(app.GUI.Controls.IsAction(app.ControlMode))
 		app.GUI.ColorModeDefault = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::GUI_COLOR_MODE_Flat : ::llc::GUI_COLOR_MODE_3D;
@@ -284,7 +278,11 @@ sttc ::llc::err_t sampleGUIMetricsUpdate(SSampleGUI & app, bool forceUpdate) {
 	rtrn 0;
 }
 
-::llc::err_t sampleGUIDraw(SSampleGUI & app) {
-	if_fail_fe(app.Target.View.fill(::llc::SColorBGRA{16, 14, 12}));
-	rtrn ::llc::guiDraw(app.GUI, app.Resources, app.Target.View);
+::llc::err_t sampleGUIRenderEvents(SSampleGUI & app, ::llc::TGUIRenderEventQueue & output, cnst ::llc::n2u1_t & targetSize, cnst ::llc::FGUITextMeasure & textMeasure) {
+	rtrn ::llc::guiRenderEvents(app.GUI, output, targetSize, textMeasure);
+}
+
+::llc::err_t sampleGUIDraw(cnst ::llc::TGUIRenderEventQueue & events, ::llc::SGUIRenderResources & resources, ::llc::g8bgra target) {
+	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+	rtrn ::llc::guiDraw(events, resources, target);
 }

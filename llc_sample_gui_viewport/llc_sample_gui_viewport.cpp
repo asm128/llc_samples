@@ -2,12 +2,8 @@
 
 #include "llc_sample_gui_resources.h"
 #include "llc_apod_serialize.h"
+#include "llc_cstring.h"
 #include "llc_runtime.h"
-
-sttc ::llc::err_t sampleGUIViewportMetricsUpdate(SSampleGUIViewport & app, bool forceUpdate) {
-	cnst ::llc::FGUITextMeasure measure = [&app](::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) { rtrn ::llc::guiMeasureTextRaster(app.Resources, font, text, size); };
-	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, measure, forceUpdate);
-}
 
 sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
 	doubleClick = false;
@@ -82,14 +78,22 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	::sampleGUIControlThemeApply(app.GUI, viewport.IdRoot, iViewport);
 	::sampleGUIControlThemeApply(app.GUI, viewport.IdTitle, iViewport);
 	::sampleGUIControlThemeApply(app.GUI, viewport.IdClient, iViewport);
-	if_fail_fe(app.ClientImages[iViewport].resize(area.Size));
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdRoot);
+}
+
+sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, double secondsLastFrame) {
+	if(secondsLastFrame <= 0)
+		rtrn 0;
+	cnst ::llc::err_t textLength = ::llc::sprintf_s(app.PerformanceText.Storage, "FPS %.2f    Frame %.2f ms", 1.0 / secondsLastFrame, secondsLastFrame * 1000.0);
+	if_fail_fe(textLength);
+	app.GUI.Controls.Text[app.Performance].Text = {app.PerformanceText.Storage, (::llc::u2_t)textLength};
+	app.GUI.Controls.SetUpdated(app.Performance, false);
+	rtrn 0;
 }
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
 	app.GUI.SelectedFont = 2;
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
-	if_fail_fe(::sampleGUIResourcesCreate(app.Resources));
 	app.Desktop = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Desktop < 0);
 	app.GUI.Controls.Draw[app.Desktop].NoBorder = true;
@@ -108,24 +112,35 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, LLC_CXS("AMBER CPU SURFACE"), {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 2, LLC_CXS("MONO CPU SURFACE"), {{754, 104}, {360, 230}}));
 	if_fail_fe(::sampleGUIViewportActivate(app, 2));
-	if_fail_fe(::llc::guiRenderResourcesSync(app.Resources, app.GUI));
-	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
-		cnst ::llc::cid_t idClient = app.Viewports[iViewport].IdClient;
-		app.Resources.Images[idClient].Image = app.ClientImages[iViewport].View;
-		app.Resources.Images[idClient].ImageAlign = ::llc::ALIGN_CENTER;
-	}
-	if_fail_fe(app.Target.resize(app.Window.Size));
-	rtrn ::sampleGUIViewportMetricsUpdate(app, true);
+	app.Performance = ::llc::controlCreate(app.GUI);
+	if_true_fe(app.Performance < 0);
+	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
+	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
+	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
+	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
+	app.GUI.Controls.Text[app.Performance].Text = LLC_CXS("FPS --    Frame -- ms");
+	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
+	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
+	rtrn 0;
 }
 
-::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit) {
+::llc::err_t sampleGUIViewportRenderResourcesSetup(cnst SSampleGUIViewport & app, ::llc::SGUIRenderResources & resources, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT]) {
+	if_fail_fe(::sampleGUIResourcesCreate(resources));
+	if_fail_fe(::llc::guiRenderResourcesSync(resources, app.GUI));
+	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
+		cnst ::llc::cid_t idClient = app.Viewports[iViewport].IdClient;
+		if_fail_fe(clientImages[iViewport].resize(app.GUI.Controls.Placement[idClient].Area.Size));
+		resources.Images[idClient].Image = clientImages[iViewport].View;
+		resources.Images[idClient].ImageAlign = ::llc::ALIGN_CENTER;
+	}
+	rtrn 0;
+}
+
+::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
 	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(0x1B))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if(app.Target.metrics() != app.Window.Size.u2()) {
-		if_fail_fe(app.Target.resize(app.Window.Size));
-		if_fail_fe(::sampleGUIViewportMetricsUpdate(app, true));
-	}
 	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
+	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
@@ -144,10 +159,13 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	rtrn 0;
 }
 
-::llc::err_t sampleGUIViewportDraw(SSampleGUIViewport & app) {
-	if_fail_fe(app.Target.View.fill(::llc::SColorBGRA{16, 14, 12}));
-	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport)
-		::sampleGUIViewportImageUpdate(app.ClientImages[iViewport], iViewport, app.FrameIndex);
-	++app.FrameIndex;
-	rtrn ::llc::guiDraw(app.GUI, app.Resources, app.Target.View);
+::llc::err_t sampleGUIViewportRenderEvents(SSampleGUIViewport & app, ::llc::TGUIRenderEventQueue & output, cnst ::llc::n2u1_t & targetSize, cnst ::llc::FGUITextMeasure & textMeasure) {
+	rtrn ::llc::guiRenderEvents(app.GUI, output, targetSize, textMeasure);
+}
+
+::llc::err_t sampleGUIViewportDraw(cnst ::llc::TGUIRenderEventQueue & events, ::llc::SGUIRenderResources & resources, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
+	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+	for(::llc::u0_t iViewport = 0; iViewport < SAMPLE_GUI_VIEWPORT_COUNT; ++iViewport)
+		::sampleGUIViewportImageUpdate(clientImages[iViewport], iViewport, frameIndex);
+	rtrn ::llc::guiDraw(events, resources, target);
 }

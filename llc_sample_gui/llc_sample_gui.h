@@ -6,9 +6,7 @@
 
 stct SSampleGUI {
 	::llc::SEngineWindow		Window			= {};
-	::llc::img8bgra			Target			= {};
 	::llc::SGUI				GUI				= {};
-	::llc::SGUIRenderResources	Resources		= {};
 	::llc::cid_t			ControlTitle	= ::llc::CID_INVALID;
 	::llc::cid_t			ControlMode		= ::llc::CID_INVALID;
 	::llc::astcid<3>		ControlsTheme	= {};
@@ -24,8 +22,10 @@ stct SSampleGUI {
 	::llc::u0_t			Theme			= 0;
 };
 
-::llc::err_t	sampleGUISetup	(SSampleGUI& app);
-::llc::err_t	sampleGUIUpdate	(SSampleGUI& app, bool systemRequestedExit);
-::llc::err_t	sampleGUIDraw	(SSampleGUI& app);
+::llc::err_t	sampleGUISetup				(SSampleGUI & app);
+::llc::err_t	sampleGUIRenderResourcesSetup	(cnst SSampleGUI & app, ::llc::SGUIRenderResources & resources);
+::llc::err_t	sampleGUIUpdate				(SSampleGUI & app, bool systemRequestedExit);
+::llc::err_t	sampleGUIRenderEvents		(SSampleGUI & app, ::llc::TGUIRenderEventQueue & output, cnst ::llc::n2u1_t & targetSize, cnst ::llc::FGUITextMeasure & textMeasure);
+::llc::err_t	sampleGUIDraw				(cnst ::llc::TGUIRenderEventQueue & events, ::llc::SGUIRenderResources & resources, ::llc::g8bgra target);
 
 #endif // LLC_SAMPLE_GUI_H_23627

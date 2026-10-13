@@ -3,4 +3,8 @@
   <PropertyGroup>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-MT' Or '$(Configuration)'=='Release-MT'">
+    <LocalDebuggerCommand>$(OutDir)lrt.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>$(TargetName)</LocalDebuggerCommandArguments>
+  </PropertyGroup>
 </Project>
