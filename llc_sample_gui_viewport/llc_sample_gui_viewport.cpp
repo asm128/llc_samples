@@ -4,6 +4,7 @@
 #include "llc_apod_serialize.h"
 #include "llc_cstring.h"
 #include "llc_runtime.h"
+#include "llc_system_key.h"
 
 sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
 	doubleClick = false;
@@ -104,7 +105,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG ANY TITLE | DOUBLE-CLICK A TITLE TO FOLD | CLICK AN EXPOSED WINDOW TO BRING IT FORWARD | ESC EXITS");
+	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG ANY TITLE | DOUBLE-CLICK TO FOLD | TAB MOVES FOCUS | ENTER OR SPACE ACTIVATES | ESC OR EXIT CLOSES");
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
@@ -121,6 +122,19 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Text[app.Performance].Text = LLC_CXS("FPS --    Frame -- ms");
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
+	app.Exit = ::llc::controlCreate(app.GUI);
+	if_true_fe(app.Exit < 0);
+	app.GUI.Controls.Placement[app.Exit].Area = {{18, 18}, {96, 36}};
+	app.GUI.Controls.Placement[app.Exit].Align = ::llc::ALIGN_BOTTOM_RIGHT;
+	app.GUI.Controls.Placement[app.Exit].Border = {2, 2, 2, 2};
+	app.GUI.Controls.Placement[app.Exit].Margin = {1, 1, 1, 1};
+	app.GUI.Controls.Text[app.Exit].Text = LLC_CXS("EXIT");
+	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
+	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
+	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
+		app.ControlsKeyboard[iViewport] = app.Viewports[iViewport].IdTitle;
+	}
+	app.ControlsKeyboard[app.Viewports.size()] = app.Exit;
 	rtrn 0;
 }
 
@@ -137,16 +151,18 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 }
 
 ::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(0x1B))
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
+	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.ControlsKeyboard, app.Window.EventQueue));
+	if(app.GUI.Controls.IsAction(app.Exit))
+		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
 	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
 		::llc::SViewport & viewport = app.Viewports[iViewport];
-		if(::sampleGUIViewportPressed(app, viewport))
+		if(::sampleGUIViewportPressed(app, viewport) || app.GUI.Controls.IsAction(viewport.IdTitle))
 			if_fail_fe(::sampleGUIViewportActivate(app, iViewport));
 		if(app.GUI.Controls.IsHovered(viewport.IdTitle))
 			hoveredViewport = iViewport;

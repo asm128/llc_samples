@@ -13,9 +13,12 @@ stct SSampleGUIViewport {
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
+	::llc::cid_t			Exit			= ::llc::CID_INVALID;
 	::llc::astchar<96>		PerformanceText		= {};
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
+	::llc::astcid<SAMPLE_GUI_VIEWPORT_COUNT + 1>
+						ControlsKeyboard= {};
 };
 
 ::llc::err_t	sampleGUIViewportSetup				(SSampleGUIViewport & app);

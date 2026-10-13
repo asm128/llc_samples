@@ -3,6 +3,7 @@
 #include "llc_cstring.h"
 #include "llc_runtime.h"
 #include "llc_string.h"
+#include "llc_system_key.h"
 
 stacxpr ::llc::u0_t THEME_COUNT = SAMPLE_GUI_THEME_COUNT;
 stacxpr ::llc::u0_t STATE_COUNT = 8;
@@ -143,22 +144,27 @@ sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t id
 }
 
 sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idControl) {
-	if(idControl == app.ControlTitle    ) rtrn LLC_CXS("TITLE");
-	if(idControl == app.ControlMode     ) rtrn LLC_CXS("MODE");
-	if(idControl == app.ControlLive     ) rtrn LLC_CXS("LIVE CONTROL");
-	if(idControl == app.ControlInspector) rtrn LLC_CXS("GLOBAL INSPECTOR");
-	if(idControl == app.ControlHelp     ) rtrn LLC_CXS("HELP");
+	if(idControl == app.ControlTitle         ) rtrn LLC_CXS("TITLE");
+	if(idControl == app.ControlMode          ) rtrn LLC_CXS("MODE");
+	if(idControl == app.ControlLive          ) rtrn LLC_CXS("LIVE CONTROL");
+	if(idControl == app.ControlInspector     ) rtrn LLC_CXS("GLOBAL INSPECTOR");
+	if(idControl == app.ControlHelp          ) rtrn LLC_CXS("HELP");
+	if(idControl == app.ControlExit          ) rtrn LLC_CXS("EXIT");
 	if(idControl == app.ControlAlignmentTitle) rtrn LLC_CXS("ALIGNMENT TITLE");
 	if(idControl == app.ControlAlignmentRoot ) rtrn LLC_CXS("ALIGNMENT STAGE");
-	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme)
+
+	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
 		if(idControl == app.ControlsTheme[iTheme])
 			rtrn ::sampleGUIThemeText(iTheme);
-	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState)
+	}
+	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState) {
 		if(idControl == app.ControlsState[iState])
 			rtrn ::sampleGUIStateText(iState);
-	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment)
+	}
+	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment) {
 		if(idControl == app.ControlsAlignment[iAlignment])
 			rtrn ::sampleGUIAlignmentText(iAlignment);
+	}
 	rtrn LLC_CXS("CONTROL");
 }
 
@@ -230,8 +236,11 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	if_true_fe(app.ControlLive < 0);
 	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 416}, {884, 56}}, 1);
 	if_true_fe(app.ControlInspector < 0);
-	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("Each palette derives every state from one 16-shade tone. Mode switches the same geometry between flat and 3D shading. ESC exits."), {{24, 486}, {884, 36}}, 1);
+	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 486}, {772, 36}}, 1);
 	if_true_fe(app.ControlHelp < 0);
+	app.ControlExit = ::sampleGUIControlCreate(app, LLC_CXS("EXIT"), {{24, 18}, {96, 36}}, 2);
+	if_true_fe(app.ControlExit < 0);
+	app.GUI.Controls.Placement[app.ControlExit].Align = ::llc::ALIGN_BOTTOM_LEFT;
 	app.ControlAlignmentTitle = ::sampleGUIControlCreate(app, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1);
 	if_true_fe(app.ControlAlignmentTitle < 0);
 	app.GUI.Controls.Placement[app.ControlAlignmentTitle].Align = ::llc::ALIGN_TOP_RIGHT;
@@ -245,6 +254,12 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 		app.GUI.Controls.Text[app.ControlsAlignment[iAlignment]].Align = ::sampleGUITextAlignment(iAlignment);
 		if_fail_fe(::llc::controlSetParent(app.GUI, app.ControlsAlignment[iAlignment], app.ControlAlignmentRoot));
 	}
+	app.ControlsKeyboard[0] = app.ControlMode;
+	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
+		app.ControlsKeyboard[1 + iTheme] = app.ControlsTheme[iTheme];
+	}
+	app.ControlsKeyboard[4] = app.ControlLive;
+	app.ControlsKeyboard[5] = app.ControlExit;
 
 	::sampleGUIThemeApply(app);
 	::sampleGUIStateCardsApply(app);
@@ -259,9 +274,11 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 }
 
 ::llc::err_t sampleGUIUpdate(SSampleGUI & app, bool systemRequestedExit) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(0x1B))
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input));
+	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.ControlsKeyboard));
+	if(app.GUI.Controls.IsAction(app.ControlExit))
+		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.ControlMode))
 		app.GUI.ColorModeDefault = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::GUI_COLOR_MODE_Flat : ::llc::GUI_COLOR_MODE_3D;
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme)

@@ -5,7 +5,12 @@
 #include "llc_string.h"
 #include "llc_sync.h"
 
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+#	include "llc_sample_gui_components.h"
+	typedef SSampleGUIComponents SSampleContent;
+#	define LLC_SAMPLE_TITLE "LLC GUI components"
+#	define LLC_SAMPLE_WINDOW_SIZE {1280, 720}
+#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 #	include "llc_sample_gui_viewport.h"
 	typedef SSampleGUIViewport SSampleContent;
 #	define LLC_SAMPLE_TITLE "LLC GUI viewport"
@@ -38,13 +43,16 @@ stct SWindowRuntimeWin32 {
 stct SGDIApplication {
 	HWND			WindowHandle	= {};
 	::llc::n2u1_t	WindowSize	= {};
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	::llc::img8bgra			Target			= {};
 	::llc::SGUIRenderResources	GUIResources		= {};
 	::llc::SFrameTimer		FrameTimer		= {};
 	vltl ::llc::refcount_t		LastFrameMicroseconds	= 0;
 #endif
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+	::llc::img8bgra			ClientImages[SAMPLE_GUI_COMPONENTS_COUNT] = {};
+	::llc::u2_t			FrameIndex		= 0;
+#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 	::llc::img8bgra			ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	::llc::u2_t			FrameIndex		= 0;
 #endif
@@ -53,13 +61,13 @@ stct SGDIApplication {
 	::llc::err_t	SetWindowSize	(::llc::n2u1_t size) nxpt;
 	::llc::err_t	Present		(::llc::gc8bgra target) nxpt;
 	::llc::err_t	Shutdown	() nxpt;
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	::llc::err_t	MeasureText	(::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) cnst;
 	double		SecondsLastFrame() nxpt;
 #endif
 };
 
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 stct SSampleRenderFrame {
 	::llc::n2u1_t			TargetSize	= {};
 	::llc::TGUIRenderEventQueue	Events		= {};
@@ -84,7 +92,7 @@ stct SApplication {
 	SSampleContent		Sample		= {};
 	SWindowRuntimeWin32	Runtime		= {};
 	SGDIApplication		Presentation	= {};
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	SSampleFrameExchange	Frames		= {};
 #endif
 
@@ -244,7 +252,7 @@ namespace
 	}
 }
 
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 ::llc::err_t SSampleFrameExchange::Initialize(::llc::u2_t frameCount) {
 	if_true_fe(frameCount < 3 || Available.size() || Published || Current);
 	if_fail_fe(Available.reserve(frameCount));
@@ -363,7 +371,7 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 			::DispatchMessageA(&message);
 		}
 	}
-#if !defined(LLC_SAMPLE_GUI_VIEWPORT) && !defined(LLC_SAMPLE_GUI)
+#if !defined(LLC_SAMPLE_GUI_COMPONENTS) && !defined(LLC_SAMPLE_GUI_VIEWPORT) && !defined(LLC_SAMPLE_GUI)
 	if(window.Resized)
 		if_fail_fe(app.Presentation.SetWindowSize(window.Size));
 #endif
@@ -378,7 +386,7 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 	if(FALSE == ::GetClientRect(WindowHandle, &clientRect))
 		rtrn ::llc::OS_ERROR;
 	if_fail_fe(SetWindowSize({(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)}));
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	FrameTimer.Timer.Reset();
 	llc_sync_exchange(LastFrameMicroseconds, 0);
 #endif
@@ -389,7 +397,7 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 	if(0 == size.x || 0 == size.y)
 		rtrn ::llc::OS_INVALID_PARAMETER;
 	WindowSize = size;
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	if(Target.metrics() != size.u2())
 		if_fail_fe(Target.resize(size));
 #endif
@@ -418,7 +426,7 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 	::ReleaseDC(WindowHandle, deviceContext);
 	if(GDI_ERROR == result)
 		rtrn ::llc::OS_ERROR;
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	cnst double secondsLastFrame = FrameTimer.Frame();
 	llc_sync_exchange(LastFrameMicroseconds, (::llc::refcount_t)(secondsLastFrame * 1000000.0));
 #endif
@@ -428,17 +436,17 @@ static ::llc::err_t windowUpdate(SApplication& app) nxpt {
 ::llc::err_t SGDIApplication::Shutdown() nxpt {
 	WindowHandle = {};
 	WindowSize = {};
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	GUIResources = {};
 	llc_sync_exchange(LastFrameMicroseconds, 0);
 #endif
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT)
 	FrameIndex = 0;
 #endif
 	rtrn 0;
 }
 
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 ::llc::err_t SGDIApplication::MeasureText(::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) cnst {
 	rtrn ::llc::guiMeasureTextRaster(GUIResources, font, text, size);
 }
@@ -449,7 +457,9 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 }
 
 static ::llc::err_t sampleRenderResourcesSetup(SApplication & app) {
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+	rtrn ::sampleGUIComponentsRenderResourcesSetup(app.Sample, app.Presentation.GUIResources, app.Presentation.ClientImages);
+#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 	rtrn ::sampleGUIViewportRenderResourcesSetup(app.Sample, app.Presentation.GUIResources, app.Presentation.ClientImages);
 #else
 	rtrn ::sampleGUIRenderResourcesSetup(app.Sample, app.Presentation.GUIResources);
@@ -462,7 +472,9 @@ static ::llc::err_t sampleRenderFrameUpdate(SApplication & app) {
 	frame->TargetSize = app.Sample.Window.Size;
 	frame->NoDraw = app.Sample.Window.NoDraw;
 	cnst ::llc::FGUITextMeasure textMeasure = [&app](::llc::s1_t font, ::llc::vcst_t text, ::llc::n2u1_t & size) { rtrn app.Presentation.MeasureText(font, text, size); };
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+	#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+	cnst ::llc::err_t result = ::sampleGUIComponentsRenderEvents(app.Sample, frame->Events, frame->TargetSize, textMeasure);
+	#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 	cnst ::llc::err_t result = ::sampleGUIViewportRenderEvents(app.Sample, frame->Events, frame->TargetSize, textMeasure);
 #else
 	cnst ::llc::err_t result = ::sampleGUIRenderEvents(app.Sample, frame->Events, frame->TargetSize, textMeasure);
@@ -483,7 +495,9 @@ static ::llc::err_t sampleRenderDraw(SApplication & app) {
 	}
 	if(app.Presentation.WindowSize != frame->TargetSize)
 		if_fail_fe(app.Presentation.SetWindowSize(frame->TargetSize));
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+	if_fail_fe(::sampleGUIComponentsDraw(frame->Events, app.Presentation.GUIResources, app.Presentation.ClientImages, app.Presentation.FrameIndex++, app.Presentation.Target.View));
+#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 	if_fail_fe(::sampleGUIViewportDraw(frame->Events, app.Presentation.GUIResources, app.Presentation.ClientImages, app.Presentation.FrameIndex++, app.Presentation.Target.View));
 #else
 	if_fail_fe(::sampleGUIDraw(frame->Events, app.Presentation.GUIResources, app.Presentation.Target.View));
@@ -496,7 +510,9 @@ static ::llc::err_t sampleRenderDraw(SApplication & app) {
 	if_fail_fe(::windowCreate(app, LLC_SAMPLE_RUNTIME_TITLE, LLC_SAMPLE_WINDOW_SIZE));
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
 	if(::llc::not_failed(result)) {
-	#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+	#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+		result = ::sampleGUIComponentsSetup(app.Sample);
+	#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 		result = ::sampleGUIViewportSetup(app.Sample);
 	#elif defined(LLC_SAMPLE_GUI)
 		result = ::sampleGUISetup(app.Sample);
@@ -504,7 +520,7 @@ static ::llc::err_t sampleRenderDraw(SApplication & app) {
 		result = ::sampleWindowSetup(app.Sample);
 #endif
 	}
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	if(::llc::not_failed(result))
 		result = ::sampleRenderResourcesSetup(app);
 	if(::llc::not_failed(result))
@@ -531,14 +547,16 @@ static ::llc::err_t sampleRenderDraw(SApplication & app) {
 		rtrn resultWindow;
 	if_fail_fe(resultWindow);
 	cnst ::llc::err_t resultSample =
-#if defined(LLC_SAMPLE_GUI_VIEWPORT)
+	#if defined(LLC_SAMPLE_GUI_COMPONENTS)
+		::sampleGUIComponentsUpdate(app.Sample, systemRequestedExit, app.Presentation.SecondsLastFrame());
+	#elif defined(LLC_SAMPLE_GUI_VIEWPORT)
 		::sampleGUIViewportUpdate(app.Sample, systemRequestedExit, app.Presentation.SecondsLastFrame());
 #elif defined(LLC_SAMPLE_GUI)
 		::sampleGUIUpdate(app.Sample, systemRequestedExit);
 #else
 		::sampleWindowUpdate(app.Sample, systemRequestedExit);
 #endif
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	if(0 == resultSample)
 		if_fail_fe(::sampleRenderFrameUpdate(app));
 #endif
@@ -547,7 +565,7 @@ static ::llc::err_t sampleRenderDraw(SApplication & app) {
 }
 
 ::llc::err_t draw(SApplication& app) {
-#if defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
+#if defined(LLC_SAMPLE_GUI_COMPONENTS) || defined(LLC_SAMPLE_GUI_VIEWPORT) || defined(LLC_SAMPLE_GUI)
 	rtrn ::sampleRenderDraw(app);
 #else
 	if_fail_fe(::sampleWindowDraw(app.Sample));
