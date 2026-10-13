@@ -232,12 +232,15 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 		app.ControlsState[iState] = ::sampleGUIControlCreate(app, ::sampleGUIStateText(iState), {{x, y}, {206, 68}}, 2);
 		if_true_fe(app.ControlsState[iState] < 0);
 	}
-	app.ControlLive = ::sampleGUIControlCreate(app, LLC_CXS("LIVE"), {{24, 338}, {884, 64}}, 2);
+	app.ControlLive = ::sampleGUIControlCreate(app, LLC_CXS("LIVE"), {{24, 138}, {884, 64}}, 2);
 	if_true_fe(app.ControlLive < 0);
-	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 416}, {884, 56}}, 1);
+	app.GUI.Controls.Placement[app.ControlLive].Align = ::llc::ALIGN_BOTTOM_LEFT;
+	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 68}, {884, 56}}, 1);
 	if_true_fe(app.ControlInspector < 0);
-	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 486}, {772, 36}}, 1);
+	app.GUI.Controls.Placement[app.ControlInspector].Align = ::llc::ALIGN_BOTTOM_LEFT;
+	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 18}, {772, 36}}, 1);
 	if_true_fe(app.ControlHelp < 0);
+	app.GUI.Controls.Placement[app.ControlHelp].Align = ::llc::ALIGN_BOTTOM_LEFT;
 	app.ControlExit = ::sampleGUIControlCreate(app, LLC_CXS("EXIT"), {{24, 18}, {96, 36}}, 2);
 	if_true_fe(app.ControlExit < 0);
 	app.GUI.Controls.Placement[app.ControlExit].Align = ::llc::ALIGN_BOTTOM_LEFT;
