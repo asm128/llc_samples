@@ -10,4 +10,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|x64'">
     <LocalDebuggerCommandArgumentsHistory>llc_sample_gui_components_win32|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MT|x64'">
+    <LocalDebuggerCommandArgumentsHistory>llc_sample_gui_components_win32|</LocalDebuggerCommandArgumentsHistory>
+  </PropertyGroup>
 </Project>

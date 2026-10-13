@@ -4,6 +4,9 @@
 #include "llc_apod_serialize.h"
 #include "llc_cstring.h"
 #include "llc_runtime.h"
+#include "llc_system_key.h"
+
+#include <limits.h>
 
 sttc ::llc::err_t sampleGUIComponentsDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
 	doubleClick = false;
@@ -91,6 +94,105 @@ sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & ap
 	rtrn 0;
 }
 
+sttc ::llc::cid_t sampleGUIComponentsControlCreate(SSampleGUIComponents & app, ::llc::vcst_t text, cnst ::llc::rect2s1_t & area) {
+	cnst ::llc::cid_t idControl = ::llc::controlCreateChild(app.GUI, app.ComponentsPanel);
+	if(idControl < 0)
+		rtrn idControl;
+	::llc::SControlPlacement & placement = app.GUI.Controls.Placement[idControl];
+	placement.Area = area;
+	placement.Margin = {1, 1, 1, 1};
+	placement.Border = {2, 2, 2, 2};
+	app.GUI.Controls.Text[idControl].Align = ::llc::ALIGN_CENTER;
+	app.GUI.Controls.Text[idControl].FontSelected = 2;
+	if(::llc::failed(::llc::controlTextSet(app.GUI, idControl, text))) {
+		::llc::controlDelete(app.GUI, idControl);
+		rtrn -1;
+	}
+	rtrn idControl;
+}
+
+sttc ::llc::err_t sampleGUIComponentsKeyboardAppend(SSampleGUIComponents & app) {
+	if_fail_fe(app.ControlsKeyboard.push_back(app.CheckBox.IdControl));
+	if_fail_fe(app.ControlsKeyboard.push_back(app.SliderHorizontal.IdRoot));
+	if_fail_fe(app.ControlsKeyboard.push_back(app.SliderVertical.IdRoot));
+	if_fail_fe(app.ControlsKeyboard.push_back(app.ControlEdit));
+	for(::llc::u2_t iCharacter = 0; iCharacter < app.InputBox.VirtualKeyboard.Characters.size(); ++iCharacter)
+		if_fail_fe(app.ControlsKeyboard.push_back(app.InputBox.VirtualKeyboard.Characters[iCharacter].IdControl));
+	for(::llc::u2_t iCommand = 0; iCommand < app.InputBox.VirtualKeyboard.Commands.size(); ++iCommand)
+		if_fail_fe(app.ControlsKeyboard.push_back(app.InputBox.VirtualKeyboard.Commands[iCommand].IdControl));
+	rtrn app.ControlsKeyboard.push_back(app.ControlExit);
+}
+
+sttc void sampleGUIComponentsThemeApply(SSampleGUIComponents & app) nxpt {
+	::sampleGUIControlThemeApply(app.GUI, app.CheckBox.IdControl, 0);
+	::sampleGUIControlThemeApply(app.GUI, app.SliderHorizontal.IdRoot, 1);
+	::sampleGUIControlThemeApply(app.GUI, app.SliderHorizontal.IdThumb, 1);
+	::sampleGUIControlThemeApply(app.GUI, app.SliderVertical.IdRoot, 2);
+	::sampleGUIControlThemeApply(app.GUI, app.SliderVertical.IdThumb, 2);
+	::sampleGUIControlThemeApply(app.GUI, app.ControlEdit, 0);
+	::sampleGUIControlThemeApply(app.GUI, app.ControlExit, 1);
+	::sampleGUIControlThemeApply(app.GUI, app.InputBox.IdRoot, 2);
+	::sampleGUIControlThemeApply(app.GUI, app.InputBox.IdText, 2);
+	::sampleGUIControlThemeApply(app.GUI, app.InputBox.VirtualKeyboard.IdRoot, 2);
+	for(::llc::u2_t iCharacter = 0; iCharacter < app.InputBox.VirtualKeyboard.Characters.size(); ++iCharacter)
+		::sampleGUIControlThemeApply(app.GUI, app.InputBox.VirtualKeyboard.Characters[iCharacter].IdControl, 2);
+	for(::llc::u2_t iCommand = 0; iCommand < app.InputBox.VirtualKeyboard.Commands.size(); ++iCommand)
+		::sampleGUIControlThemeApply(app.GUI, app.InputBox.VirtualKeyboard.Commands[iCommand].IdControl, 2);
+}
+
+sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
+	app.ComponentsPanel = ::llc::controlCreateChild(app.GUI, app.Desktop);
+	if_true_fe(app.ComponentsPanel < 0);
+	::llc::SControlPlacement & panelPlacement = app.GUI.Controls.Placement[app.ComponentsPanel];
+	panelPlacement.Area = {{18, 18}, {500, 112}};
+	panelPlacement.Align = ::llc::ALIGN_BOTTOM_LEFT;
+	panelPlacement.Margin = {};
+	panelPlacement.Border = {};
+	app.GUI.Controls.Draw[app.ComponentsPanel].NoBorder = true;
+	app.GUI.Controls.Draw[app.ComponentsPanel].NoClient = true;
+
+	::llc::SCheckBoxCreate checkBoxSetup = {};
+	checkBoxSetup.Parent = app.ComponentsPanel;
+	checkBoxSetup.Area = {{0, 0}, {32, 32}};
+	checkBoxSetup.Text = LLC_CXS("X");
+	if_fail_fe(::llc::checkBoxCreate(app.CheckBox, app.GUI, checkBoxSetup));
+	cnst ::llc::cid_t idCheckBoxLabel = ::sampleGUIComponentsControlCreate(app, LLC_CXS("CHECK BOX | ENTER / SPACE"), {{38, 0}, {212, 32}});
+	if_true_fe(idCheckBoxLabel < 0);
+	app.GUI.Controls.Draw[idCheckBoxLabel].NoBorder = true;
+	app.GUI.Controls.Draw[idCheckBoxLabel].NoClient = true;
+	app.GUI.Controls.Text[idCheckBoxLabel].Align = ::llc::ALIGN_CENTER_LEFT;
+	::sampleGUIControlThemeApply(app.GUI, idCheckBoxLabel, 0);
+
+	::llc::SSliderCreate horizontalSetup = {};
+	horizontalSetup.Parent = app.ComponentsPanel;
+	horizontalSetup.Area = {{0, 40}, {250, 30}};
+	horizontalSetup.Value = 35;
+	if_fail_fe(::llc::sliderCreate(app.SliderHorizontal, app.GUI, horizontalSetup));
+	app.SliderHorizontal.TextFormat = [](::llc::astchar<64> & output, ::llc::s3_t value, ::llc::minmaxs3_c &) { rtrn ::llc::sprintf_s(output.Storage, "HORIZONTAL %" LLC_FMT_S3, value); };
+	if_fail_fe(::llc::sliderSetValue(app.SliderHorizontal, app.GUI, app.SliderHorizontal.ValueCurrent));
+
+	::llc::SSliderCreate verticalSetup = {};
+	verticalSetup.Parent = app.ComponentsPanel;
+	verticalSetup.Area = {{260, 0}, {40, 108}};
+	verticalSetup.Value = 65;
+	verticalSetup.Vertical = true;
+	if_fail_fe(::llc::sliderCreate(app.SliderVertical, app.GUI, verticalSetup));
+	if_fail_fe(::llc::controlTextSet(app.GUI, app.SliderVertical.IdRoot, LLC_CXS("V")));
+
+	app.ControlEdit = ::sampleGUIComponentsControlCreate(app, LLC_CXS("EDIT TEXT / CP437 KEYBOARD"), {{310, 0}, {190, 32}});
+	if_true_fe(app.ControlEdit < 0);
+	app.ControlExit = ::sampleGUIComponentsControlCreate(app, LLC_CXS("EXIT"), {{310, 40}, {190, 32}});
+	if_true_fe(app.ControlExit < 0);
+
+	if_fail_fe(::llc::inputBoxCreate(app.InputBox, app.GUI, app.Desktop));
+	app.GUI.Controls.Placement[app.InputBox.IdRoot].Align = ::llc::ALIGN_CENTER_BOTTOM;
+	app.GUI.Controls.Placement[app.InputBox.IdRoot].Area.Offset.y = 70;
+	app.GUI.Controls.Text[app.InputBox.IdText].FontSelected = 2;
+	if_fail_fe(::sampleGUIComponentsKeyboardAppend(app));
+	::sampleGUIComponentsThemeApply(app);
+	rtrn 0;
+}
+
 ::llc::err_t sampleGUIComponentsSetup(SSampleGUIComponents & app) {
 	app.GUI.SelectedFont = 2;
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
@@ -104,7 +206,7 @@ sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & ap
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG ANY TITLE | DOUBLE-CLICK A TITLE TO FOLD | CLICK AN EXPOSED WINDOW TO BRING IT FORWARD | ESC EXITS");
+	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG / FOLD VIEWPORTS | TAB / SHIFT+TAB FOCUS | ENTER / SPACE ACTIVATE | ARROWS / PAGE / HOME / END SLIDE | ESC CLOSES / EXITS");
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
@@ -112,6 +214,7 @@ sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & ap
 	if_fail_fe(::sampleGUIComponentsCreate(app, 1, LLC_CXS("AMBER CPU SURFACE"), {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIComponentsCreate(app, 2, LLC_CXS("MONO CPU SURFACE"), {{754, 104}, {360, 230}}));
 	if_fail_fe(::sampleGUIComponentsActivate(app, 2));
+	if_fail_fe(::sampleGUIComponentsControlsSetup(app));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
 	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
@@ -137,9 +240,25 @@ sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & ap
 }
 
 ::llc::err_t sampleGUIComponentsUpdate(SSampleGUIComponents & app, bool systemRequestedExit, double secondsLastFrame) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(0x1B))
+	if(systemRequestedExit || app.Window.Closed)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
+	cnst bool editingAtFrameStart = app.InputBox.Editing;
+	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.ControlsKeyboard, app.Window.EventQueue));
+	if_fail_fe(::llc::checkBoxUpdate(app.CheckBox, app.GUI));
+	if_fail_fe(::llc::sliderUpdate(app.SliderHorizontal, app.GUI, app.Window.Input));
+	if_fail_fe(::llc::sliderUpdate(app.SliderVertical, app.GUI, app.Window.Input));
+	if(app.GUI.Controls.IsAction(app.ControlEdit))
+		app.InputBox.Edit(app.GUI, true);
+	if(editingAtFrameStart) {
+		cnst ::llc::err_t inputResult = app.InputBox.Update(app.GUI, app.InputBox.VirtualKeyboard, app.Window.EventQueue, app.ControlsKeyboard);
+		if_fail_fe(inputResult);
+		if(INT_MAX == inputResult)
+			app.InputBox.Edit(app.GUI, false);
+	}
+	else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
+		rtrn ::llc::APPLICATION_STATE_EXIT;
+	if(app.GUI.Controls.IsAction(app.ControlExit))
+		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGUIComponentsPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIComponentsDoubleClick(app.Window.EventQueue, doubleClick));
