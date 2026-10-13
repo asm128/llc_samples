@@ -1,5 +1,9 @@
 <Solution>
   <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug-MT" />
+    <BuildType Name="Release" />
+    <BuildType Name="Release-MT" />
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
