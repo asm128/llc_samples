@@ -17,4 +17,5 @@
     <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
   <Project Path="llc_sample_gui_viewport/llc_sample_gui_viewport.vcxproj" Id="2a71dc41-2f04-48a5-8ccd-8bc79fc48f76" />
+  <Project Path="llc_sample_geometry/llc_sample_geometry.vcxproj" Id="9d1f2bb2-cdda-4eec-afd6-43c5e8772602" />
 </Solution>
