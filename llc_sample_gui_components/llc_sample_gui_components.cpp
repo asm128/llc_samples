@@ -129,13 +129,10 @@ sttc ::llc::s3_t sampleSliderValueOffset(cnst SSampleSlider & slider, bool incre
 }
 
 sttc ::llc::err_t sampleSliderTextUpdate(SSampleSlider & slider, ::llc::SGUI & gui) {
-	cnst ::llc::err_t length = slider.Vertical
-		? ::llc::sprintf_s(slider.ValueText.Storage, "%" LLC_FMT_S3, slider.ValueCurrent)
-		: ::llc::sprintf_s(slider.ValueText.Storage, "HORIZONTAL %" LLC_FMT_S3, slider.ValueCurrent)
-		;
+	cnst ::llc::err_t length = ::llc::sprintf_s(slider.ValueText.Storage, "%" LLC_FMT_S3, slider.ValueCurrent);
 	if_fail_fe(length);
 	if_true_fe((::llc::u2_t)length >= slider.ValueText.size());
-	rtrn ::llc::controlTextSet(gui, slider.IdRoot, {slider.ValueText.Storage, (::llc::u2_t)length});
+	rtrn ::llc::controlTextSet(gui, slider.IdThumb, {slider.ValueText.Storage, (::llc::u2_t)length});
 }
 
 sttc ::llc::err_t sampleSliderSetValue(SSampleSlider & slider, ::llc::SGUI & gui, ::llc::s3_t value) {
@@ -177,7 +174,12 @@ sttc ::llc::err_t sampleSliderCreate(SSampleSlider & slider, ::llc::SGUI & gui, 
 	::llc::SControlPlacement & thumbPlacement = gui.Controls.Placement[slider.IdThumb];
 	thumbPlacement.Margin = {};
 	thumbPlacement.Border = {1, 1, 1, 1};
-	thumbPlacement.Area.Size = vertical ? ::llc::n2s1_t{16, 20} : ::llc::n2s1_t{20, 16};
+	thumbPlacement.Area.Size = {16, 16};
+	::llc::SControlConstraints & thumbConstraints = gui.Controls.Constraints[slider.IdThumb];
+	if(vertical)
+		thumbConstraints.AttachSizeToControl.x = slider.IdThumb;
+	else
+		thumbConstraints.AttachSizeToControl.y = slider.IdThumb;
 	rtrn ::sampleSliderSetValue(slider, gui, value);
 }
 
@@ -229,6 +231,49 @@ sttc ::llc::err_t sampleSliderUpdate(SSampleSlider & slider, ::llc::SGUI & gui, 
 		valueNext = ::sampleSliderValueOffset(slider, increase, slider.ValuePage);
 	}
 	rtrn valueNext != slider.ValueCurrent ? ::sampleSliderSetValue(slider, gui, valueNext) : 0;
+}
+
+stacxpr ::llc::n2s1_t sampleDragDelta(::llc::ALIGN align, ::llc::n2s1_t delta) {
+	if(::llc::bit_false(align, ::llc::ALIGN_HCENTER) && ::llc::bit_true(align, ::llc::ALIGN_RIGHT))
+		delta.x = -delta.x;
+	if(::llc::bit_false(align, ::llc::ALIGN_VCENTER) && ::llc::bit_true(align, ::llc::ALIGN_BOTTOM))
+		delta.y = -delta.y;
+	rtrn delta;
+}
+
+static_assert(::sampleDragDelta(::llc::ALIGN_CENTER_BOTTOM, {3, 5}) == ::llc::n2s1_t{ 3, -5});
+static_assert(::sampleDragDelta(::llc::ALIGN_TOP_RIGHT   , {3, 5}) == ::llc::n2s1_t{-3,  5});
+static_assert(::sampleDragDelta(::llc::ALIGN_CENTER      , {3, 5}) == ::llc::n2s1_t{ 3,  5});
+static_assert(::sampleDragDelta(::llc::ALIGN_BOTTOM_LEFT , {3, 5}) == ::llc::n2s1_t{ 3, -5});
+
+sttc ::llc::err_t sampleVirtualKeyboardUpdate(SSampleGUIComponents & app, bool & dragCanceled) {
+	dragCanceled = false;
+	cnst ::llc::SInput & input = app.Window.Input;
+	cnst ::llc::cid_t idKeyboard = app.InputBox.VirtualKeyboard.IdRoot;
+	cnst ::llc::cid_t idInputBox = app.InputBox.IdRoot;
+	::llc::SControlPlacement & placement = app.GUI.Controls.Placement[idInputBox];
+	if(input.ButtonUp(0)) {
+		app.InputBoxDragging = false;
+		app.InputBoxDragCanceled = false;
+	}
+	if(app.InputBoxDragging && (input.KeyDown(::llc::SYSTEM_KEY_Escape) || input.ButtonDown(1))) {
+		placement.Area.Offset = app.InputBoxDragOrigin;
+		app.InputBoxDragging = false;
+		app.InputBoxDragCanceled = true;
+		dragCanceled = true;
+		rtrn ::llc::controlMetricsInvalidate(app.GUI, idInputBox);
+	}
+	if(false == app.InputBoxDragging && false == app.InputBoxDragCanceled && input.MouseCurrent.ButtonState[0] && app.GUI.Controls.IsPressed(idKeyboard)) {
+		app.InputBoxDragOrigin = placement.Area.Offset;
+		app.InputBoxDragging = true;
+	}
+	if(false == app.InputBoxDragging || (0 == input.MouseCurrent.Deltas.x && 0 == input.MouseCurrent.Deltas.y))
+		rtrn 0;
+	cnst ::llc::n2f3_t scale = app.GUI.Zoom.DPI * app.GUI.Zoom.ZoomLevel;
+	if_zero_fef(scale.x && scale.y, "Invalid GUI scale:{%f, %f}.", scale.x, scale.y);
+	cnst ::llc::n2s1_t delta = ::sampleDragDelta(placement.Align, ::llc::n2s2_t{input.MouseCurrent.Deltas.x, input.MouseCurrent.Deltas.y}.f3().GetScaled(1.0 / scale.x, 1.0 / scale.y).s1());
+	placement.Area.Offset += delta;
+	rtrn ::llc::controlMetricsInvalidate(app.GUI, idInputBox);
 }
 
 sttc ::llc::err_t sampleGUIComponentsDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
@@ -408,7 +453,6 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 
 	if_fail_fe(::sampleSliderCreate(app.SliderHorizontal, app.GUI, app.ComponentsPanel, {{0, 40}, {250, 30}}, false, 35));
 	if_fail_fe(::sampleSliderCreate(app.SliderVertical, app.GUI, app.ComponentsPanel, {{260, 0}, {40, 108}}, true, 65));
-	if_fail_fe(::llc::controlTextSet(app.GUI, app.SliderVertical.IdRoot, LLC_CXS("V")));
 
 	app.ControlEdit = ::sampleGUIComponentsControlCreate(app, LLC_CXS("EDIT TEXT / CP437 KEYBOARD"), {{310, 0}, {190, 32}});
 	if_true_fe(app.ControlEdit < 0);
@@ -471,10 +515,14 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if(app.GUI.Controls.IsAction(app.ControlEdit))
 		app.InputBox.Edit(app.GUI, true);
 	if(editingAtFrameStart) {
-		cnst ::llc::err_t inputResult = app.InputBox.Update(app.GUI, app.InputBox.VirtualKeyboard, app.Window.EventQueue, app.ControlsKeyboard);
-		if_fail_fe(inputResult);
-		if(INT_MAX == inputResult)
-			app.InputBox.Edit(app.GUI, false);
+		bool dragCanceled = false;
+		if_fail_fe(::sampleVirtualKeyboardUpdate(app, dragCanceled));
+		if(false == dragCanceled) {
+			cnst ::llc::err_t inputResult = app.InputBox.Update(app.GUI, app.InputBox.VirtualKeyboard, app.Window.EventQueue, app.ControlsKeyboard);
+			if_fail_fe(inputResult);
+			if(INT_MAX == inputResult)
+				app.InputBox.Edit(app.GUI, false);
+		}
 	}
 	else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;

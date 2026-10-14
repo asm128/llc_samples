@@ -5,13 +5,10 @@
 #include "llc_grid_color.h"
 #include "llc_mutex.h"
 #include "llc_string.h"
+#include "llc_swap.h"
 #include "llc_sync.h"
 
-#if defined(LLC_SAMPLE_RUNTIME_MT)
-#	define LLC_SAMPLE_GUI_COMPONENTS_TITLE "LLC GUI components [MT]"
-#else
-#	define LLC_SAMPLE_GUI_COMPONENTS_TITLE "LLC GUI components"
-#endif
+#define LLC_SAMPLE_GUI_COMPONENTS_TITLE "LLC GUI components"
 
 #if defined(LLC_WINDOWS)
 #	include <Windowsx.h>
@@ -28,7 +25,7 @@ stct SGDIApplication {
 
 	::llc::err_t	Initialize		(HWND windowHandle) nxpt;
 	::llc::err_t	SetWindowSize		(::llc::n2u1_t size) nxpt;
-	::llc::err_t	Present			(::llc::gc8bgra target) nxpt;
+	::llc::err_t	Present			(HDC deviceContext, ::llc::gc8bgra target) nxpt;
 	::llc::err_t	Shutdown		() nxpt;
 	double			SecondsLastFrame	() nxpt;
 };
@@ -40,7 +37,9 @@ stct SApplication {
 	::llc::mutex		LockGUI		= {};
 	::llc::mutex		LockRender	= {};
 	::llc::pobj<::llc::img8bgra>
-					Offscreen	= {};
+					FrontImage	= {};
+	::llc::pobj<::llc::img8bgra>
+					BackImage	= {};
 	::llc::img8bgra		ClientImages[SAMPLE_GUI_COMPONENTS_COUNT] = {};
 	::llc::u2_t		FrameIndex	= 0;
 
@@ -52,11 +51,6 @@ namespace {
 
 	SApplication* applicationFromHandle(HWND handle) nxpt {
 		rtrn (SApplication*)::GetWindowLongPtrA(handle, GWLP_USERDATA);
-	}
-
-	void enqueueResult(::llc::err_t result) nxpt {
-		if(::llc::failed(result))
-			error_printf("Failed to enqueue window event with result: %i.", result);
 	}
 
 	LRESULT CALLBACK windowProcedure(HWND handle, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -76,11 +70,11 @@ namespace {
 			((MINMAXINFO*)lParam)->ptMinTrackSize = {160, 120};
 			rtrn 0;
 		case WM_CLOSE:
-			::enqueueResult(::llc::eventEnqueueScreenClose(window.EventQueue));
+			if_fail_e(::llc::eventEnqueueScreenClose(window.EventQueue));
 			window.Closed = true;
 			rtrn 0;
 		case WM_DESTROY:
-			::enqueueResult(::llc::eventEnqueueScreenDestroy(window.EventQueue));
+			if_fail_e(::llc::eventEnqueueScreenDestroy(window.EventQueue));
 			app->Runtime.WindowHandle = 0;
 			window.Closed = true;
 			rtrn 0;
@@ -93,34 +87,34 @@ namespace {
 			cnst ::llc::n2u1_t clientSize = {(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)};
 			::llc::SEventArgsScreenCreate eventArgs = {};
 			eventArgs.Size = clientSize;
-			::enqueueResult(::llc::eventEnqueueScreenCreate(window.EventQueue, eventArgs));
+			if_fail_e(::llc::eventEnqueueScreenCreate(window.EventQueue, eventArgs));
 			break;
 		}
 		case WM_SHOWWINDOW:
 			if(wParam) {
-				::enqueueResult(::llc::eventEnqueueScreenShow(window.EventQueue, (::llc::u0_t)lParam));
+				if_fail_e(::llc::eventEnqueueScreenShow(window.EventQueue, (::llc::u0_t)lParam));
 				window.Repaint = true;
 			}
 			else
-				::enqueueResult(::llc::eventEnqueueScreenHide(window.EventQueue, (::llc::u0_t)lParam));
+				if_fail_e(::llc::eventEnqueueScreenHide(window.EventQueue, (::llc::u0_t)lParam));
 			break;
 		case WM_ACTIVATE:
 			switch(LOWORD(wParam)) {
 			default: break;
-			case WA_ACTIVE:     ::enqueueResult(::llc::eventEnqueueScreenActivate(window.EventQueue, 0)); break;
-			case WA_CLICKACTIVE: ::enqueueResult(::llc::eventEnqueueScreenActivate(window.EventQueue, 1)); break;
-			case WA_INACTIVE:   ::enqueueResult(::llc::eventEnqueueScreenDeactivate(window.EventQueue, 0)); break;
+			case WA_ACTIVE:     if_fail_e(::llc::eventEnqueueScreenActivate(window.EventQueue, 0)); break;
+			case WA_CLICKACTIVE: if_fail_e(::llc::eventEnqueueScreenActivate(window.EventQueue, 1)); break;
+			case WA_INACTIVE:   if_fail_e(::llc::eventEnqueueScreenDeactivate(window.EventQueue, 0)); break;
 			}
 			break;
 		case WM_CHAR:
-			::enqueueResult(::llc::eventEnqueueTextChar(window.EventQueue, (::llc::u2_t)wParam));
+			if_fail_e(::llc::eventEnqueueTextChar(window.EventQueue, (::llc::u2_t)wParam));
 			window.Repaint = true;
 			break;
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 			if(wParam < ::llc::size(window.Input.KeyboardCurrent.KeyState))
 				window.Input.KeyboardCurrent.KeyState[(::llc::u2_t)wParam] = 1;
-			::enqueueResult(WM_KEYDOWN == message
+			if_fail_e(WM_KEYDOWN == message
 				? ::llc::eventEnqueueKeyboardDown(window.EventQueue, (::llc::u0_t)wParam)
 				: ::llc::eventEnqueueKeyboardSysDown(window.EventQueue, (::llc::u0_t)wParam));
 			window.Repaint = true;
@@ -129,7 +123,7 @@ namespace {
 		case WM_SYSKEYUP:
 			if(wParam < ::llc::size(window.Input.KeyboardCurrent.KeyState))
 				window.Input.KeyboardCurrent.KeyState[(::llc::u2_t)wParam] = 0;
-			::enqueueResult(WM_KEYUP == message
+			if_fail_e(WM_KEYUP == message
 				? ::llc::eventEnqueueKeyboardUp(window.EventQueue, (::llc::u0_t)wParam)
 				: ::llc::eventEnqueueKeyboardSysUp(window.EventQueue, (::llc::u0_t)wParam));
 			window.Repaint = true;
@@ -139,7 +133,7 @@ namespace {
 		case WM_MBUTTONDOWN: {
 			cnst ::llc::u0_t button = WM_LBUTTONDOWN == message ? 0 : WM_RBUTTONDOWN == message ? 1 : 2;
 			window.Input.MouseCurrent.ButtonState[button] = 1;
-			::enqueueResult(::llc::eventEnqueueMouseDown(window.EventQueue, button));
+			if_fail_e(::llc::eventEnqueueMouseDown(window.EventQueue, button));
 			window.Repaint = true;
 			break;
 		}
@@ -148,7 +142,7 @@ namespace {
 		case WM_MBUTTONUP: {
 			cnst ::llc::u0_t button = WM_LBUTTONUP == message ? 0 : WM_RBUTTONUP == message ? 1 : 2;
 			window.Input.MouseCurrent.ButtonState[button] = 0;
-			::enqueueResult(::llc::eventEnqueueMouseUp(window.EventQueue, button));
+			if_fail_e(::llc::eventEnqueueMouseUp(window.EventQueue, button));
 			window.Repaint = true;
 			break;
 		}
@@ -157,22 +151,24 @@ namespace {
 		case WM_MBUTTONDBLCLK: {
 			cnst ::llc::u0_t button = WM_LBUTTONDBLCLK == message ? 0 : WM_RBUTTONDBLCLK == message ? 1 : 2;
 			window.Input.MouseCurrent.ButtonState[button] = 1;
-			::enqueueResult(::llc::eventEnqueueMouseDoubleClick(window.EventQueue, button));
+			if_fail_e(::llc::eventEnqueueMouseDoubleClick(window.EventQueue, button));
 			window.Repaint = true;
 			break;
 		}
 		case WM_MOUSEWHEEL:
 			window.Input.MouseCurrent.Deltas.z = (::llc::s1_t)GET_WHEEL_DELTA_WPARAM(wParam);
-			::enqueueResult(::llc::eventEnqueueMouseWheel(window.EventQueue, window.Input.MouseCurrent.Deltas.z));
+			if_fail_e(::llc::eventEnqueueMouseWheel(window.EventQueue, window.Input.MouseCurrent.Deltas.z));
 			window.Repaint = true;
 			break;
 		case WM_MOUSEMOVE: {
 			cnst ::llc::n2s1_t position = {(::llc::s1_t)GET_X_LPARAM(lParam), (::llc::s1_t)GET_Y_LPARAM(lParam)};
+			cnst bool positionChanged = position != window.Input.MouseCurrent.Position;
 			window.Input.MouseCurrent.Position = position;
 			window.Input.MouseCurrent.Deltas.x = position.x - window.Input.MousePrevious.Position.x;
 			window.Input.MouseCurrent.Deltas.y = position.y - window.Input.MousePrevious.Position.y;
-			::enqueueResult(::llc::eventEnqueueMousePosition(window.EventQueue, position));
-			window.Repaint = true;
+			if_fail_e(::llc::eventEnqueueMousePosition(window.EventQueue, position));
+			if(positionChanged)
+				window.Repaint = true;
 			break;
 		}
 		case WM_SIZE: {
@@ -181,7 +177,7 @@ namespace {
 				RECT clientRect = {};
 				::GetClientRect(handle, &clientRect);
 				cnst ::llc::n2u1_t size = {(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)};
-				::enqueueResult(::llc::engineWindowResize(window, size));
+				if_fail_e(::llc::engineWindowResize(window, size));
 			}
 			break;
 		}
@@ -190,9 +186,13 @@ namespace {
 		case WM_PAINT: {
 			PAINTSTRUCT paint = {};
 			::BeginPaint(handle, &paint);
+			{
+				::llc::lock_guard<::llc::mutex> lock{app->LockRender};
+				if(app->FrontImage)
+					if_fail_e(app->Presentation.Present(paint.hdc, app->FrontImage->View));
+			}
 			::EndPaint(handle, &paint);
-			window.Repaint = true;
-			break;
+			rtrn 0;
 		}
 		}
 		rtrn ::DefWindowProcA(handle, message, wParam, lParam);
@@ -260,6 +260,8 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 			::DispatchMessageA(&message);
 		}
 	}
+	if(window.Resized)
+		if_fail_fe(app.Presentation.SetWindowSize(window.Size));
 	rtrn window.Closed ? ::llc::APPLICATION_STATE_EXIT : 0;
 }
 
@@ -283,14 +285,17 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 	rtrn 0;
 }
 
-::llc::err_t SGDIApplication::Present(::llc::gc8bgra target) nxpt {
+::llc::err_t SGDIApplication::Present(HDC deviceContext, ::llc::gc8bgra target) nxpt {
 	if(0 == target.size() || 0 == target.metrics().x || 0 == target.metrics().y)
 		rtrn ::llc::OS_INVALID_PARAMETER;
-	if(0 == WindowHandle || 0 == WindowSize.x || 0 == WindowSize.y)
+	if(0 == WindowHandle || 0 == deviceContext)
 		rtrn ::llc::OS_INVALID_PARAMETER;
-	HDC deviceContext = ::GetDC(WindowHandle);
-	if(0 == deviceContext)
+	RECT clientRect = {};
+	if(FALSE == ::GetClientRect(WindowHandle, &clientRect))
 		rtrn ::llc::OS_ERROR;
+	cnst ::llc::n2u1_t clientSize = {(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)};
+	if(0 == clientSize.x || 0 == clientSize.y)
+		rtrn 0;
 
 	BITMAPINFO bitmapInfo = {};
 	bitmapInfo.bmiHeader.biSize = szof(BITMAPINFOHEADER);
@@ -300,9 +305,8 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 	bitmapInfo.bmiHeader.biBitCount = 32;
 	bitmapInfo.bmiHeader.biCompression = BI_RGB;
 	::SetStretchBltMode(deviceContext, COLORONCOLOR);
-	cnst int result = ::StretchDIBits(deviceContext, 0, 0, WindowSize.x, WindowSize.y, 0, 0, target.metrics().x, target.metrics().y
+	cnst int result = ::StretchDIBits(deviceContext, 0, 0, clientSize.x, clientSize.y, 0, 0, target.metrics().x, target.metrics().y
 		, target.begin(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-	::ReleaseDC(WindowHandle, deviceContext);
 	if(GDI_ERROR == result)
 		rtrn ::llc::OS_ERROR;
 	cnst double secondsLastFrame = FrameTimer.Frame();
@@ -335,7 +339,8 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 }
 
 ::llc::err_t cleanup(SApplication & app) {
-	app.Offscreen = {};
+	app.FrontImage = {};
+	app.BackImage = {};
 	cnst ::llc::err_t resultPresentation = app.Presentation.Shutdown();
 	cnst ::llc::err_t resultWindow = ::windowDestroy(app);
 	rtrn ::llc::failed(resultPresentation) ? resultPresentation : resultWindow;
@@ -350,14 +355,6 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 	if(::llc::APPLICATION_STATE_EXIT == resultWindow)
 		rtrn resultWindow;
 	if_fail_fe(resultWindow);
-	{
-		::llc::lock_guard<::llc::mutex> lock{app.LockRender};
-		if(app.Offscreen) {
-			if(app.Sample.Window.Resized)
-				if_fail_fe(app.Presentation.SetWindowSize(app.Sample.Window.Size));
-			if_fail_fe(app.Presentation.Present(app.Offscreen->View));
-		}
-	}
 	::llc::err_t resultSample = 0;
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockGUI};
@@ -368,29 +365,28 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 }
 
 ::llc::err_t draw(SApplication & app) {
-	::llc::pobj<::llc::img8bgra> target = {};
-	if_null_ve(::llc::OS_NO_MEMORY, target.create());
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockGUI};
 		if(app.Sample.Window.NoDraw) {
 			::llc::sleep(8);
 			rtrn 0;
 		}
-		if_fail_fe(target->resize(app.Sample.Window.Size.u2()));
-		if_fail_fe(::sampleGUIComponentsDraw(app.Sample, app.ClientImages, app.FrameIndex++, target->View));
+		if(!app.BackImage)
+			if_null_ve(::llc::OS_NO_MEMORY, app.BackImage.create());
+		if_fail_fe(app.BackImage->resize(app.Sample.Window.Size.u2()));
+		if_fail_fe(::sampleGUIComponentsDraw(app.Sample, app.ClientImages, app.FrameIndex++, app.BackImage->View));
 	}
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockRender};
-		app.Offscreen = target;
+		::llc::swap(app.FrontImage, app.BackImage);
 	}
+	if(app.Runtime.WindowHandle)
+		if(FALSE == ::InvalidateRect(app.Runtime.WindowHandle, 0, FALSE))
+			rtrn ::llc::OS_ERROR;
 	rtrn 0;
 }
 
-#if defined(LLC_SAMPLE_RUNTIME_MT)
-LLC_DEFINE_APPLICATION_ENTRY_POINT_MT(SApplication, LLC_SAMPLE_GUI_COMPONENTS_TITLE)
-#else
 LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_COMPONENTS_TITLE)
-#endif
 
 #endif // LLC_WINDOWS
 

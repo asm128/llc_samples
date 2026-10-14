@@ -38,6 +38,9 @@ stct SSampleGUIComponents {
 	SSampleSlider		SliderHorizontal	= {};
 	SSampleSlider		SliderVertical		= {};
 	::llc::SInputBox		InputBox			= {};
+	::llc::n2s1_t			InputBoxDragOrigin	= {};
+	bool					InputBoxDragging	= false;
+	bool					InputBoxDragCanceled	= false;
 	::llc::acid			ControlsKeyboard	= {};
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_COMPONENTS_COUNT>
 						Viewports		= {};
