@@ -81,10 +81,10 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LLC_SAMPLE_GUI;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)llc_samples;$(SolutionDir)../llc/llc;$(SolutionDir)../llc_engine/llc_engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)../llc/llc;$(SolutionDir)../llc_engine/llc_engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
@@ -137,12 +137,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_gui.cpp" />
-    <ClCompile Include="..\llc_samples\llc_sample_gui_resources.cpp" />
-    <ClCompile Include="..\llc_samples\llc_sample_window_win32.cpp" />
+    <ClCompile Include="llc_sample_gui_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_gui.h" />
-    <ClInclude Include="..\llc_samples\llc_sample_gui_resources.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\llc\llc\llc.vcxproj">

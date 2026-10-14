@@ -1,14 +1,28 @@
 #include "llc_engine_window.h"
-#include "llc_gui_checkbox.h"
 #include "llc_gui_inputbox.h"
-#include "llc_gui_render.h"
-#include "llc_gui_slider.h"
 #include "llc_gui_viewport.h"
+#include "llc_minmax.h"
 
 #ifndef LLC_SAMPLE_GUI_COMPONENTS_H_23627
 #define LLC_SAMPLE_GUI_COMPONENTS_H_23627
 
 stxp ::llc::u0_t SAMPLE_GUI_COMPONENTS_COUNT = 3;
+
+stct SSampleCheckBox {
+	::llc::cid_t		IdControl	= ::llc::CID_INVALID;
+	bool			Checked		= false;
+};
+
+stct SSampleSlider {
+	::llc::cid_t		IdRoot		= ::llc::CID_INVALID;
+	::llc::cid_t		IdThumb		= ::llc::CID_INVALID;
+	::llc::minmaxs3_t	ValueLimits	= {0, 100};
+	::llc::s3_t		ValueCurrent	= 0;
+	::llc::s3_t		ValueStep	= 1;
+	::llc::s3_t		ValuePage	= 10;
+	bool			Vertical	= false;
+	::llc::astchar<64>	ValueText	= {};
+};
 
 stct SSampleGUIComponents {
 	::llc::SEngineWindow		Window			= {};
@@ -20,19 +34,21 @@ stct SSampleGUIComponents {
 	::llc::cid_t			ComponentsPanel	= ::llc::CID_INVALID;
 	::llc::cid_t			ControlEdit		= ::llc::CID_INVALID;
 	::llc::cid_t			ControlExit		= ::llc::CID_INVALID;
-	::llc::SCheckBox		CheckBox			= {};
-	::llc::SSlider			SliderHorizontal	= {};
-	::llc::SSlider			SliderVertical		= {};
+	SSampleCheckBox		CheckBox			= {};
+	SSampleSlider		SliderHorizontal	= {};
+	SSampleSlider		SliderVertical		= {};
 	::llc::SInputBox		InputBox			= {};
 	::llc::acid			ControlsKeyboard	= {};
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_COMPONENTS_COUNT>
 						Viewports		= {};
+	::llc::astatic<::llc::n2s1_t, SAMPLE_GUI_COMPONENTS_COUNT>
+						UnfoldedSize		= {};
+	::llc::astatic<bool, SAMPLE_GUI_COMPONENTS_COUNT>
+						Folded			= {};
 };
 
 ::llc::err_t	sampleGUIComponentsSetup				(SSampleGUIComponents & app);
-::llc::err_t	sampleGUIComponentsRenderResourcesSetup	(cnst SSampleGUIComponents & app, ::llc::SGUIRenderResources & resources, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT]);
 ::llc::err_t	sampleGUIComponentsUpdate				(SSampleGUIComponents & app, bool systemRequestedExit, double secondsLastFrame);
-::llc::err_t	sampleGUIComponentsRenderEvents			(SSampleGUIComponents & app, ::llc::TGUIRenderEventQueue & output, cnst ::llc::n2u1_t & targetSize, cnst ::llc::FGUITextMeasure & textMeasure);
-::llc::err_t	sampleGUIComponentsDraw					(cnst ::llc::TGUIRenderEventQueue & events, ::llc::SGUIRenderResources & resources, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target);
+::llc::err_t	sampleGUIComponentsDraw					(SSampleGUIComponents & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target);
 
 #endif // LLC_SAMPLE_GUI_COMPONENTS_H_23627

@@ -6,11 +6,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_gui.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\llc_samples\llc_sample_gui_resources.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\llc_samples\llc_sample_window_win32.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="llc_sample_gui_win32.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_gui.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="..\llc_samples\llc_sample_gui_resources.h"><Filter>Header Files</Filter></ClInclude>
   </ItemGroup>
 </Project>
