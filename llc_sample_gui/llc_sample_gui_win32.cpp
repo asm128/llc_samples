@@ -17,10 +17,8 @@ stct SWindowRuntimeWin32 {
 
 stct SGDIApplication {
 	HWND			WindowHandle	= {};
-	::llc::n2u1_t	WindowSize	= {};
 
 	::llc::err_t	Initialize	(HWND windowHandle) nxpt;
-	::llc::err_t	SetWindowSize	(::llc::n2u1_t size) nxpt;
 	::llc::err_t	Present		(HDC deviceContext, ::llc::gc8bgra target) nxpt;
 	::llc::err_t	Shutdown	() nxpt;
 };
@@ -254,8 +252,6 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 			::DispatchMessageA(&message);
 		}
 	}
-	if(window.Resized)
-		if_fail_fe(app.Presentation.SetWindowSize(window.Size));
 	rtrn window.Closed ? ::llc::APPLICATION_STATE_EXIT : 0;
 }
 
@@ -263,16 +259,6 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 	if(0 == windowHandle || WindowHandle)
 		rtrn ::llc::OS_INVALID_PARAMETER;
 	WindowHandle = windowHandle;
-	RECT clientRect = {};
-	if(FALSE == ::GetClientRect(WindowHandle, &clientRect))
-		rtrn ::llc::OS_ERROR;
-	rtrn SetWindowSize({(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)});
-}
-
-::llc::err_t SGDIApplication::SetWindowSize(::llc::n2u1_t size) nxpt {
-	if(0 == size.x || 0 == size.y)
-		rtrn ::llc::OS_INVALID_PARAMETER;
-	WindowSize = size;
 	rtrn 0;
 }
 
@@ -303,7 +289,6 @@ sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
 
 ::llc::err_t SGDIApplication::Shutdown() nxpt {
 	WindowHandle = {};
-	WindowSize = {};
 	rtrn 0;
 }
 
