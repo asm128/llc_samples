@@ -1,4 +1,5 @@
 #include "llc_sample_solar_system.h"
+#include "llc_engine_d3d.h"
 
 #include "llc_app_impl.h"
 #include "llc_chrono.h"
@@ -33,7 +34,10 @@ stct SApplication {
 	SSampleSolarSystem	Sample		= {};
 	SWindowRuntimeWin32	Runtime		= {};
 	SGDIApplication		Presentation	= {};
+	::llc::SD3DApplication D3D		= {};
+	bool				UseD3D		= true;
 	::llc::mutex		LockGUI		= {};
+	::llc::mutex		LockScene	= {};
 	::llc::mutex		LockRender	= {};
 	::llc::pobj<::llc::img8bgra>
 					FrontImage	= {};
@@ -42,6 +46,7 @@ stct SApplication {
 	::llc::img8bgra		ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	vltl ::llc::refcount_t	LastUpdateMicroseconds = 0;
 	vltl ::llc::refcount_t	LastDrawMicroseconds = 0;
+	vltl ::llc::refcount_t	UpdatePending = 0;
 
 	SApplication(::llc::SRuntimeValues&) {}
 };
@@ -178,6 +183,11 @@ namespace {
 				::GetClientRect(handle, &clientRect);
 				cnst ::llc::n2u1_t size = {(::llc::u1_t)(clientRect.right - clientRect.left), (::llc::u1_t)(clientRect.bottom - clientRect.top)};
 				if_fail_e(::llc::engineWindowResize(window, size));
+				{
+					::llc::lock_guard<::llc::mutex> lock{app->LockScene};
+					if(app->D3D.Device)
+						if_fail_e(app->D3D.Resize(size));
+				}
 			}
 			break;
 		}
@@ -188,7 +198,7 @@ namespace {
 			::BeginPaint(handle, &paint);
 			{
 				::llc::lock_guard<::llc::mutex> lock{app->LockRender};
-				if(app->FrontImage)
+				if(false == app->UseD3D && app->FrontImage)
 					if_fail_e(app->Presentation.Present(paint.hdc, app->FrontImage->View));
 			}
 			::EndPaint(handle, &paint);
@@ -317,7 +327,10 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
 	if(::llc::not_failed(result))
 		result = ::sampleSolarSystemSetup(app.Sample);
+	if(::llc::not_failed(result))
+		result = app.D3D.Initialize(app.Runtime.WindowHandle, app.Sample.Window.Size, *app.Sample.Engine.Scene->Graphics);
 	if(::llc::failed(result)) {
+		app.D3D.Shutdown();
 		app.Presentation.Shutdown();
 		::windowDestroy(app);
 	}
@@ -327,6 +340,7 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 ::llc::err_t cleanup(SApplication & app) {
 	app.FrontImage = {};
 	app.BackImage = {};
+	app.D3D.Shutdown();
 	cnst ::llc::err_t resultPresentation = app.Presentation.Shutdown();
 	cnst ::llc::err_t resultWindow = ::windowDestroy(app);
 	rtrn ::llc::failed(resultPresentation) ? resultPresentation : resultWindow;
@@ -342,12 +356,28 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 	if(::llc::APPLICATION_STATE_EXIT == resultWindow)
 		rtrn resultWindow;
 	if_fail_fe(resultWindow);
-	::llc::err_t resultSample = 0;
+	bool useD3D = false;
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockGUI};
-		cnst double secondsUpdate = llc_sync_compare_exchange(app.LastUpdateMicroseconds, 0, 0) * .000001;
-		cnst double secondsDraw = llc_sync_compare_exchange(app.LastDrawMicroseconds, 0, 0) * .000001;
+		if(app.Sample.Window.Input.KeyDown('D'))
+			app.UseD3D = true;
+		if(app.Sample.Window.Input.KeyDown('C'))
+			app.UseD3D = false;
+		useD3D = app.UseD3D;
+	}
+	cnst double secondsUpdate = llc_sync_compare_exchange(app.LastUpdateMicroseconds, 0, 0) * .000001;
+	cnst double secondsDraw = llc_sync_compare_exchange(app.LastDrawMicroseconds, 0, 0) * .000001;
+	llc_sync_increment(app.UpdatePending);
+	::llc::err_t resultSample = 0;
+	{
+		::llc::lock_guard<::llc::mutex> lock{app.LockScene};
 		resultSample = ::sampleSolarSystemUpdate(app.Sample, systemRequestedExit, app.Presentation.SecondsLastFrame(), secondsUpdate, secondsDraw);
+	}
+	llc_sync_decrement(app.UpdatePending);
+	if(app.Runtime.WindowHandle && app.Sample.PerformanceText.Storage[0]) {
+		::llc::astchar<160> title = {};
+		::llc::sprintf_s(title.Storage, "%s   Renderer %s   [D] D3D11  [C] CPU", app.Sample.PerformanceText.Storage, useD3D ? "D3D11" : "CPU");
+		::SetWindowTextA(app.Runtime.WindowHandle, title.Storage);
 	}
 	llc_sync_exchange(app.LastUpdateMicroseconds, (::llc::refcount_t)(::llc::timeCurrentInUs() - timeStart));
 	::llc::sleep(1);
@@ -356,10 +386,30 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 
 ::llc::err_t draw(SApplication & app) {
 	cnst ::llc::s3_t timeStart = ::llc::timeCurrentInUs();
+	bool noDraw = false;
+	bool useD3D = false;
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockGUI};
-		if(app.Sample.Window.NoDraw) {
-			::llc::sleep(8);
+		noDraw = app.Sample.Window.NoDraw;
+		useD3D = app.UseD3D;
+	}
+	if(noDraw) {
+		::llc::sleep(8);
+		rtrn 0;
+	}
+	if(llc_sync_compare_exchange(app.UpdatePending, 0, 0)) {
+		::llc::sleep(1);
+		rtrn 0;
+	}
+	{
+		::llc::lock_guard<::llc::mutex> lock{app.LockScene};
+		if(useD3D) {
+			::llc::n3f2_t cameraPosition = {}, cameraTarget = {};
+			if_fail_fe(::sampleSolarSystemCamera(app.Sample, cameraPosition, cameraTarget));
+			if_fail_fe(app.D3D.Draw(*app.Sample.Engine.Scene, cameraPosition, cameraTarget, {0, 1, 0}, {.00001f, 1000.0f}, app.Sample.Time));
+			cnst double secondsLastFrame = app.Presentation.FrameTimer.Frame();
+			llc_sync_exchange(app.Presentation.LastFrameMicroseconds, (::llc::refcount_t)(secondsLastFrame * 1000000.0));
+			llc_sync_exchange(app.LastDrawMicroseconds, (::llc::refcount_t)(::llc::timeCurrentInUs() - timeStart));
 			rtrn 0;
 		}
 		if(!app.BackImage)

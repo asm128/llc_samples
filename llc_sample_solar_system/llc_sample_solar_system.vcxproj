@@ -164,7 +164,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -190,7 +190,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
     </Link>
     <Manifest>
@@ -219,7 +219,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -247,7 +247,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
     </Link>
     <Manifest>
@@ -274,7 +274,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -300,7 +300,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
     </Link>
     <Manifest>
@@ -329,7 +329,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
@@ -357,7 +357,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>llc.lib; user32.lib; gdi32.lib; llc_engine.lib; zlibvc.lib; </AdditionalDependencies>
+      <AdditionalDependencies>llc.lib; llc_engine.lib; zlibvc.lib; ws2_32.lib; gdi32.lib; user32.lib; windowscodecs.lib; dxgi.lib; d2d1.lib; d3d11.lib; dwrite.lib; ole32.lib; </AdditionalDependencies>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
     </Link>
     <Manifest>
