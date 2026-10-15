@@ -7,6 +7,7 @@
 #include "llc_string.h"
 #include "llc_swap.h"
 #include "llc_sync.h"
+#include "llc_engine_d3d.h"
 
 #define LLC_SAMPLE_GUI_VIEWPORT_TITLE "LLC GUI viewport"
 
@@ -32,6 +33,8 @@ stct SApplication {
 	SSampleGUIViewport	Sample		= {};
 	SWindowRuntimeWin32	Runtime		= {};
 	SGDIApplication		Presentation	= {};
+	::llc::SD3DApplication	D3D		= {};
+	HWND				ViewportHandle	= {};
 	::llc::mutex		LockGUI		= {};
 	::llc::mutex		LockRender	= {};
 	::llc::pobj<::llc::img8bgra>
@@ -238,6 +241,12 @@ sttc ::llc::err_t windowCreate(SApplication & app, ::llc::vcst_t title, ::llc::n
 }
 
 sttc ::llc::err_t windowDestroy(SApplication & app) nxpt {
+	app.D3D.Shutdown();
+	if(app.ViewportHandle) {
+		if(FALSE == ::DestroyWindow(app.ViewportHandle))
+			rtrn ::llc::OS_ERROR;
+		app.ViewportHandle = {};
+	}
 	if(app.Runtime.WindowHandle)
 		if(FALSE == ::DestroyWindow(app.Runtime.WindowHandle))
 			rtrn ::llc::OS_ERROR;
@@ -315,6 +324,14 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 	::llc::err_t result = app.Presentation.Initialize(app.Runtime.WindowHandle);
 	if(::llc::not_failed(result))
 		result = ::sampleGUIViewportSetup(app.Sample);
+	if(::llc::not_failed(result)) {
+		app.ViewportHandle = ::CreateWindowExA(0, "STATIC", "", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+			, 0, 0, 640, 380, app.Runtime.WindowHandle, 0, ::GetModuleHandleA(0), 0);
+		if(0 == app.ViewportHandle)
+			result = ::llc::OS_ERROR;
+	}
+	if(::llc::not_failed(result))
+		result = app.D3D.Initialize(app.ViewportHandle, {640, 380}, *app.Sample.Ship.Engine.Scene->Graphics);
 	if(::llc::failed(result)) {
 		app.Presentation.Shutdown();
 		::windowDestroy(app);
@@ -349,6 +366,8 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 }
 
 ::llc::err_t draw(SApplication & app) {
+	::llc::rect2s1_t viewportArea = {};
+	bool viewportVisible = false;
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockGUI};
 		if(app.Sample.Window.NoDraw) {
@@ -359,6 +378,24 @@ double SGDIApplication::SecondsLastFrame() nxpt {
 			if_null_ve(::llc::OS_NO_MEMORY, app.BackImage.create());
 		if_fail_fe(app.BackImage->resize(app.Sample.Window.Size.u2()));
 		if_fail_fe(::sampleGUIViewportDraw(app.Sample, app.ClientImages, app.FrameIndex++, app.BackImage->View));
+		cnst ::llc::SViewport & viewport = app.Sample.Viewports[0];
+		cnst ::llc::cid_t idTarget = viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET];
+		viewportArea = app.Sample.GUI.Controls.Area[idTarget].Client.Global;
+		viewportVisible = false == app.Sample.GUI.Controls.IsHidden(viewport.IdControl)
+			&& false == app.Sample.GUI.Controls.IsHidden(idTarget)
+			&& viewportArea.Size.x > 0 && viewportArea.Size.y > 0;
+		if(viewportVisible) {
+			cnst ::llc::n2u1_t viewportSize = viewportArea.Size.u1();
+			if(app.D3D.WindowSize != viewportSize)
+				if_fail_fe(app.D3D.Resize(viewportSize));
+			if_fail_fe(app.D3D.Draw(*app.Sample.Ship.Engine.Scene, {0, 5, -12}, {}, {0, 1, 0}, {.01f, 100.0f}, app.Sample.Ship.Angle));
+		}
+	}
+	if(app.ViewportHandle) {
+		::ShowWindow(app.ViewportHandle, viewportVisible ? SW_SHOWNA : SW_HIDE);
+		if(viewportVisible)
+			if(FALSE == ::MoveWindow(app.ViewportHandle, viewportArea.Offset.x, viewportArea.Offset.y, viewportArea.Size.x, viewportArea.Size.y, FALSE))
+				rtrn ::llc::OS_ERROR;
 	}
 	{
 		::llc::lock_guard<::llc::mutex> lock{app.LockRender};

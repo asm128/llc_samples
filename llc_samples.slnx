@@ -17,6 +17,7 @@
   <Project Path="../llc/llc_test_module/llc_test_module.vcxproj" Id="d0cda2a4-f7af-4cbb-a43b-4b92d37e3e10">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
     <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
   </Project>
   <Project Path="../llc/lrt/lrt.vcxproj" Id="a2acd1de-fa4c-4e69-b44b-397bd27d51ae" />
@@ -24,29 +25,39 @@
   <Project Path="llc_samples/llc_samples.vcxproj" Id="2a1321e7-7b5a-42a4-a667-07a4e166f2f1">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
     <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
   </Project>
   <Project Path="llc_sample_engine/llc_sample_engine.vcxproj" Id="de142627-69c9-4a36-938b-af713b3a1952">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
     <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
   </Project>
   <Project Path="llc_sample_geometry/llc_sample_geometry.vcxproj" Id="c4dac5be-b6ab-41b2-88bb-1ee133dcb63b">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
   <Project Path="llc_sample_gui/llc_sample_gui.vcxproj" Id="025fc16a-4715-4e97-bf9a-ff8d130f7588">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
   <Project Path="llc_sample_gui_components/llc_sample_gui_components.vcxproj" Id="4c016171-fe0e-4020-9fee-298b505c054e">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
   <Project Path="llc_sample_gui_viewport/llc_sample_gui_viewport.vcxproj" Id="63394d72-8d17-4798-9724-216c31359c45">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
   <Project Path="llc_sample_solar_system/llc_sample_solar_system.vcxproj" Id="d1fee172-145a-4b2a-927f-fc2bbecde3c7">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
     <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
   </Project>
 </Solution>

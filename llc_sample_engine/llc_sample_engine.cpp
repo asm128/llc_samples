@@ -108,11 +108,19 @@ sttc ::llc::err_t shipPartCreate(SSampleEngine & app, ::llc::u0_t type, ::llc::u
 ::llc::err_t sampleEngineUpdate(SSampleEngine & app, bool systemRequestedExit, double secondsLastFrame, double, double) {
 	if(systemRequestedExit || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape)) return ::llc::APPLICATION_STATE_EXIT;
 	app.Angle += (::llc::f3_t)(secondsLastFrame * .35);
+	app.ModuleTime += (::llc::f3_t)secondsLastFrame;
 	app.Engine.SetOrientation(app.ShipRoot, ::llc::quatf2_t{}.MakeFromEuler(.25f, app.Angle, 0).Normalize());
+	for(::llc::u0_t iPart = 0; iPart < app.ShipParts.size(); ++iPart) {
+		cnst ::llc::f3_t phase = (::llc::f3_t)(::llc::math_2pi / app.ShipParts.size() * iPart);
+		cnst ::llc::f3_t orbit = phase + app.ModuleTime * (::llc::f3_t)::llc::math_2pi / SHIP_MODULE_ORBITAL_PERIOD;
+		cnst ::llc::f3_t spin = app.ModuleTime * (::llc::f3_t)::llc::math_2pi / SHIP_MODULE_ROTATION_PERIOD;
+		app.Engine.SetPosition(app.ShipParts[iPart], {(::llc::f2_t)(::llc::cos(orbit) * SHIP_MODULE_ORBITAL_RADIUS), 0, (::llc::f2_t)(::llc::sin(orbit) * SHIP_MODULE_ORBITAL_RADIUS)});
+		app.Engine.SetOrientation(app.ShipParts[iPart], ::llc::quatf2_t{}.MakeFromEuler(0, spin - orbit, 0).Normalize());
+	}
 	return app.Engine.Update(secondsLastFrame);
 }
 
-::llc::err_t sampleEngineDraw(SSampleEngine & app, ::llc::img8bgra (&)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::g8bgra target) {
+::llc::err_t sampleEngineDraw(SSampleEngine & app, ::llc::img8bgra (&)[SAMPLE_ENGINE_VIEWPORT_COUNT], ::llc::g8bgra target) {
 	llc_necs(app.Color.resize(target.metrics())); llc_necs(app.Depth.resize(target.metrics()));
 	app.Color.View.fill({8, 12, 16, 255}); app.Depth.View.fill((::llc::u2_t)-1);
 	llc_necs(::llc::drawScene(app.Color.View, app.Depth.View, app.Engine.Scene->RenderCache, *app.Engine.Scene, {0, 5, -12}, {}, {0, 1, 0}, {.01f, 100.0f}));

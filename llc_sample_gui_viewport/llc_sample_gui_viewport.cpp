@@ -216,10 +216,11 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
-	if_fail_fe(::sampleGUIViewportCreate(app, 0, LLC_CXS("AZURE CPU SURFACE"), {{80, 92}, {420, 250}}));
+	if_fail_fe(::sampleGUIViewportCreate(app, 0, LLC_CXS("GALAXY HELL SHIP | D3D11"), {{80, 92}, {640, 420}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, LLC_CXS("AMBER CPU SURFACE"), {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 2, LLC_CXS("MONO CPU SURFACE"), {{754, 104}, {360, 230}}));
-	if_fail_fe(::sampleGUIViewportActivate(app, 2));
+	if_fail_fe(::sampleGUIViewportActivate(app, 0));
+	if_fail_fe(::sampleEngineSetup(app.Ship));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
 	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
@@ -248,6 +249,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
+	if_fail_fe(::sampleEngineUpdate(app.Ship, false, secondsLastFrame, 0, 0));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();

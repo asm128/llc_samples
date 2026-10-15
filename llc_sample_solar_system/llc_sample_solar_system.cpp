@@ -4,8 +4,8 @@
 #include "llc_system_key.h"
 
 stxp ::llc::vcst_t SOLAR_SYSTEM_DATA_FOLDER	= LLC_CXS("../llc_samples_data/llc_solar_system");
-stxp ::llc::vcst_t SOLAR_SYSTEM_JSON			= LLC_CXS("llc_solar_system.json");
-stxp ::llc::vcst_t SOLAR_SYSTEM_BACKGROUND		= LLC_CXS("black.png");
+stxp ::llc::vcst_t SOLAR_SYSTEM_JSON		= LLC_CXS("llc_solar_system.json");
+stxp ::llc::vcst_t SOLAR_SYSTEM_BACKGROUND	= LLC_CXS("black.png");
 
 ::llc::err_t sampleSolarSystemSetup(SSampleSolarSystem & app) {
 	if_null_ve(::llc::OS_NO_MEMORY, app.Engine.Scene.create());
@@ -33,20 +33,23 @@ static ::llc::err_t selectBody(SSampleSolarSystem & app, uint32_t iBody) {
 }
 
 static ::llc::err_t selectBodyType(SSampleSolarSystem & app, ::llc::CELESTIAL_BODY type) {
-	if(type == ::llc::CELESTIAL_BODY_Planet && app.SelectedPlanet < app.SolarSystem.PlanetarySystem.Type.size())
+	if(type == ::llc::CELESTIAL_BODY_Planet && app.SelectedPlanet < app.SolarSystem.PlanetarySystem.Type.size()) {
 		return ::selectBody(app, app.SelectedPlanet);
-	for(uint32_t iBody = 0; iBody < app.SolarSystem.PlanetarySystem.Type.size(); ++iBody)
+	}
+	for(uint32_t iBody = 0; iBody < app.SolarSystem.PlanetarySystem.Type.size(); ++iBody) {
 		if(app.SolarSystem.PlanetarySystem.Type[iBody] == type)
 			return ::selectBody(app, iBody);
+	}
 	return 0;
 }
 
 ::llc::err_t sampleSolarSystemUpdate(SSampleSolarSystem & app, bool systemRequestedExit, double secondsLastFrame, double secondsUpdate, double secondsDraw) {
 	if(systemRequestedExit || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
 		return ::llc::APPLICATION_STATE_EXIT;
-	for(uint32_t iBody = 0, iPlanet = 0; iBody < app.SolarSystem.PlanetarySystem.Type.size(); ++iBody)
+	for(uint32_t iBody = 0, iPlanet = 0; iBody < app.SolarSystem.PlanetarySystem.Type.size(); ++iBody) {
 		if(app.SolarSystem.PlanetarySystem.Type[iBody] == ::llc::CELESTIAL_BODY_Planet && iPlanet < 9 && app.Window.Input.KeyDown((::llc::u0_t)('1' + iPlanet++)))
 			llc_necs(::selectBody(app, iBody));
+	}
 	if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Tab)) {
 		const bool				reverse					= app.Window.Input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Shift];
 		const ::llc::CELESTIAL_BODY selectedType		= app.SolarSystem.PlanetarySystem.Type[app.SelectedBody];

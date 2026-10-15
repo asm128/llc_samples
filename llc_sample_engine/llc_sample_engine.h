@@ -5,7 +5,10 @@
 #ifndef LLC_SAMPLE_ENGINE_H_23627
 #define LLC_SAMPLE_ENGINE_H_23627
 
-stxp ::llc::u0_t SAMPLE_GUI_VIEWPORT_COUNT = 1;
+stxp ::llc::u0_t SAMPLE_ENGINE_VIEWPORT_COUNT = 1;
+stxp ::llc::f3_t SHIP_MODULE_ORBITAL_PERIOD = 6;
+stxp ::llc::f3_t SHIP_MODULE_ORBITAL_RADIUS = 3;
+stxp ::llc::f3_t SHIP_MODULE_ROTATION_PERIOD = 1;
 
 enum SHIP_SAMPLE_GEOMETRY : ::llc::u0_t
 	{ SHIP_SAMPLE_GEOMETRY_Gun
@@ -26,10 +29,11 @@ stct SSampleEngine {
 	::llc::eid_t			ShipRoot		= ::llc::EID_INVALID;
 	::llc::astatic<::llc::eid_t, 6>	ShipParts		= {};
 	::llc::f3_t			Angle			= 0;
+	::llc::f3_t			ModuleTime		= 0;
 };
 
 ::llc::err_t	sampleEngineSetup	(SSampleEngine & app);
 ::llc::err_t	sampleEngineUpdate	(SSampleEngine & app, bool systemRequestedExit, double secondsLastFrame, double secondsUpdate, double secondsDraw);
-::llc::err_t	sampleEngineDraw	(SSampleEngine & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::g8bgra target);
+::llc::err_t	sampleEngineDraw	(SSampleEngine & app, ::llc::img8bgra (&clientImages)[SAMPLE_ENGINE_VIEWPORT_COUNT], ::llc::g8bgra target);
 
 #endif // LLC_SAMPLE_ENGINE_H_23627

@@ -39,7 +39,7 @@ stct SApplication {
 					FrontImage	= {};
 	::llc::pobj<::llc::img8bgra>
 					BackImage	= {};
-	::llc::img8bgra		ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
+	::llc::img8bgra		ClientImages[SAMPLE_ENGINE_VIEWPORT_COUNT] = {};
 	vltl ::llc::refcount_t	LastUpdateMicroseconds = 0;
 	vltl ::llc::refcount_t	LastDrawMicroseconds = 0;
 

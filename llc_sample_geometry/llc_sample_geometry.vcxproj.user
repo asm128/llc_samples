@@ -17,6 +17,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommand>$(OutDir)lrt.exe </LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>$(ProjectName)</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArgumentsHistory>llc_sample_geometry|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|x64'">
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
