@@ -5,23 +5,23 @@
 #define LLC_SAMPLE_GUI_H_23627
 
 stct SSampleGUI {
-	::llc::SEngineWindow		Window			= {};
-	::llc::SGUI				GUI				= {};
-	::llc::cid_t			ControlTitle	= ::llc::CID_INVALID;
-	::llc::cid_t			ControlMode		= ::llc::CID_INVALID;
-	::llc::astcid<3>		ControlsTheme	= {};
-	::llc::astcid<8>		ControlsState	= {};
-	::llc::cid_t			ControlLive		= ::llc::CID_INVALID;
-	::llc::cid_t			ControlInspector= ::llc::CID_INVALID;
-	::llc::cid_t			ControlHelp		= ::llc::CID_INVALID;
-	::llc::cid_t			ControlExit		= ::llc::CID_INVALID;
+	::llc::SEngineWindow	Window					= {};
+	::llc::SGUI				GUI						= {};
+	::llc::cid_t			ControlTitle			= ::llc::CID_INVALID;
+	::llc::cid_t			ControlMode				= ::llc::CID_INVALID;
+	::llc::astcid<3>		ControlsTheme			= {};
+	::llc::astcid<8>		ControlsState			= {};
+	::llc::cid_t			ControlLive				= ::llc::CID_INVALID;
+	::llc::cid_t			ControlInspector		= ::llc::CID_INVALID;
+	::llc::cid_t			ControlHelp				= ::llc::CID_INVALID;
+	::llc::cid_t			ControlExit				= ::llc::CID_INVALID;
 	::llc::cid_t			ControlAlignmentTitle	= ::llc::CID_INVALID;
 	::llc::cid_t			ControlAlignmentRoot	= ::llc::CID_INVALID;
-	::llc::astcid<9>		ControlsAlignment	= {};
-	::llc::astcid<6>		ControlsKeyboard	= {};
-	::llc::astchar<512>	TextLive		= {};
-	::llc::astchar<512>	TextInspector	= {};
-	::llc::u0_t			Theme			= 0;
+	::llc::astcid<9>		ControlsAlignment		= {};
+	::llc::astcid<6>		ControlsKeyboard		= {};
+	::llc::astchar<512>		TextLive				= {};
+	::llc::astchar<512>		TextInspector			= {};
+	::llc::u0_t				Theme					= 0;
 };
 
 ::llc::err_t	sampleGUISetup				(SSampleGUI & app);
