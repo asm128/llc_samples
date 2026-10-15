@@ -23,6 +23,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommand>$(OutDir)lrt.exe </LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>$(ProjectName)</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArgumentsHistory>llc_sample_engine|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
