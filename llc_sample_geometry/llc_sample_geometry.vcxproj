@@ -338,7 +338,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_geometry.cpp" />
-    <ClCompile Include="llc_sample_geometry_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_geometry.h" />
