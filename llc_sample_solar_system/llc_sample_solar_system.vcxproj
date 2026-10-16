@@ -370,7 +370,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_solar_system.cpp" />
-    <ClCompile Include="llc_sample_solar_system_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_solar_system.h" />

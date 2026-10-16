@@ -18,9 +18,6 @@
     <ClCompile Include="llc_sample_gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="llc_sample_gui_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_gui.h">

@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="llc_sample_gui_viewport_win32.cpp">
+    <ClCompile Include="llc_sample_gui_viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="llc_sample_gui_viewport.cpp">
+    <ClCompile Include="..\llc_sample_engine\llc_sample_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
