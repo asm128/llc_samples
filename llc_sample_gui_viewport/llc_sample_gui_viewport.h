@@ -7,7 +7,7 @@
 stxp ::llc::u0_t SAMPLE_GUI_VIEWPORT_COUNT = 3;
 
 stct SSampleGUIViewport {
-	::llc::SEngineWindow		Window			= {};
+	::llc::SWindow		Window			= {};
 	::llc::SGUI				GUI				= {};
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;

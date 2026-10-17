@@ -60,7 +60,7 @@ namespace {
 		SApplication* app = ::applicationFromHandle(handle);
 		if(0 == app)
 			rtrn ::DefWindowProcA(handle, message, wParam, lParam);
-		::llc::SEngineWindow & window = app->Sample.Window;
+		::llc::SWindow & window = app->Sample.Window;
 
 		switch(message) {
 		default: break;
@@ -198,7 +198,7 @@ namespace {
 }
 
 sttc ::llc::err_t windowCreate(SApplication & app, ::llc::vcst_t title, ::llc::n2u1_t size) nxpt {
-	::llc::SEngineWindow & window = app.Sample.Window;
+	::llc::SWindow & window = app.Sample.Window;
 	if(0 == size.x || 0 == size.y)
 		rtrn ::llc::OS_INVALID_PARAMETER;
 	if(false == window.Closed || app.Runtime.WindowHandle)
@@ -247,7 +247,7 @@ sttc ::llc::err_t windowDestroy(SApplication & app) nxpt {
 }
 
 sttc ::llc::err_t windowUpdate(SApplication & app) nxpt {
-	::llc::SEngineWindow & window = app.Sample.Window;
+	::llc::SWindow & window = app.Sample.Window;
 	::llc::engineWindowBeginFrame(window);
 	MSG message = {};
 	while(::PeekMessageA(&message, 0, 0, 0, PM_REMOVE)) {

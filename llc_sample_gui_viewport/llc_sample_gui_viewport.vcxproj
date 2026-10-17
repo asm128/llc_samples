@@ -142,21 +142,5 @@
   <ItemGroup>
     <ClInclude Include="llc_sample_gui_viewport.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\llc\llc\llc.vcxproj">
-      <Project>{830ab681-b788-47d4-9767-ba4e0792f682}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\llc_engine\llc_engine\llc_engine.vcxproj">
-      <Project>{741112f8-7e79-49a2-ad8a-c91a3d3af594}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\zlib\contrib\vstudio\vc14\zlibvc.vcxproj">
-      <Project>{8fd826f8-3739-44e6-8cc8-997122e53b8d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\llc\lrt\lrt.vcxproj" Condition="'$(Configuration)'=='Debug-MT' Or '$(Configuration)'=='Release-MT'">
-      <Project>{A2ACD1DE-FA4C-4E69-B44B-397BD27D51AE}</Project>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

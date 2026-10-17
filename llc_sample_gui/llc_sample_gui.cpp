@@ -1,5 +1,7 @@
 #include "llc_sample_gui.h"
+#include "llc_app_impl.h"
 #include "llc_cstring.h"
+#include "llc_framework.h"
 #include "llc_runtime.h"
 #include "llc_string.h"
 #include "llc_system_key.h"
@@ -391,9 +393,8 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 }
 
 ::llc::err_t sampleGUIUpdate(SSampleGUI & app, bool systemRequestedExit) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	(void)::llc::guiProcessInput(app.GUI, app.Window.Input);
 	if(app.GUI.Controls.IsAction(app.ControlExit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.ControlMode))
@@ -416,3 +417,47 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
+
+#define LLC_SAMPLE_GUI_TITLE "LLC GUI palettes, states and alignment"
+
+stct SApplication {
+	::llc::SFramework	Framework;
+	SSampleGUI			Sample;
+
+	SApplication(::llc::SRuntimeValues & runtimeValues)
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+};
+
+::llc::err_t setup(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	window.Size = {1280, 540};
+	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
+	rtrn ::sampleGUISetup(app.Sample);
+}
+
+::llc::err_t cleanup(SApplication & app) {
+	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
+}
+
+::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	if(systemRequestedExit)
+		rtrn ::llc::APPLICATION_STATE_EXIT;
+	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
+	if(result)
+		rtrn result;
+	cnst ::llc::err_t resultSample = ::sampleGUIUpdate(app.Sample, false);
+	::llc::sleep(1);
+	rtrn resultSample;
+}
+
+::llc::err_t draw(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.NoDraw)
+		rtrn 0;
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	rtrn ::sampleGUIDraw(app.Sample, window.BackBuffer->Color.View);
+}
+
+LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_TITLE)

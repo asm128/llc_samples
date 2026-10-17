@@ -15,7 +15,7 @@ stct SSampleGUIScale {
 };
 
 stct SSampleGeometry {
-	::llc::SEngineWindow		Window			= {};
+	::llc::SWindow		Window			= {};
 	::llc::SGUI				GUI				= {};
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
