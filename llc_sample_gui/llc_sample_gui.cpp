@@ -12,22 +12,40 @@ stacxpr ::llc::u0_t THEME_COUNT = SAMPLE_GUI_THEME_COUNT;
 stacxpr ::llc::u0_t STATE_COUNT = 8;
 stacxpr ::llc::u0_t ALIGNMENT_COUNT = 9;
 
+GDEFINE_ENUM_TYPE(SAMPLE_GUI_THEME, ::llc::u0_t);
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_THEME, AZURE, 0, "Palette: Azure");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_THEME, AMBER, 1, "Palette: Amber");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_THEME, MONO , 2, "Palette: Mono");
+
+GDEFINE_ENUM_TYPE(SAMPLE_GUI_STATE, ::llc::u0_t);
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, NORMAL           , 0                                                                  , "NORMAL");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, HOVERED          , ::llc::GUI_CONTROL_FLAG_Hovered                                    , "HOVERED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, PRESSED          , ::llc::GUI_CONTROL_FLAG_Pressed                                    , "PRESSED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, DISABLED         , ::llc::GUI_CONTROL_FLAG_Disabled                                   , "DISABLED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, SELECTED         , ::llc::GUI_CONTROL_FLAG_Selected                                   , "SELECTED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, SELECTED_HOVERED , ::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Hovered, "SELECTED + HOVERED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, SELECTED_PRESSED , ::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Pressed, "SELECTED + PRESSED");
+GDEFINE_ENUM_VALUED(SAMPLE_GUI_STATE, SELECTED_DISABLED, ::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Disabled, "SELECTED + DISABLED");
+GDEFINE_ENUM_VALUE (SAMPLE_GUI_STATE, FOCUSED          , ::llc::GUI_CONTROL_FLAG_Focused);
+GDEFINE_ENUM_VALUE (SAMPLE_GUI_STATE, ACTION           , ::llc::GUI_CONTROL_FLAG_Action);
+
+GDEFINE_ENUM_TYPE(SAMPLE_GUI_ALIGNMENT, ::llc::u0_t);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, TOP_LEFT     , ::llc::ALIGN_TOP_LEFT);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, CENTER_TOP   , ::llc::ALIGN_CENTER_TOP);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, TOP_RIGHT    , ::llc::ALIGN_TOP_RIGHT);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, CENTER_LEFT  , ::llc::ALIGN_CENTER_LEFT);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, CENTER       , ::llc::ALIGN_CENTER);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, CENTER_RIGHT , ::llc::ALIGN_CENTER_RIGHT);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, BOTTOM_LEFT  , ::llc::ALIGN_BOTTOM_LEFT);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, CENTER_BOTTOM, ::llc::ALIGN_CENTER_BOTTOM);
+GDEFINE_ENUM_VALUE(SAMPLE_GUI_ALIGNMENT, BOTTOM_RIGHT , ::llc::ALIGN_BOTTOM_RIGHT);
+
 sttc ::llc::vcst_t sampleGUIThemeText(::llc::u0_t theme) {
-	switch(theme % SAMPLE_GUI_THEME_COUNT) {
-	default:
-	case 0: rtrn LLC_CXS("Palette: Azure");
-	case 1: rtrn LLC_CXS("Palette: Amber");
-	case 2: rtrn LLC_CXS("Palette: Mono");
-	}
+	rtrn ::llc::get_value_descv((SAMPLE_GUI_THEME)(theme % SAMPLE_GUI_THEME_COUNT));
 }
 
 sttc ::llc::vcst_t sampleGUIThemeName(::llc::u0_t theme) {
-	switch(theme % SAMPLE_GUI_THEME_COUNT) {
-	default:
-	case 0: rtrn LLC_CXS("AZURE");
-	case 1: rtrn LLC_CXS("AMBER");
-	case 2: rtrn LLC_CXS("MONO");
-	}
+	rtrn ::llc::get_value_namev((SAMPLE_GUI_THEME)(theme % SAMPLE_GUI_THEME_COUNT));
 }
 
 sttc ::llc::SColorBGRA sampleGUIThemeColor(::llc::u0_t theme) nxpt {
@@ -116,76 +134,15 @@ sttc void sampleGUIThemeApply(::llc::SGUI & gui, ::llc::u0_t theme) nxpt {
 }
 
 sttc ::llc::vcst_t sampleGUIStateText(::llc::u0_t state) {
-	switch(state) {
-	default:
-	case 0: rtrn LLC_CXS("NORMAL");
-	case 1: rtrn LLC_CXS("HOVERED");
-	case 2: rtrn LLC_CXS("PRESSED");
-	case 3: rtrn LLC_CXS("DISABLED");
-	case 4: rtrn LLC_CXS("SELECTED");
-	case 5: rtrn LLC_CXS("SELECTED + HOVERED");
-	case 6: rtrn LLC_CXS("SELECTED + PRESSED");
-	case 7: rtrn LLC_CXS("SELECTED + DISABLED");
-	}
+	rtrn ::llc::get_value_descv(::llc::get_enum<SAMPLE_GUI_STATE>().get_value_by_index(state < STATE_COUNT ? state : 0));
 }
 
-sttc ::llc::ALIGN sampleGUIControlAlignment(::llc::u0_t alignment) nxpt {
-	switch(alignment % ALIGNMENT_COUNT) {
-	default:
-	case 0: rtrn ::llc::ALIGN_TOP_LEFT;
-	case 1: rtrn ::llc::ALIGN_CENTER_TOP;
-	case 2: rtrn ::llc::ALIGN_TOP_RIGHT;
-	case 3: rtrn ::llc::ALIGN_CENTER_LEFT;
-	case 4: rtrn ::llc::ALIGN_CENTER;
-	case 5: rtrn ::llc::ALIGN_CENTER_RIGHT;
-	case 6: rtrn ::llc::ALIGN_BOTTOM_LEFT;
-	case 7: rtrn ::llc::ALIGN_CENTER_BOTTOM;
-	case 8: rtrn ::llc::ALIGN_BOTTOM_RIGHT;
-	}
-}
-
-sttc ::llc::ALIGN sampleGUITextAlignment(::llc::u0_t alignment) nxpt {
-	switch(alignment % ALIGNMENT_COUNT) {
-	default:
-	case 0: rtrn ::llc::ALIGN_BOTTOM_RIGHT;
-	case 1: rtrn ::llc::ALIGN_CENTER_BOTTOM;
-	case 2: rtrn ::llc::ALIGN_BOTTOM_LEFT;
-	case 3: rtrn ::llc::ALIGN_CENTER_RIGHT;
-	case 4: rtrn ::llc::ALIGN_CENTER;
-	case 5: rtrn ::llc::ALIGN_CENTER_LEFT;
-	case 6: rtrn ::llc::ALIGN_TOP_RIGHT;
-	case 7: rtrn ::llc::ALIGN_CENTER_TOP;
-	case 8: rtrn ::llc::ALIGN_TOP_LEFT;
-	}
-}
-
-sttc ::llc::vcst_t sampleGUIAlignmentText(::llc::u0_t alignment) {
-	switch(alignment % ALIGNMENT_COUNT) {
-	default:
-	case 0: rtrn LLC_CXS("TOP_LEFT");
-	case 1: rtrn LLC_CXS("CENTER_TOP");
-	case 2: rtrn LLC_CXS("TOP_RIGHT");
-	case 3: rtrn LLC_CXS("CENTER_LEFT");
-	case 4: rtrn LLC_CXS("CENTER");
-	case 5: rtrn LLC_CXS("CENTER_RIGHT");
-	case 6: rtrn LLC_CXS("BOTTOM_LEFT");
-	case 7: rtrn LLC_CXS("CENTER_BOTTOM");
-	case 8: rtrn LLC_CXS("BOTTOM_RIGHT");
-	}
-}
+sttc ::llc::ALIGN	sampleGUIControlAlignment	(::llc::u0_t alignment) nxpt	{ rtrn (::llc::ALIGN)::llc::get_enum<SAMPLE_GUI_ALIGNMENT>().get_value_by_index(alignment % ALIGNMENT_COUNT); }
+sttc ::llc::ALIGN	sampleGUITextAlignment		(::llc::u0_t alignment) nxpt	{ rtrn (::llc::ALIGN)::llc::get_enum<SAMPLE_GUI_ALIGNMENT>().get_value_by_index(ALIGNMENT_COUNT - 1 - alignment % ALIGNMENT_COUNT); }
+sttc ::llc::vcst_t	sampleGUIAlignmentText		(::llc::u0_t alignment)			{ rtrn ::llc::get_enum<SAMPLE_GUI_ALIGNMENT>().get_label_by_index(alignment % ALIGNMENT_COUNT); }
 
 sttc ::llc::GUI_CONTROL_FLAG sampleGUIStateFlags(::llc::u0_t state) nxpt {
-	switch(state) {
-	default:
-	case 0: rtrn {};
-	case 1: rtrn ::llc::GUI_CONTROL_FLAG_Hovered;
-	case 2: rtrn ::llc::GUI_CONTROL_FLAG_Pressed;
-	case 3: rtrn ::llc::GUI_CONTROL_FLAG_Disabled;
-	case 4: rtrn ::llc::GUI_CONTROL_FLAG_Selected;
-	case 5: rtrn (::llc::GUI_CONTROL_FLAG)(::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Hovered);
-	case 6: rtrn (::llc::GUI_CONTROL_FLAG)(::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Pressed);
-	case 7: rtrn (::llc::GUI_CONTROL_FLAG)(::llc::GUI_CONTROL_FLAG_Selected | ::llc::GUI_CONTROL_FLAG_Disabled);
-	}
+	rtrn (::llc::GUI_CONTROL_FLAG)::llc::get_enum<SAMPLE_GUI_STATE>().get_value_by_index(state < STATE_COUNT ? state : 0);
 }
 
 sttc ::llc::GUI_CONTROL_PALETTE sampleGUIControlPalette(bool disabled, cnst ::llc::SControlState & state) nxpt {
@@ -202,12 +159,11 @@ sttc ::llc::GUI_CONTROL_PALETTE sampleGUIControlPalette(bool disabled, cnst ::ll
 	rtrn ::llc::GUI_CONTROL_PALETTE_NORMAL;
 }
 
-sttc ::llc::cid_t sampleGUIControlCreate(SSampleGUI & app, ::llc::vcst_t text, cnst ::llc::rect2s1_t & area, ::llc::s1_t font = -1) {
-	cnst ::llc::cid_t idControl = ::llc::controlCreate(app.GUI);
-	if(idControl < 0)
-		rtrn idControl;
+sttc ::llc::err_t sampleGUIControlCreate(SSampleGUI & app, ::llc::cid_t & idControl, ::llc::vcst_t text, cnst ::llc::rect2s1_t & area, ::llc::s1_t font = -1, ::llc::ALIGN align = ::llc::ALIGN_TOP_LEFT) {
+	if_fail_fe(idControl = ::llc::controlCreate(app.GUI));
 	::llc::SControlPlacement & placement = app.GUI.Controls.Placement[idControl];
 	placement.Area = area;
+	placement.Align = align;
 	placement.Margin = {2, 2, 2, 2};
 	placement.Border = {3, 3, 3, 3};
 	::llc::SControlDraw & draw = app.GUI.Controls.Draw[idControl];
@@ -215,7 +171,7 @@ sttc ::llc::cid_t sampleGUIControlCreate(SSampleGUI & app, ::llc::vcst_t text, c
 	draw.ColorMode = ::llc::GUI_COLOR_MODE_Default;
 	app.GUI.Controls.Text[idControl].Text = text;
 	app.GUI.Controls.Text[idControl].FontSelected = font;
-	rtrn idControl;
+	rtrn 0;
 }
 
 sttc void sampleGUIThemeApply(SSampleGUI & app) nxpt {
@@ -240,14 +196,14 @@ sttc ::llc::err_t sampleGUIStateFlagAppend(::llc::string & text, ::llc::vcst_t f
 
 sttc ::llc::err_t sampleGUIStateDescribe(cnst ::llc::SControlState & state, bool disabled, ::llc::string & text) {
 	text.clear();
-	if(state.IsSelected()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("SELECTED")));
-	if(state.IsHovered ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("HOVERED")));
-	if(state.IsPressed ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("PRESSED")));
-	if(state.IsFocused ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("FOCUSED")));
-	if(disabled          ) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("DISABLED")));
-	if(state.IsAction  ()) if_fail_fe(::sampleGUIStateFlagAppend(text, LLC_CXS("ACTION")));
+	if(state.IsSelected()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_SELECTED)));
+	if(state.IsHovered ()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_HOVERED )));
+	if(state.IsPressed ()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_PRESSED )));
+	if(state.IsFocused ()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_FOCUSED )));
+	if(disabled          ) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_DISABLED)));
+	if(state.IsAction  ()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_ACTION  )));
 	if(0 == text.size())
-		if_fail_fe(text.append_string(LLC_CXS("NORMAL")));
+		if_fail_fe(text.append_string(::llc::get_value_namev(SAMPLE_GUI_STATE_NORMAL)));
 	rtrn text.size();
 }
 
@@ -258,9 +214,7 @@ sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t id
 	for(::llc::u2_t iCharacter = 0; iCharacter < text.size(); ++iCharacter)
 		storage.Storage[iCharacter] = text[iCharacter];
 	storage.Storage[text.size()] = 0;
-	app.GUI.Controls.Text[idControl].Text = {storage.Storage, text.size()};
-	app.GUI.Controls.SetUpdated(idControl, false);
-	rtrn 0;
+	rtrn ::llc::controlTextSet(app.GUI, idControl, {storage.Storage, text.size()});
 }
 
 sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idControl) {
@@ -273,19 +227,7 @@ sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idCo
 	if(idControl == app.ControlAlignmentTitle) rtrn LLC_CXS("ALIGNMENT TITLE");
 	if(idControl == app.ControlAlignmentRoot ) rtrn LLC_CXS("ALIGNMENT STAGE");
 
-	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
-		if(idControl == app.ControlsTheme[iTheme])
-			rtrn ::sampleGUIThemeText(iTheme);
-	}
-	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState) {
-		if(idControl == app.ControlsState[iState])
-			rtrn ::sampleGUIStateText(iState);
-	}
-	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment) {
-		if(idControl == app.ControlsAlignment[iAlignment])
-			rtrn ::sampleGUIAlignmentText(iAlignment);
-	}
-	rtrn LLC_CXS("CONTROL");
+	rtrn app.GUI.Controls.Text[idControl].Text;
 }
 
 sttc ::llc::cid_t sampleGUIHoveredControl(cnst SSampleGUI & app) nxpt {
@@ -338,43 +280,25 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 
-	app.ControlTitle = ::sampleGUIControlCreate(app, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3);
-	if_true_fe(app.ControlTitle < 0);
-	app.ControlMode = ::sampleGUIControlCreate(app, LLC_CXS("Mode: 3D"), {{742, 18}, {184, 42}}, 2);
-	if_true_fe(app.ControlMode < 0);
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlTitle, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlMode, LLC_CXS("Mode: 3D"), {{742, 18}, {184, 42}}, 2));
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
-		app.ControlsTheme[iTheme] = ::sampleGUIControlCreate(app, ::sampleGUIThemeText(iTheme), {{(::llc::s1_t)(24 + 226 * iTheme), 76}, {206, 40}}, 2);
-		if_true_fe(app.ControlsTheme[iTheme] < 0);
+		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsTheme[iTheme], ::sampleGUIThemeText(iTheme), {{(::llc::s1_t)(24 + 226 * iTheme), 76}, {206, 40}}, 2));
 	}
 
 	for(::llc::u0_t iState = 0; iState < STATE_COUNT; ++iState) {
 		cnst ::llc::s1_t x = (::llc::s1_t)(24 + 226 * (iState % 4));
 		cnst ::llc::s1_t y = (::llc::s1_t)(140 + 88 * (iState / 4));
-		app.ControlsState[iState] = ::sampleGUIControlCreate(app, ::sampleGUIStateText(iState), {{x, y}, {206, 68}}, 2);
-		if_true_fe(app.ControlsState[iState] < 0);
+		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsState[iState], ::sampleGUIStateText(iState), {{x, y}, {206, 68}}, 2));
 	}
-	app.ControlLive = ::sampleGUIControlCreate(app, LLC_CXS("LIVE"), {{24, 138}, {884, 64}}, 2);
-	if_true_fe(app.ControlLive < 0);
-	app.GUI.Controls.Placement[app.ControlLive].Align = ::llc::ALIGN_BOTTOM_LEFT;
-	app.ControlInspector = ::sampleGUIControlCreate(app, LLC_CXS("GUI | HOVER:NONE"), {{24, 68}, {884, 56}}, 1);
-	if_true_fe(app.ControlInspector < 0);
-	app.GUI.Controls.Placement[app.ControlInspector].Align = ::llc::ALIGN_BOTTOM_LEFT;
-	app.ControlHelp = ::sampleGUIControlCreate(app, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 18}, {772, 36}}, 1);
-	if_true_fe(app.ControlHelp < 0);
-	app.GUI.Controls.Placement[app.ControlHelp].Align = ::llc::ALIGN_BOTTOM_LEFT;
-	app.ControlExit = ::sampleGUIControlCreate(app, LLC_CXS("EXIT"), {{24, 18}, {96, 36}}, 2);
-	if_true_fe(app.ControlExit < 0);
-	app.GUI.Controls.Placement[app.ControlExit].Align = ::llc::ALIGN_BOTTOM_LEFT;
-	app.ControlAlignmentTitle = ::sampleGUIControlCreate(app, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1);
-	if_true_fe(app.ControlAlignmentTitle < 0);
-	app.GUI.Controls.Placement[app.ControlAlignmentTitle].Align = ::llc::ALIGN_TOP_RIGHT;
-	app.ControlAlignmentRoot = ::sampleGUIControlCreate(app, LLC_CXS(""), {{24, 76}, {332, 446}});
-	if_true_fe(app.ControlAlignmentRoot < 0);
-	app.GUI.Controls.Placement[app.ControlAlignmentRoot].Align = ::llc::ALIGN_TOP_RIGHT;
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlLive, LLC_CXS("LIVE"), {{24, 138}, {884, 64}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlInspector, LLC_CXS("GUI | HOVER:NONE"), {{24, 68}, {884, 56}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlHelp, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 18}, {772, 36}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlExit, LLC_CXS("EXIT"), {{24, 18}, {96, 36}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentTitle, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1, ::llc::ALIGN_TOP_RIGHT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentRoot, LLC_CXS(""), {{24, 76}, {332, 446}}, -1, ::llc::ALIGN_TOP_RIGHT));
 	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment) {
-		app.ControlsAlignment[iAlignment] = ::sampleGUIControlCreate(app, ::sampleGUIAlignmentText(iAlignment), {{0, 0}, {108, 58}}, 1);
-		if_true_fe(app.ControlsAlignment[iAlignment] < 0);
-		app.GUI.Controls.Placement[app.ControlsAlignment[iAlignment]].Align = ::sampleGUIControlAlignment(iAlignment);
+		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsAlignment[iAlignment], ::sampleGUIAlignmentText(iAlignment), {{0, 0}, {108, 58}}, 1, ::sampleGUIControlAlignment(iAlignment)));
 		app.GUI.Controls.Text[app.ControlsAlignment[iAlignment]].Align = ::sampleGUITextAlignment(iAlignment);
 		if_fail_fe(::llc::controlSetParent(app.GUI, app.ControlsAlignment[iAlignment], app.ControlAlignmentRoot));
 	}
