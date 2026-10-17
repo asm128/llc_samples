@@ -1,7 +1,9 @@
 #include "llc_sample_gui_components.h"
 
+#include "llc_app_impl.h"
 #include "llc_apod_serialize.h"
 #include "llc_cstring.h"
+#include "llc_framework.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
 
@@ -248,7 +250,7 @@ static_assert(::sampleDragDelta(::llc::ALIGN_BOTTOM_LEFT , {3, 5}) == ::llc::n2s
 
 sttc ::llc::err_t sampleVirtualKeyboardUpdate(SSampleGUIComponents & app, bool & dragCanceled) {
 	dragCanceled = false;
-	cnst ::llc::SInput & input = app.Window.Input;
+	cnst ::llc::SInput & input = *app.Window.Input;
 	cnst ::llc::cid_t idKeyboard = app.InputBox.VirtualKeyboard.IdRoot;
 	cnst ::llc::cid_t idInputBox = app.InputBox.IdRoot;
 	::llc::SControlPlacement & placement = app.GUI.Controls.Placement[idInputBox];
@@ -508,10 +510,9 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if(systemRequestedExit || app.Window.Closed)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	cnst bool editingAtFrameStart = app.InputBox.Editing;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
 	if_fail_fe(::sampleCheckBoxUpdate(app.CheckBox, app.GUI));
-	if_fail_fe(::sampleSliderUpdate(app.SliderHorizontal, app.GUI, app.Window.Input));
-	if_fail_fe(::sampleSliderUpdate(app.SliderVertical, app.GUI, app.Window.Input));
+	if_fail_fe(::sampleSliderUpdate(app.SliderHorizontal, app.GUI, *app.Window.Input));
+	if_fail_fe(::sampleSliderUpdate(app.SliderVertical, app.GUI, *app.Window.Input));
 	if(app.GUI.Controls.IsAction(app.ControlEdit))
 		app.InputBox.Edit(app.GUI, true);
 	if(editingAtFrameStart) {
@@ -524,7 +525,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 				app.InputBox.Edit(app.GUI, false);
 		}
 	}
-	else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
+	else if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.ControlExit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
@@ -541,13 +542,13 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 			if_fail_fe(::sampleGUIComponentsActivate(app, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
-		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Offset += delta;
 			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl));
 		}
-		if(app.GUI.Controls.IsPressed(idResize) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.GUI.Controls.IsPressed(idResize) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Size += delta;
 			app.GUI.Controls.Placement[viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET]].Area.Size += delta;
 			app.UnfoldedSize[iViewport] = app.GUI.Controls.Placement[viewport.IdControl].Area.Size;
@@ -574,3 +575,49 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	}
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
+
+#define LLC_SAMPLE_GUI_COMPONENTS_TITLE "LLC GUI components"
+
+stct SApplication {
+	::llc::SFramework	Framework;
+	SSampleGUIComponents	Sample;
+	::llc::img8bgra	ClientImages[SAMPLE_GUI_COMPONENTS_COUNT] = {};
+	::llc::u2_t		FrameIndex = 0;
+
+	SApplication(::llc::SRuntimeValues & runtimeValues)
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+};
+
+::llc::err_t setup(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	window.Size = {1280, 720};
+	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
+	rtrn ::sampleGUIComponentsSetup(app.Sample);
+}
+
+::llc::err_t cleanup(SApplication & app) {
+	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
+}
+
+::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	if(systemRequestedExit)
+		rtrn ::llc::APPLICATION_STATE_EXIT;
+	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
+	if(result)
+		rtrn result;
+	cnst ::llc::err_t resultSample = ::sampleGUIComponentsUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	::llc::sleep(1);
+	rtrn resultSample;
+}
+
+::llc::err_t draw(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.NoDraw)
+		rtrn 0;
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	rtrn ::sampleGUIComponentsDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View);
+}
+
+LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_COMPONENTS_TITLE)

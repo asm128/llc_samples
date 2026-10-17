@@ -6,7 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_gui_components.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="llc_sample_gui_components_win32.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_gui_components.h"><Filter>Header Files</Filter></ClInclude>

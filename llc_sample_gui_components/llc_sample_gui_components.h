@@ -1,4 +1,4 @@
-#include "llc_engine_window.h"
+#include "llc_window.h"
 #include "llc_gui_inputbox.h"
 #include "llc_gui_viewport.h"
 #include "llc_minmax.h"
@@ -25,8 +25,8 @@ stct SSampleSlider {
 };
 
 stct SSampleGUIComponents {
-	::llc::SWindow		Window			= {};
-	::llc::SGUI				GUI				= {};
+	::llc::SWindow		& Window;
+	::llc::SGUI			& GUI;
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
@@ -48,6 +48,8 @@ stct SSampleGUIComponents {
 						UnfoldedSize		= {};
 	::llc::astatic<bool, SAMPLE_GUI_COMPONENTS_COUNT>
 						Folded			= {};
+
+	SSampleGUIComponents(::llc::SWindow & window, ::llc::SGUI & gui) : Window(window), GUI(gui) {}
 };
 
 ::llc::err_t	sampleGUIComponentsSetup				(SSampleGUIComponents & app);
