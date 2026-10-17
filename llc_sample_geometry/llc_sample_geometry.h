@@ -1,4 +1,4 @@
-#include "llc_engine_window.h"
+#include "llc_window.h"
 #include "llc_gui_viewport.h"
 #include "llc_geometry.h"
 
@@ -15,8 +15,8 @@ stct SSampleGUIScale {
 };
 
 stct SSampleGeometry {
-	::llc::SWindow		Window			= {};
-	::llc::SGUI				GUI				= {};
+	::llc::SWindow		& Window;
+	::llc::SGUI			& GUI;
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
@@ -35,6 +35,8 @@ stct SSampleGeometry {
 	::llc::astatic<::llc::SGeometryBuffers, SAMPLE_GUI_VIEWPORT_COUNT>
 						Geometry		= {};
 	::llc::f2_t		Angle			= {};
+
+	SSampleGeometry(::llc::SWindow & window, ::llc::SGUI & gui) : Window(window), GUI(gui) {}
 };
 
 ::llc::err_t	sampleGeometrySetup				(SSampleGeometry & app);

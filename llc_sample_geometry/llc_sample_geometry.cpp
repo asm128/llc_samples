@@ -1,8 +1,12 @@
 #include "llc_sample_geometry.h"
 
+#include "llc_app_impl.h"
 #include "llc_apod_serialize.h"
+#include "llc_chrono.h"
 #include "llc_cstring.h"
+#include "llc_framework.h"
 #include "llc_runtime.h"
+#include "llc_sync.h"
 #include "llc_system_key.h"
 #include "llc_geometry_lh.h"
 #include "llc_raster_lh.h"
@@ -315,18 +319,18 @@ sttc ::llc::err_t sampleGeometryScaleUpdate(SSampleGeometry & app) {
 	cnst bool focused = app.GUI.Controls.IsFocused(slider.IdRoot) || app.GUI.Controls.IsFocused(slider.IdThumb);
 	cnst bool hovered = app.GUI.Controls.IsHovered(slider.IdRoot) || app.GUI.Controls.IsHovered(slider.IdThumb);
 	if(focused) {
-		if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Home)) value = .5;
-		else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_End)) value = 2.0;
-		else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Right)) value += .01;
-		else if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Left)) value -= .01;
+		if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Home)) value = .5;
+		else if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_End)) value = 2.0;
+		else if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Right)) value += .01;
+		else if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Left)) value -= .01;
 	}
-	if((focused || hovered) && app.Window.Input.MouseCurrent.Deltas.z)
-		value += 0 < app.Window.Input.MouseCurrent.Deltas.z ? .05 : -.05;
-	if(app.GUI.Controls.IsPressed(slider.IdThumb) && app.Window.Input.MouseCurrent.Deltas.x)
-		value += app.Window.Input.MouseCurrent.Deltas.x * .005;
-	else if(app.Window.Input.ButtonDown(0) && app.GUI.Controls.IsPressed(slider.IdRoot)) {
+	if((focused || hovered) && app.Window.Input->MouseCurrent.Deltas.z)
+		value += 0 < app.Window.Input->MouseCurrent.Deltas.z ? .05 : -.05;
+	if(app.GUI.Controls.IsPressed(slider.IdThumb) && app.Window.Input->MouseCurrent.Deltas.x)
+		value += app.Window.Input->MouseCurrent.Deltas.x * .005;
+	else if(app.Window.Input->ButtonDown(0) && app.GUI.Controls.IsPressed(slider.IdRoot)) {
 		cnst ::llc::SControlArea & thumbArea = app.GUI.Controls.Area[slider.IdThumb];
-		value += app.Window.Input.MouseCurrent.Position.x < thumbArea.Total.Global.Offset.x + thumbArea.Total.Global.Size.x / 2 ? -.05 : .05;
+		value += app.Window.Input->MouseCurrent.Position.x < thumbArea.Total.Global.Offset.x + thumbArea.Total.Global.Size.x / 2 ? -.05 : .05;
 	}
 	rtrn value != slider.Value ? ::sampleGeometryScaleSet(app, value) : 0;
 }
@@ -430,9 +434,8 @@ sttc ::llc::err_t sampleGeometryScaleUpdate(SSampleGeometry & app) {
 }
 
 ::llc::err_t sampleGeometryUpdate(SSampleGeometry & app, bool systemRequestedExit, double secondsLastFrame, double secondsUpdate, double secondsDraw) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGeometryScaleUpdate(app));
@@ -453,13 +456,13 @@ sttc ::llc::err_t sampleGeometryScaleUpdate(SSampleGeometry & app) {
 				if_fail_fe(::sampleGeometryMaximize(app, iViewport));
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
 		}
-		if(app.MaximizedViewport < 0 && app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.MaximizedViewport < 0 && app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Offset += delta;
 			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl));
 		}
-		if(app.MaximizedViewport < 0 && app.GUI.Controls.IsPressed(idResize) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.MaximizedViewport < 0 && app.GUI.Controls.IsPressed(idResize) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Size += delta;
 			app.GUI.Controls.Placement[viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET]].Area.Size += delta;
 			app.UnfoldedSize[iViewport] = app.GUI.Controls.Placement[viewport.IdControl].Area.Size;
@@ -469,7 +472,7 @@ sttc ::llc::err_t sampleGeometryScaleUpdate(SSampleGeometry & app) {
 			hoveredViewport = iViewport;
 	}
 	if(doubleClick && hoveredViewport < app.Viewports.size()) {
-		if(app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Shift)) {
+		if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Shift)) {
 			if_fail_fe(::sampleGeometryFold(app, (::llc::u0_t)hoveredViewport));
 		}
 		else {
@@ -494,3 +497,59 @@ sttc ::llc::err_t sampleGeometryScaleUpdate(SSampleGeometry & app) {
 	}
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
+
+#define LLC_SAMPLE_GEOMETRY_TITLE "LLC geometry wireframe"
+
+stct SApplication {
+	::llc::SFramework	Framework;
+	SSampleGeometry		Sample;
+	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
+	vltl ::llc::refcount_t LastUpdateMicroseconds = 0;
+	vltl ::llc::refcount_t LastDrawMicroseconds = 0;
+
+	SApplication(::llc::SRuntimeValues & runtimeValues)
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+};
+
+::llc::err_t setup(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	window.Size = {1600, 960};
+	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
+	rtrn ::sampleGeometrySetup(app.Sample);
+}
+
+::llc::err_t cleanup(SApplication & app) {
+	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
+}
+
+::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	if(systemRequestedExit)
+		rtrn ::llc::APPLICATION_STATE_EXIT;
+	cnst ::llc::s3_t timeStart = ::llc::timeCurrentInUs();
+	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
+	if(result)
+		rtrn result;
+	cnst double secondsUpdate = llc_sync_compare_exchange(app.LastUpdateMicroseconds, 0, 0) * .000001;
+	cnst double secondsDraw = llc_sync_compare_exchange(app.LastDrawMicroseconds, 0, 0) * .000001;
+	cnst ::llc::err_t resultSample = ::sampleGeometryUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame, secondsUpdate, secondsDraw);
+	llc_sync_exchange(app.LastUpdateMicroseconds, (::llc::refcount_t)(::llc::timeCurrentInUs() - timeStart));
+	::llc::sleep(1);
+	rtrn resultSample;
+}
+
+::llc::err_t draw(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.NoDraw) {
+		::llc::sleep(8);
+		rtrn 0;
+	}
+	cnst ::llc::s3_t timeStart = ::llc::timeCurrentInUs();
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	cnst ::llc::err_t result = ::sampleGeometryDraw(app.Sample, app.ClientImages, window.BackBuffer->Color.View);
+	llc_sync_exchange(app.LastDrawMicroseconds, (::llc::refcount_t)(::llc::timeCurrentInUs() - timeStart));
+	rtrn result;
+}
+
+LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GEOMETRY_TITLE)

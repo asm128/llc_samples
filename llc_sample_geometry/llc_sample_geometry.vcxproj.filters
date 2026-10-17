@@ -6,7 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="llc_sample_geometry.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="llc_sample_geometry_win32.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_sample_geometry.h"><Filter>Header Files</Filter></ClInclude>
