@@ -1,7 +1,9 @@
 #include "llc_sample_gui_viewport.h"
 
 #include "llc_apod_serialize.h"
+#include "llc_app_impl.h"
 #include "llc_cstring.h"
+#include "llc_framework.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
 
@@ -242,9 +244,8 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 }
 
 ::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
-	if(systemRequestedExit || app.Window.Closed || app.Window.Input.KeyDown(::llc::SYSTEM_KEY_Escape))
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::llc::guiProcessInput(app.GUI, app.Window.Input, app.Window.EventQueue));
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
@@ -260,13 +261,13 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 			if_fail_fe(::sampleGUIViewportActivate(app, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
-		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Offset += delta;
 			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl));
 		}
-		if(app.GUI.Controls.IsPressed(idResize) && (app.Window.Input.MouseCurrent.Deltas.x || app.Window.Input.MouseCurrent.Deltas.y)) {
-			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input.MouseCurrent.Deltas.y};
+		if(app.GUI.Controls.IsPressed(idResize) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
+			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Size += delta;
 			app.GUI.Controls.Placement[viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET]].Area.Size += delta;
 			app.UnfoldedSize[iViewport] = app.GUI.Controls.Placement[viewport.IdControl].Area.Size;
@@ -293,3 +294,49 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	}
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
+
+#define LLC_SAMPLE_GUI_VIEWPORT_TITLE "LLC GUI viewports"
+
+stct SApplication {
+	::llc::SFramework	Framework;
+	SSampleGUIViewport	Sample;
+	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
+	::llc::u2_t		FrameIndex = 0;
+
+	SApplication(::llc::SRuntimeValues & runtimeValues)
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+};
+
+::llc::err_t setup(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	window.Size = {1280, 720};
+	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
+	rtrn ::sampleGUIViewportSetup(app.Sample);
+}
+
+::llc::err_t cleanup(SApplication & app) {
+	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
+}
+
+::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	if(systemRequestedExit)
+		rtrn ::llc::APPLICATION_STATE_EXIT;
+	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
+	if(result)
+		rtrn result;
+	cnst ::llc::err_t resultSample = ::sampleGUIViewportUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	::llc::sleep(1);
+	rtrn resultSample;
+}
+
+::llc::err_t draw(SApplication & app) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.NoDraw)
+		rtrn 0;
+	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	rtrn ::sampleGUIViewportDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View);
+}
+
+LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_VIEWPORT_TITLE)

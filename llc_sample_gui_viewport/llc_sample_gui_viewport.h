@@ -1,4 +1,4 @@
-#include "llc_engine_window.h"
+#include "llc_window.h"
 #include "llc_gui_viewport.h"
 
 #ifndef LLC_SAMPLE_GUI_VIEWPORT_H_23627
@@ -7,8 +7,10 @@
 stxp ::llc::u0_t SAMPLE_GUI_VIEWPORT_COUNT = 3;
 
 stct SSampleGUIViewport {
-	::llc::SWindow		Window			= {};
-	::llc::SGUI				GUI				= {};
+	::llc::SWindow		& Window;
+	::llc::SGUI			& GUI;
+
+	SSampleGUIViewport(::llc::SWindow & window, ::llc::SGUI & gui) : Window(window), GUI(gui) {}
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
