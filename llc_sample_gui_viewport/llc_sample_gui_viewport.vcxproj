@@ -75,7 +75,6 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)../$(Platform).$(Configuration)/</OutDir>
     <IntDir>$(SolutionDir)../obj/$(Platform).$(Configuration)/$(ProjectName)/</IntDir>
-    
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -84,7 +83,7 @@
       <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)../llc/llc;$(SolutionDir)../llc_engine/llc_engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../llc/llc;$(SolutionDir)../llc/llc_engine;</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
