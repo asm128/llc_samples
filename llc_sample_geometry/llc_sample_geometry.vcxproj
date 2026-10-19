@@ -75,7 +75,7 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)../$(Platform).$(Configuration)/</OutDir>
     <IntDir>$(SolutionDir)../obj/$(Platform).$(Configuration)/$(ProjectName)/</IntDir>
-    <TargetName>llc_sample_geometry_win32</TargetName>
+    
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
