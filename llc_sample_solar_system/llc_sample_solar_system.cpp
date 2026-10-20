@@ -4,7 +4,7 @@
 #include "llc_runtime.h"
 #include "llc_system_key.h"
 
-stxp ::llc::vcst_t SOLAR_SYSTEM_JSON = LLC_CXS("llc_solar_system.json");
+stxp ::llc::vcst_t SOLAR_SYSTEM_JSON = "llc_solar_system.json";
 
 ::llc::err_t sampleSolarSystemSetup(SSampleSolarSystem & app) {
 	llc_necs(::llc::planetarySystemSetup(app.SolarSystem, app.Engine, SOLAR_SYSTEM_JSON));

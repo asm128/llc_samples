@@ -120,11 +120,11 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	::llc::cid_t help;
 	if_fail_fe(help = ::llc::controlCreate(gui));
 	gui.Controls.Placement[help].Area = {{20, 18}, {1500, 36}};
-	if_fail_fe(::llc::controlTextSet(gui, help, LLC_CXS("DRAG TITLE | RESIZE EDGES | DOUBLE-CLICK MAXIMIZES | SHIFT+DOUBLE-CLICK FOLDS | R: RESET | C/D: RENDERER | ESC: EXIT")));
+	if_fail_fe(::llc::controlTextSet(gui, help, "DRAG TITLE | RESIZE EDGES | DOUBLE-CLICK MAXIMIZES | SHIFT+DOUBLE-CLICK FOLDS | R: RESET | C/D: RENDERER | ESC: EXIT"));
 	if_fail_fe(app.Scale = ::llc::controlCreate(gui));
 	gui.Controls.Placement[app.Scale].Area = {{20, 16}, {280, 32}};
 	gui.Controls.Placement[app.Scale].Align = ::llc::ALIGN_BOTTOM_LEFT;
-	if_fail_fe(::llc::controlTextSet(gui, app.Scale, LLC_CXS("UI SCALE")));
+	if_fail_fe(::llc::controlTextSet(gui, app.Scale, "UI SCALE"));
 	if_fail_fe(app.ScaleThumb = ::llc::controlCreateChild(gui, app.Scale));
 	gui.Controls.Placement[app.ScaleThumb].Area.Size = {60, 28};
 	gui.Controls.Constraints[app.ScaleThumb].AttachSizeToControl.y = app.ScaleThumb;
@@ -282,7 +282,7 @@ sttc ::llc::err_t sampleGeometryGUIUpdate(SSampleGeometry & app, double secondsL
 	for(::llc::u2_t iEntity = 0; iEntity < entities.size(); ++iEntity) {
 		cnst ::llc::eid_t entity = (::llc::eid_t)entities[iEntity];
 		app.Entities[iEntity] = entity;
-		if_fail_fe(engine.SetShader(entity, ::llc::psTerrestrial, LLC_CXS("psTerrestrial")));
+		if_fail_fe(engine.SetShader(entity, ::llc::psTerrestrial, "psTerrestrial"));
 		if_fail_fe(engine.SetPosition(entity, {((::llc::f2_t)(iEntity % 4) - 1.5f) * 2, 0, iEntity < 4 ? -1.5f : 1.5f}));
 		if_fail_fe(engine.SetHidden(entity, true));
 		if_fail_fe(engine.SetRotation(entity, {0, .6f, 0}));

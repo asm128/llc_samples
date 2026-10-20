@@ -218,14 +218,14 @@ sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t id
 }
 
 sttc ::llc::vcst_t sampleGUIControlName(cnst SSampleGUI & app, ::llc::cid_t idControl) {
-	if(idControl == app.ControlTitle         ) rtrn LLC_CXS("TITLE");
-	if(idControl == app.ControlMode          ) rtrn LLC_CXS("MODE");
-	if(idControl == app.ControlLive          ) rtrn LLC_CXS("LIVE CONTROL");
-	if(idControl == app.ControlInspector     ) rtrn LLC_CXS("GLOBAL INSPECTOR");
-	if(idControl == app.ControlHelp          ) rtrn LLC_CXS("HELP");
-	if(idControl == app.ControlExit          ) rtrn LLC_CXS("EXIT");
-	if(idControl == app.ControlAlignmentTitle) rtrn LLC_CXS("ALIGNMENT TITLE");
-	if(idControl == app.ControlAlignmentRoot ) rtrn LLC_CXS("ALIGNMENT STAGE");
+	if(idControl == app.ControlTitle         ) rtrn "TITLE";
+	if(idControl == app.ControlMode          ) rtrn "MODE";
+	if(idControl == app.ControlLive          ) rtrn "LIVE CONTROL";
+	if(idControl == app.ControlInspector     ) rtrn "GLOBAL INSPECTOR";
+	if(idControl == app.ControlHelp          ) rtrn "HELP";
+	if(idControl == app.ControlExit          ) rtrn "EXIT";
+	if(idControl == app.ControlAlignmentTitle) rtrn "ALIGNMENT TITLE";
+	if(idControl == app.ControlAlignmentRoot ) rtrn "ALIGNMENT STAGE";
 
 	rtrn app.GUI.Controls.Text[idControl].Text;
 }
@@ -253,7 +253,7 @@ sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
 
 sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t idHovered) {
 	cnst ::llc::vcst_t themeName = ::sampleGUIThemeName(app.Theme);
-	cnst ::llc::vcst_t modeName = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? LLC_CXS("3D") : LLC_CXS("FLAT");
+	cnst ::llc::vcst_t modeName = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::vcst_t{"3D"} : ::llc::vcst_t{"FLAT"};
 	::llc::astchar<512> text = {};
 	::llc::err_t length = 0;
 	if(::llc::controlInvalid(app.GUI, idHovered))
@@ -280,8 +280,8 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlTitle, LLC_CXS("LLC GUI CONTROL PALETTES AND STATES"), {{24, 18}, {650, 42}}, 3));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlMode, LLC_CXS("Mode: 3D"), {{742, 18}, {184, 42}}, 2));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlTitle, "LLC GUI CONTROL PALETTES AND STATES", {{24, 18}, {650, 42}}, 3));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlMode, "Mode: 3D", {{742, 18}, {184, 42}}, 2));
 	for(::llc::u0_t iTheme = 0; iTheme < THEME_COUNT; ++iTheme) {
 		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsTheme[iTheme], ::sampleGUIThemeText(iTheme), {{(::llc::s1_t)(24 + 226 * iTheme), 76}, {206, 40}}, 2));
 	}
@@ -291,12 +291,12 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 		cnst ::llc::s1_t y = (::llc::s1_t)(140 + 88 * (iState / 4));
 		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsState[iState], ::sampleGUIStateText(iState), {{x, y}, {206, 68}}, 2));
 	}
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlLive, LLC_CXS("LIVE"), {{24, 138}, {884, 64}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlInspector, LLC_CXS("GUI | HOVER:NONE"), {{24, 68}, {884, 56}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlHelp, LLC_CXS("TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE"), {{136, 18}, {772, 36}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlExit, LLC_CXS("EXIT"), {{24, 18}, {96, 36}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentTitle, LLC_CXS("CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT"), {{24, 18}, {332, 42}}, 1, ::llc::ALIGN_TOP_RIGHT));
-	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentRoot, LLC_CXS(""), {{24, 76}, {332, 446}}, -1, ::llc::ALIGN_TOP_RIGHT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlLive, "LIVE", {{24, 138}, {884, 64}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlInspector, "GUI | HOVER:NONE", {{24, 68}, {884, 56}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlHelp, "TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE", {{136, 18}, {772, 36}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlExit, "EXIT", {{24, 18}, {96, 36}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentTitle, "CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT", {{24, 18}, {332, 42}}, 1, ::llc::ALIGN_TOP_RIGHT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentRoot, "", {{24, 76}, {332, 446}}, -1, ::llc::ALIGN_TOP_RIGHT));
 	for(::llc::u0_t iAlignment = 0; iAlignment < ALIGNMENT_COUNT; ++iAlignment) {
 		if_fail_fe(::sampleGUIControlCreate(app, app.ControlsAlignment[iAlignment], ::sampleGUIAlignmentText(iAlignment), {{0, 0}, {108, 58}}, 1, ::sampleGUIControlAlignment(iAlignment)));
 		app.GUI.Controls.Text[app.ControlsAlignment[iAlignment]].Align = ::sampleGUITextAlignment(iAlignment);
@@ -329,7 +329,7 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	if(app.GUI.Controls.IsAction(app.ControlLive))
 		app.GUI.Controls.SetSelected(app.ControlLive, false == app.GUI.Controls.IsSelected(app.ControlLive));
 	cnst ::llc::cid_t idHovered = ::sampleGUIHoveredControl(app);
-	if_fail_fe(::llc::controlTextSet(app.GUI, app.ControlMode, app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? LLC_CXS("Mode: 3D") : LLC_CXS("Mode: Flat")));
+	if_fail_fe(::llc::controlTextSet(app.GUI, app.ControlMode, app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::vcst_t{"Mode: 3D"} : ::llc::vcst_t{"Mode: Flat"}));
 	::sampleGUIThemeApply(app);
 	::sampleGUIStateCardsApply(app);
 	if_fail_fe(::sampleGUILiveTextUpdate(app));

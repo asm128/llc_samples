@@ -96,7 +96,7 @@ sttc ::llc::err_t sampleCheckBoxSetChecked(SSampleCheckBox & checkBox, ::llc::SG
 	if_true_fe(::llc::controlInvalid(gui, checkBox.IdControl));
 	if(checkBox.Checked == checked)
 		rtrn 0;
-	if_fail_fe(::llc::controlTextSet(gui, checkBox.IdControl, checked ? LLC_CXS("X") : ::llc::vcst_t{}));
+	if_fail_fe(::llc::controlTextSet(gui, checkBox.IdControl, checked ? ::llc::vcst_t{"X"} : ::llc::vcst_t{}));
 	checkBox.Checked = checked;
 	gui.Controls.SetSelected(checkBox.IdControl, checked);
 	rtrn 1;
@@ -446,7 +446,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	::sampleGUIControlThemeApply(app.GUI, app.ComponentsPanel, 2);
 
 	if_fail_fe(::sampleCheckBoxCreate(app.CheckBox, app.GUI, app.ComponentsPanel, {{0, 0}, {32, 32}}));
-	cnst ::llc::cid_t idCheckBoxLabel = ::sampleGUIComponentsControlCreate(app, LLC_CXS("CHECK BOX | ENTER / SPACE"), {{38, 0}, {212, 32}});
+	cnst ::llc::cid_t idCheckBoxLabel = ::sampleGUIComponentsControlCreate(app, "CHECK BOX | ENTER / SPACE", {{38, 0}, {212, 32}});
 	if_true_fe(idCheckBoxLabel < 0);
 	app.GUI.Controls.Draw[idCheckBoxLabel].NoBorder = true;
 	app.GUI.Controls.Draw[idCheckBoxLabel].NoClient = true;
@@ -456,9 +456,9 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if_fail_fe(::sampleSliderCreate(app.SliderHorizontal, app.GUI, app.ComponentsPanel, {{0, 40}, {250, 30}}, false, 35));
 	if_fail_fe(::sampleSliderCreate(app.SliderVertical, app.GUI, app.ComponentsPanel, {{260, 0}, {40, 108}}, true, 65));
 
-	app.ControlEdit = ::sampleGUIComponentsControlCreate(app, LLC_CXS("EDIT TEXT / CP437 KEYBOARD"), {{310, 0}, {190, 32}});
+	app.ControlEdit = ::sampleGUIComponentsControlCreate(app, "EDIT TEXT / CP437 KEYBOARD", {{310, 0}, {190, 32}});
 	if_true_fe(app.ControlEdit < 0);
-	app.ControlExit = ::sampleGUIComponentsControlCreate(app, LLC_CXS("EXIT"), {{310, 40}, {190, 32}});
+	app.ControlExit = ::sampleGUIComponentsControlCreate(app, "EXIT", {{310, 40}, {190, 32}});
 	if_true_fe(app.ControlExit < 0);
 
 	if_fail_fe(::llc::inputBoxCreate(app.InputBox, app.GUI, app.Desktop));
@@ -485,13 +485,13 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG / FOLD VIEWPORTS | TAB / SHIFT+TAB FOCUS | ENTER / SPACE ACTIVATE | ARROWS / PAGE / HOME / END SLIDE | ESC CLOSES / EXITS");
+	app.GUI.Controls.Text[app.Help].Text = "DRAG / FOLD VIEWPORTS | TAB / SHIFT+TAB FOCUS | ENTER / SPACE ACTIVATE | ARROWS / PAGE / HOME / END SLIDE | ESC CLOSES / EXITS";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
-	if_fail_fe(::sampleGUIComponentsCreate(app, 0, LLC_CXS("AZURE CPU SURFACE"), {{80, 92}, {420, 250}}));
-	if_fail_fe(::sampleGUIComponentsCreate(app, 1, LLC_CXS("AMBER CPU SURFACE"), {{408, 184}, {430, 280}}));
-	if_fail_fe(::sampleGUIComponentsCreate(app, 2, LLC_CXS("MONO CPU SURFACE"), {{754, 104}, {360, 230}}));
+	if_fail_fe(::sampleGUIComponentsCreate(app, 0, "AZURE CPU SURFACE", {{80, 92}, {420, 250}}));
+	if_fail_fe(::sampleGUIComponentsCreate(app, 1, "AMBER CPU SURFACE", {{408, 184}, {430, 280}}));
+	if_fail_fe(::sampleGUIComponentsCreate(app, 2, "MONO CPU SURFACE", {{754, 104}, {360, 230}}));
 	if_fail_fe(::sampleGUIComponentsActivate(app, 2));
 	if_fail_fe(::sampleGUIComponentsControlsSetup(app));
 	app.Performance = ::llc::controlCreate(app.GUI);
@@ -500,7 +500,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Performance].Text = LLC_CXS("FPS --    Frame -- ms");
+	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);

@@ -214,13 +214,13 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = LLC_CXS("DRAG ANY TITLE | DOUBLE-CLICK TO FOLD | TAB MOVES FOCUS | ENTER OR SPACE ACTIVATES | ESC OR EXIT CLOSES");
+	app.GUI.Controls.Text[app.Help].Text = "DRAG ANY TITLE | DOUBLE-CLICK TO FOLD | TAB MOVES FOCUS | ENTER OR SPACE ACTIVATES | ESC OR EXIT CLOSES";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
-	if_fail_fe(::sampleGUIViewportCreate(app, 0, LLC_CXS("AZURE CPU SURFACE"), {{80, 92}, {420, 250}}));
-	if_fail_fe(::sampleGUIViewportCreate(app, 1, LLC_CXS("AMBER CPU SURFACE"), {{408, 184}, {430, 280}}));
-	if_fail_fe(::sampleGUIViewportCreate(app, 2, LLC_CXS("MONO CPU SURFACE"), {{754, 104}, {360, 230}}));
+	if_fail_fe(::sampleGUIViewportCreate(app, 0, "AZURE CPU SURFACE", {{80, 92}, {420, 250}}));
+	if_fail_fe(::sampleGUIViewportCreate(app, 1, "AMBER CPU SURFACE", {{408, 184}, {430, 280}}));
+	if_fail_fe(::sampleGUIViewportCreate(app, 2, "MONO CPU SURFACE", {{754, 104}, {360, 230}}));
 	if_fail_fe(::sampleGUIViewportActivate(app, 2));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
@@ -228,7 +228,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Performance].Text = LLC_CXS("FPS --    Frame -- ms");
+	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	app.Exit = ::llc::controlCreate(app.GUI);
@@ -237,7 +237,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Placement[app.Exit].Align = ::llc::ALIGN_BOTTOM_RIGHT;
 	app.GUI.Controls.Placement[app.Exit].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Exit].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Exit].Text = LLC_CXS("EXIT");
+	app.GUI.Controls.Text[app.Exit].Text = "EXIT";
 	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
