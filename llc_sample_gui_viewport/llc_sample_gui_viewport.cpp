@@ -240,7 +240,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	app.GUI.Controls.Text[app.Exit].Text = LLC_CXS("EXIT");
 	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
@@ -278,7 +278,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	}
 	if(doubleClick && hoveredViewport < app.Viewports.size())
 		if_fail_fe(::sampleGUIViewportFold(app, (::llc::u0_t)hoveredViewport));
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIViewportDraw(SSampleGUIViewport & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {

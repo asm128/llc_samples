@@ -313,7 +313,7 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	::sampleGUIStateCardsApply(app);
 	if_fail_fe(::sampleGUILiveTextUpdate(app));
 	if_fail_fe(::sampleGUIInspectorTextUpdate(app, ::llc::CID_INVALID));
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIUpdate(SSampleGUI & app, bool systemRequestedExit) {
@@ -334,7 +334,7 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	::sampleGUIStateCardsApply(app);
 	if_fail_fe(::sampleGUILiveTextUpdate(app));
 	if_fail_fe(::sampleGUIInspectorTextUpdate(app, idHovered));
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIDraw(SSampleGUI & app, ::llc::g8bgra target) {

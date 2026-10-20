@@ -503,7 +503,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	app.GUI.Controls.Text[app.Performance].Text = LLC_CXS("FPS --    Frame -- ms");
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIComponentsUpdate(SSampleGUIComponents & app, bool systemRequestedExit, double secondsLastFrame) {
@@ -559,7 +559,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	}
 	if(doubleClick && hoveredViewport < app.Viewports.size())
 		if_fail_fe(::sampleGUIComponentsFold(app, (::llc::u0_t)hoveredViewport));
-	rtrn 0;
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIComponentsDraw(SSampleGUIComponents & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
