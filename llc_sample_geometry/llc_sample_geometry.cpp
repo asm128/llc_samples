@@ -329,7 +329,10 @@ stct SApplication {
 	bool				COMInitialized	= false;
 #endif
 
-	SApplication(::llc::SRuntimeValues & runtimeValues) : Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+	SApplication(::llc::SRuntimeValues & runtimeValues)
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
+		if_fail_e(::llc::rasterFontDefaults(Sample.Engine.Scene->Graphics->Fonts));
+	}
 };
 
 #if defined(LLC_WINDOWS)

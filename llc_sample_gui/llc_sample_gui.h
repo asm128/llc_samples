@@ -1,3 +1,4 @@
+#include "llc_engine.h"
 #include "llc_window.h"
 #include "llc_gui.h"
 
@@ -5,6 +6,7 @@
 #define LLC_SAMPLE_GUI_H_23627
 
 stct SSampleGUI {
+	::llc::SEngine		Engine			= {};
 	::llc::SWindow		& Window;
 	::llc::SGUI			& GUI;
 

@@ -349,7 +349,9 @@ stct SApplication {
 	SSampleGUI			Sample;
 
 	SApplication(::llc::SRuntimeValues & runtimeValues)
-		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {}
+		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
+		if_fail_e(::llc::rasterFontDefaults(Sample.Engine.Scene->Graphics->Fonts));
+	}
 };
 
 ::llc::err_t setup(SApplication & app) {

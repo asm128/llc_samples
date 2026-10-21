@@ -1,3 +1,4 @@
+#include "llc_engine.h"
 #include "llc_window.h"
 #include "llc_gui_viewport.h"
 
@@ -7,6 +8,7 @@
 stxp ::llc::u0_t SAMPLE_GUI_VIEWPORT_COUNT = 3;
 
 stct SSampleGUIViewport {
+	::llc::SEngine		Engine			= {};
 	::llc::SWindow		& Window;
 	::llc::SGUI			& GUI;
 

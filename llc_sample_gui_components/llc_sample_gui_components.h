@@ -1,3 +1,4 @@
+#include "llc_engine.h"
 #include "llc_window.h"
 #include "llc_gui_inputbox.h"
 #include "llc_gui_viewport.h"
@@ -25,6 +26,7 @@ stct SSampleSlider {
 };
 
 stct SSampleGUIComponents {
+	::llc::SEngine		Engine			= {};
 	::llc::SWindow		& Window;
 	::llc::SGUI			& GUI;
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
