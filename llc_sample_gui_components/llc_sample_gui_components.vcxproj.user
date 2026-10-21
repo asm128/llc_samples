@@ -2,15 +2,16 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug-MT' Or '$(Configuration)'=='Release-MT'">
     <LocalDebuggerCommand>$(OutDir)lrt.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>$(TargetName)</LocalDebuggerCommandArguments>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|x64'">
-    <LocalDebuggerCommandArgumentsHistory>llc_sample_gui_components_win32|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArguments>$(ProjectName)</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MT|x64'">
     <LocalDebuggerCommandArgumentsHistory>llc_sample_gui_components_win32|</LocalDebuggerCommandArgumentsHistory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|x64'">
+    <LocalDebuggerCommandArgumentsHistory>llc_sample_gui_components_win32|llc_sample_gui_components|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

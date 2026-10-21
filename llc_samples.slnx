@@ -7,18 +7,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="llc_samples/llc_samples.vcxproj" Id="2a1321e7-7b5a-42a4-a667-07a4e166f2f1">
-    <BuildDependency Project="../llc/llc/llc.vcxproj" />
-    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
-    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
-    <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
-  </Project>
-  <Project Path="llc_sample_engine/llc_sample_engine.vcxproj" Id="de142627-69c9-4a36-938b-af713b3a1952">
-    <BuildDependency Project="../llc/llc/llc.vcxproj" />
-    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
-    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
-    <BuildDependency Project="../zlib/contrib/vstudio/vc14/zlibvc.vcxproj" />
-  </Project>
   <Project Path="llc_sample_geometry/llc_sample_geometry.vcxproj" Id="9d1f2bb2-cdda-4eec-afd6-43c5e8772602">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />

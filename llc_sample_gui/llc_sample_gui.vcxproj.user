@@ -2,9 +2,10 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug-MT' Or '$(Configuration)'=='Release-MT'">
     <LocalDebuggerCommand>$(OutDir)lrt.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>$(TargetName)</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(ProjectName)</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>
