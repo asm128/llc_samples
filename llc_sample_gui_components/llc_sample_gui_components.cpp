@@ -4,8 +4,13 @@
 #include "llc_apod_serialize.h"
 #include "llc_cstring.h"
 #include "llc_framework.h"
+#include "llc_mutex.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
+
+#if defined(LLC_WINDOWS)
+#	include "llc_engine_d3d_app.h"
+#endif
 
 #include <limits.h>
 
@@ -377,10 +382,8 @@ sttc ::llc::err_t sampleGUIComponentsFold(SSampleGUIComponents & app, ::llc::u0_
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl);
 }
 
-sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & app, double secondsLastFrame) {
-	if(secondsLastFrame <= 0)
-		rtrn 0;
-	cnst ::llc::err_t textLength = ::llc::sprintf_s(app.PerformanceText.Storage, "FPS %.2f    Frame %.2f ms", 1.0 / secondsLastFrame, secondsLastFrame * 1000.0);
+sttc ::llc::err_t sampleGUIComponentsPerformanceUpdate(SSampleGUIComponents & app, ::llc::vcst_t backend, const ::llc::SFrameMeter & frameMeter) {
+	cnst ::llc::err_t textLength = ::llc::sprintf_s(app.PerformanceText.Storage, "%.*s | %u FPS | %.2f ms avg | %ux%u | F3", LLC_VIEW_ARGS(backend), frameMeter.FramesPerSecond, frameMeter.AverageFrameTime * 1000, app.Window.Size.x, app.Window.Size.y);
 	if_fail_fe(textLength);
 	app.GUI.Controls.Text[app.Performance].Text = {app.PerformanceText.Storage, (::llc::u2_t)textLength};
 	app.GUI.Controls.SetUpdated(app.Performance, false);
@@ -485,7 +488,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = "DRAG / FOLD VIEWPORTS | TAB / SHIFT+TAB FOCUS | ENTER / SPACE ACTIVATE | ARROWS / PAGE / HOME / END SLIDE | ESC CLOSES / EXITS";
+	app.GUI.Controls.Text[app.Help].Text = "DRAG / FOLD VIEWPORTS | TAB FOCUS | ENTER / SPACE ACTIVATE | F3 HUD | F4 RENDERER | ESC CLOSES / EXITS";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
@@ -496,17 +499,18 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if_fail_fe(::sampleGUIComponentsControlsSetup(app));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
-	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
+	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {560, 36}};
 	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
+	app.GUI.Controls.Text[app.Performance].Text = "CPU | -- FPS | -- ms avg | F3";
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
 ::llc::err_t sampleGUIComponentsUpdate(SSampleGUIComponents & app, bool systemRequestedExit, double secondsLastFrame) {
+	(void)secondsLastFrame;
 	if(systemRequestedExit || app.Window.Closed)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	cnst bool editingAtFrameStart = app.InputBox.Editing;
@@ -529,7 +533,6 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.ControlExit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::sampleGUIComponentsPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIComponentsDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
@@ -562,8 +565,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
-::llc::err_t sampleGUIComponentsDraw(SSampleGUIComponents & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
-	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+sttc ::llc::err_t sampleGUIComponentsImagesUpdate(SSampleGUIComponents & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex) {
 	for(::llc::u0_t iViewport = 0; iViewport < SAMPLE_GUI_COMPONENTS_COUNT; ++iViewport) {
 		cnst ::llc::cid_t idClient = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 		cnst ::llc::n2u2_t imageSize = app.GUI.Controls.Placement[idClient].Area.Size.u2();
@@ -573,6 +575,12 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 		app.GUI.Controls.Images[idClient].Image = clientImages[iViewport].View;
 		app.GUI.Controls.Images[idClient].ImageAlign = ::llc::ALIGN_CENTER;
 	}
+	rtrn 0;
+}
+
+::llc::err_t sampleGUIComponentsDraw(SSampleGUIComponents & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_COMPONENTS_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
+	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+	if_fail_fe(::sampleGUIComponentsImagesUpdate(app, clientImages, frameIndex));
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
 
@@ -583,6 +591,13 @@ stct SApplication {
 	SSampleGUIComponents	Sample;
 	::llc::img8bgra	ClientImages[SAMPLE_GUI_COMPONENTS_COUNT] = {};
 	::llc::u2_t		FrameIndex = 0;
+	::llc::mutex		Lock;
+#if defined(LLC_WINDOWS)
+	::llc::pobj<::llc::SD3DApplication> D3D;
+	bool				UseD3D = false;
+	bool				COMInitialized = false;
+#endif
+	bool				ShowPerformance = true;
 
 	SApplication(::llc::SRuntimeValues & runtimeValues)
 		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
@@ -590,36 +605,148 @@ stct SApplication {
 	}
 };
 
+#if defined(LLC_WINDOWS)
+sttc ::llc::err_t sampleGUIComponentsRendererSet(SApplication & app, bool useD3D) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(useD3D) {
+		if(!app.D3D) {
+			cnst HRESULT result = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+			if(result != RPC_E_CHANGED_MODE) {
+				if_true_fef(FAILED(result), "CoInitializeEx failed: 0x%08X.", (::llc::u2_t)result);
+				app.COMInitialized = true;
+			}
+			if_fail_fe(app.D3D->Initialize(window.PlatformDetail.WindowHandle, app.Sample.Engine.Scene->Graphics));
+			if_fail_fe(app.D3D->CreateDeviceResources(*app.Sample.Engine.Scene->Graphics));
+		}
+		if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		window.BackBuffer = {};
+	}
+	else
+		if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	app.UseD3D = useD3D;
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, useD3D
+		? LLC_SAMPLE_GUI_COMPONENTS_TITLE " - D3D11 | F3: HUD | F4: CPU"
+		: LLC_SAMPLE_GUI_COMPONENTS_TITLE " - CPU | F3: HUD | F4: D3D11");
+	rtrn 0;
+}
+#endif
+
 ::llc::err_t setup(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 720};
 	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
-	rtrn ::sampleGUIComponentsSetup(app.Sample);
+	if_fail_fe(::sampleGUIComponentsSetup(app.Sample));
+#if defined(LLC_WINDOWS)
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_GUI_COMPONENTS_TITLE " - CPU | F3: HUD | F4: D3D11");
+#endif
+	rtrn 0;
 }
 
 ::llc::err_t cleanup(SApplication & app) {
+	::llc::lock_guard locked(app.Lock);
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->DeviceResources && app.D3D->DeviceResources->m_swapChain)
+			if_fail_e(app.D3D->Shutdown());
+		app.D3D = {};
+	}
+	if(app.COMInitialized) {
+		::CoUninitialize();
+		app.COMInitialized = false;
+	}
+#endif
 	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
 }
 
+sttc ::llc::err_t sampleGUIComponentsDrawFrame(SApplication & app);
+
 ::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	::llc::lock_guard locked(app.Lock);
 	if(systemRequestedExit)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
 	if(result)
 		rtrn result;
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F3)) {
+		app.ShowPerformance = !app.ShowPerformance;
+		app.Sample.GUI.Controls.SetHidden(app.Sample.Performance, !app.ShowPerformance);
+	}
+#if defined(LLC_WINDOWS)
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F4))
+		if_fail_fe(::sampleGUIComponentsRendererSet(app, !app.UseD3D));
+#endif
 	cnst ::llc::err_t resultSample = ::sampleGUIComponentsUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	cnst ::llc::vcst_t backend =
+#if defined(LLC_WINDOWS)
+		app.UseD3D ? ::llc::vcst_t{"D3D11"} : ::llc::vcst_t{"CPU"};
+#else
+		"CPU";
+#endif
+	if_fail_fe(::sampleGUIComponentsPerformanceUpdate(app.Sample, backend, app.Framework.FrameInfo.FrameMeter));
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D)
+		rtrn ::sampleGUIComponentsDrawFrame(app);
+#endif
 	::llc::sleep(1);
 	rtrn resultSample;
 }
 
-::llc::err_t draw(SApplication & app) {
+sttc ::llc::err_t sampleGUIComponentsDrawFrame(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
-	if(window.NoDraw)
+	if(window.NoDraw || 0 == window.Size.x || 0 == window.Size.y)
 		rtrn 0;
+#if defined(LLC_WINDOWS)
+	if(app.UseD3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		if_fail_fe(::sampleGUIComponentsImagesUpdate(app.Sample, app.ClientImages, app.FrameIndex++));
+		if_fail_fe(::llc::guiUpdateMetrics(app.Sample.GUI, window.Size, app.Sample.GUI.LastSize != window.Size || app.Sample.GUI.LastZoom != app.Sample.GUI.Zoom));
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst ::llc::rgbaf clear = ::llc::SColorBGRA{16, 14, 12};
+		context->ClearRenderTargetView(target, &clear.r);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff, app.Sample.GUI, window.Size));
+		rtrn resources.Present();
+	}
+#endif
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
-	rtrn ::sampleGUIComponentsDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View);
+	if_fail_fe(::sampleGUIComponentsDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View));
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		memcpy(app.D3D->GUIStuff.RenderTarget.begin(), window.BackBuffer->Color.begin(), window.BackBuffer->Color.byte_count());
+		for(auto & pixel : app.D3D->GUIStuff.RenderTarget.Texels) pixel.a = 255;
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff));
+		rtrn resources.Present();
+	}
+#endif
+	window.Repaint = true;
+	rtrn 0;
+}
+
+::llc::err_t draw(SApplication & app) {
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D) {
+		::llc::sleep(1);
+		rtrn 0;
+	}
+#endif
+	::llc::lock_guard locked(app.Lock);
+	rtrn ::sampleGUIComponentsDrawFrame(app);
 }
 
 LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_COMPONENTS_TITLE)

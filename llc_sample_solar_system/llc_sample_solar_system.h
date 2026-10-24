@@ -20,6 +20,8 @@ stct SSampleSolarSystem {
 	::llc::f3_t						Time			= 0;
 	bool							CameraOrbit		= true;
 	bool							Paused			= false;
+	::llc::cid_t				Performance		= ::llc::CID_INVALID;
+	::llc::astchar<96>			PerformanceText	= {};
 
 	SSampleSolarSystem(::llc::SWindow & window, ::llc::SGUI & gui) : Window(window), GUI(gui) {}
 };

@@ -120,7 +120,7 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	::llc::cid_t help;
 	if_fail_fe(help = ::llc::controlCreate(gui));
 	gui.Controls.Placement[help].Area = {{20, 18}, {1500, 36}};
-	if_fail_fe(::llc::controlTextSet(gui, help, "DRAG TITLE | RESIZE EDGES | DOUBLE-CLICK MAXIMIZES | SHIFT+DOUBLE-CLICK FOLDS | R: RESET | C/D: RENDERER | ESC: EXIT"));
+	if_fail_fe(::llc::controlTextSet(gui, help, "DRAG TITLE | RESIZE EDGES | DOUBLE-CLICK MAXIMIZES | R: RESET | F3: HUD | F4 OR C/D: RENDERER | ESC: EXIT"));
 	if_fail_fe(app.Scale = ::llc::controlCreate(gui));
 	gui.Controls.Placement[app.Scale].Area = {{20, 16}, {280, 32}};
 	gui.Controls.Placement[app.Scale].Align = ::llc::ALIGN_BOTTOM_LEFT;
@@ -129,13 +129,13 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	gui.Controls.Placement[app.ScaleThumb].Area.Size = {60, 28};
 	gui.Controls.Constraints[app.ScaleThumb].AttachSizeToControl.y = app.ScaleThumb;
 	if_fail_fe(app.Performance = ::llc::controlCreate(gui));
-	gui.Controls.Placement[app.Performance].Area = {{20, 16}, {420, 32}};
+	gui.Controls.Placement[app.Performance].Area = {{20, 16}, {560, 32}};
 	gui.Controls.Placement[app.Performance].Align = ::llc::ALIGN_BOTTOM_RIGHT;
 	if_fail_fe(::sampleGeometryLayout(app));
 	rtrn ::sampleGeometryScaleSet(app, 1);
 }
 
-sttc ::llc::err_t sampleGeometryGUIUpdate(SSampleGeometry & app, double secondsLastFrame) {
+sttc ::llc::err_t sampleGeometryGUIUpdate(SSampleGeometry & app, ::llc::vcst_t backend, const ::llc::SFrameMeter & frameMeter) {
 	::llc::SGUI & gui = app.GUI;
 	cnst ::llc::SInput & input = *app.Window.Input;
 	if(input.KeyDown('R')) {
@@ -242,11 +242,9 @@ sttc ::llc::err_t sampleGeometryGUIUpdate(SSampleGeometry & app, double secondsL
 		}
 	}
 	if_fail_fe(::sampleGeometryMaximizedSize(app));
-	if(secondsLastFrame > 0) {
-		cnst ::llc::err_t length = ::llc::sprintf_s(app.PerformanceText.Storage, "FPS %.1f | FRAME %.2f ms", 1 / secondsLastFrame, secondsLastFrame * 1000);
-		if_fail_fe(length);
-		if_fail_fe(::llc::controlTextSet(gui, app.Performance, {app.PerformanceText.Storage, (::llc::u2_t)length}));
-	}
+	cnst ::llc::err_t length = ::llc::sprintf_s(app.PerformanceText.Storage, "%.*s | %u FPS | %.2f ms avg | %ux%u | F3", LLC_VIEW_ARGS(backend), frameMeter.FramesPerSecond, frameMeter.AverageFrameTime * 1000, app.Window.Size.x, app.Window.Size.y);
+	if_fail_fe(length);
+	if_fail_fe(::llc::controlTextSet(gui, app.Performance, {app.PerformanceText.Storage, (::llc::u2_t)length}));
 	rtrn ::llc::guiUpdateMetrics(gui, app.Window.Size, gui.LastSize != app.Window.Size || gui.LastZoom != gui.Zoom);
 }
 ::llc::err_t sampleGeometrySetup(SSampleGeometry & app) {
@@ -328,6 +326,7 @@ stct SApplication {
 	bool				UseD3D			= false;
 	bool				COMInitialized	= false;
 #endif
+	bool				ShowPerformance	= true;
 
 	SApplication(::llc::SRuntimeValues & runtimeValues)
 		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
@@ -357,8 +356,8 @@ sttc ::llc::err_t sampleGeometryRendererSet(SApplication & app, bool useD3D) {
 	}
 	app.UseD3D = useD3D;
 	::SetWindowTextA(window.PlatformDetail.WindowHandle, useD3D
-		? LLC_SAMPLE_GEOMETRY_TITLE " - D3D | C: software | Esc: exit"
-		: LLC_SAMPLE_GEOMETRY_TITLE " - software | D: D3D | Esc: exit");
+		? LLC_SAMPLE_GEOMETRY_TITLE " - D3D11 | F3: HUD | F4/C: software | Esc: exit"
+		: LLC_SAMPLE_GEOMETRY_TITLE " - CPU | F3: HUD | F4/D: D3D11 | Esc: exit");
 	rtrn 0;
 }
 #endif
@@ -372,7 +371,7 @@ sttc ::llc::err_t sampleGeometryRendererSet(SApplication & app, bool useD3D) {
 	if_fail_fe(::sampleGeometryDraw(app.Sample, *window.BackBuffer));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
 #if defined(LLC_WINDOWS)
-	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_GEOMETRY_TITLE " - software | D: D3D | Esc: exit");
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_GEOMETRY_TITLE " - CPU | F3: HUD | F4/D: D3D11 | Esc: exit");
 #endif
 	rtrn 0;
 }
@@ -406,13 +405,25 @@ sttc ::llc::err_t sampleGeometryDrawFrame(SApplication & app);
 	if(window.Closed || window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(!window.NoDraw && window.Size.x && window.Size.y) {
+		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F3)) {
+			app.ShowPerformance = !app.ShowPerformance;
+			app.Sample.GUI.Controls.SetHidden(app.Sample.Performance, !app.ShowPerformance);
+		}
 #if defined(LLC_WINDOWS)
+		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F4))
+			if_fail_fe(::sampleGeometryRendererSet(app, !app.UseD3D));
 		if(window.Input->KeyDown('C') && app.UseD3D)
 			if_fail_fe(::sampleGeometryRendererSet(app, false));
 		if(window.Input->KeyDown('D') && !app.UseD3D)
 			if_fail_fe(::sampleGeometryRendererSet(app, true));
 #endif
-		if_fail_fe(::sampleGeometryGUIUpdate(app.Sample, app.Framework.FrameInfo.Seconds.LastFrame));
+		cnst ::llc::vcst_t backend =
+#if defined(LLC_WINDOWS)
+			app.UseD3D ? ::llc::vcst_t{"D3D11"} : ::llc::vcst_t{"CPU"};
+#else
+			"CPU";
+#endif
+		if_fail_fe(::sampleGeometryGUIUpdate(app.Sample, backend, app.Framework.FrameInfo.FrameMeter));
 		if_fail_fe(app.Sample.Engine.Update(app.Framework.FrameInfo.Seconds.LastFrame));
 	}
 #if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
@@ -459,12 +470,9 @@ sttc ::llc::err_t sampleGeometryDrawD3D(SApplication & app) {
 		if_fail_fe(sample.Engine.SetHidden(sample.Entities[i], true));
 		if_fail_fe(result);
 	}
-	// GUI client colors erase lower controls with transparent pixels; its hierarchy owns overlap.
-	if_fail_fe(d3d.GUIStuff.RenderTarget.View.fill(SAMPLE_CLEAR_COLOR));
-	if_fail_fe(::llc::guiDraw(gui, d3d.GUIStuff.RenderTarget.View));
 	cnst D3D11_VIEWPORT screen = resources.GetScreenViewport();
 	context->RSSetViewports(1, &screen);
-	rtrn ::llc::d3dGUIDraw(resources, d3d.GUIStuff);
+	rtrn ::llc::d3dGUIDraw(resources, d3d.GUIStuff, gui, sample.Window.Size);
 }
 #endif
 sttc ::llc::err_t sampleGeometryDrawFrame(SApplication & app) {

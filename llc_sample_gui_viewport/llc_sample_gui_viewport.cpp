@@ -1,4 +1,9 @@
 #include "llc_sample_gui_viewport.h"
+#include "llc_mutex.h"
+
+#if defined(LLC_WINDOWS)
+#	include "llc_engine_d3d_app.h"
+#endif
 
 #include "llc_apod_serialize.h"
 #include "llc_app_impl.h"
@@ -189,10 +194,8 @@ sttc ::llc::err_t sampleGUIViewportFold(SSampleGUIViewport & app, ::llc::u0_t iV
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl);
 }
 
-sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, double secondsLastFrame) {
-	if(secondsLastFrame <= 0)
-		rtrn 0;
-	cnst ::llc::err_t textLength = ::llc::sprintf_s(app.PerformanceText.Storage, "FPS %.2f    Frame %.2f ms", 1.0 / secondsLastFrame, secondsLastFrame * 1000.0);
+sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, ::llc::vcst_t backend, const ::llc::SFrameMeter & frameMeter) {
+	cnst ::llc::err_t textLength = ::llc::sprintf_s(app.PerformanceText.Storage, "%.*s | %u FPS | %.2f ms avg | %ux%u | F3", LLC_VIEW_ARGS(backend), frameMeter.FramesPerSecond, frameMeter.AverageFrameTime * 1000, app.Window.Size.x, app.Window.Size.y);
 	if_fail_fe(textLength);
 	app.GUI.Controls.Text[app.Performance].Text = {app.PerformanceText.Storage, (::llc::u2_t)textLength};
 	app.GUI.Controls.SetUpdated(app.Performance, false);
@@ -224,11 +227,11 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	if_fail_fe(::sampleGUIViewportActivate(app, 2));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
-	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
+	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {560, 36}};
 	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
+	app.GUI.Controls.Text[app.Performance].Text = "CPU | -- FPS | -- ms avg | F3";
 	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	app.Exit = ::llc::controlCreate(app.GUI);
@@ -244,11 +247,11 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 }
 
 ::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
+	(void)secondsLastFrame;
 	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
@@ -281,8 +284,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
-::llc::err_t sampleGUIViewportDraw(SSampleGUIViewport & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
-	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+sttc ::llc::err_t sampleGUIViewportImagesUpdate(SSampleGUIViewport & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::u2_t frameIndex) {
 	for(::llc::u0_t iViewport = 0; iViewport < SAMPLE_GUI_VIEWPORT_COUNT; ++iViewport) {
 		cnst ::llc::cid_t idClient = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 		cnst ::llc::n2u2_t imageSize = app.GUI.Controls.Placement[idClient].Area.Size.u2();
@@ -292,6 +294,12 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 		app.GUI.Controls.Images[idClient].Image = clientImages[iViewport].View;
 		app.GUI.Controls.Images[idClient].ImageAlign = ::llc::ALIGN_CENTER;
 	}
+	rtrn 0;
+}
+
+::llc::err_t sampleGUIViewportDraw(SSampleGUIViewport & app, ::llc::img8bgra (&clientImages)[SAMPLE_GUI_VIEWPORT_COUNT], ::llc::u2_t frameIndex, ::llc::g8bgra target) {
+	if_fail_fe(target.fill(::llc::SColorBGRA{16, 14, 12}));
+	if_fail_fe(::sampleGUIViewportImagesUpdate(app, clientImages, frameIndex));
 	rtrn ::llc::guiDraw(app.GUI, target);
 }
 
@@ -302,6 +310,13 @@ stct SApplication {
 	SSampleGUIViewport	Sample;
 	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	::llc::u2_t		FrameIndex = 0;
+	::llc::mutex		Lock;
+#if defined(LLC_WINDOWS)
+	::llc::pobj<::llc::SD3DApplication> D3D;
+	bool				UseD3D = false;
+	bool				COMInitialized = false;
+#endif
+	bool				ShowPerformance = true;
 
 	SApplication(::llc::SRuntimeValues & runtimeValues)
 		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
@@ -309,36 +324,148 @@ stct SApplication {
 	}
 };
 
+#if defined(LLC_WINDOWS)
+sttc ::llc::err_t sampleGUIViewportRendererSet(SApplication & app, bool useD3D) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(useD3D) {
+		if(!app.D3D) {
+			cnst HRESULT result = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+			if(result != RPC_E_CHANGED_MODE) {
+				if_true_fef(FAILED(result), "CoInitializeEx failed: 0x%08X.", (::llc::u2_t)result);
+				app.COMInitialized = true;
+			}
+			if_fail_fe(app.D3D->Initialize(window.PlatformDetail.WindowHandle, app.Sample.Engine.Scene->Graphics));
+			if_fail_fe(app.D3D->CreateDeviceResources(*app.Sample.Engine.Scene->Graphics));
+		}
+		if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		window.BackBuffer = {};
+	}
+	else
+		if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	app.UseD3D = useD3D;
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, useD3D
+		? LLC_SAMPLE_GUI_VIEWPORT_TITLE " - D3D11 | F3: HUD | F4: CPU"
+		: LLC_SAMPLE_GUI_VIEWPORT_TITLE " - CPU | F3: HUD | F4: D3D11");
+	rtrn 0;
+}
+#endif
+
 ::llc::err_t setup(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 720};
 	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
-	rtrn ::sampleGUIViewportSetup(app.Sample);
+	if_fail_fe(::sampleGUIViewportSetup(app.Sample));
+#if defined(LLC_WINDOWS)
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_GUI_VIEWPORT_TITLE " - CPU | F3: HUD | F4: D3D11");
+#endif
+	rtrn 0;
 }
 
 ::llc::err_t cleanup(SApplication & app) {
+	::llc::lock_guard locked(app.Lock);
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->DeviceResources && app.D3D->DeviceResources->m_swapChain)
+			if_fail_e(app.D3D->Shutdown());
+		app.D3D = {};
+	}
+	if(app.COMInitialized) {
+		::CoUninitialize();
+		app.COMInitialized = false;
+	}
+#endif
 	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
 }
 
+sttc ::llc::err_t sampleGUIViewportDrawFrame(SApplication & app);
+
 ::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	::llc::lock_guard locked(app.Lock);
 	if(systemRequestedExit)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
 	if(result)
 		rtrn result;
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F3)) {
+		app.ShowPerformance = !app.ShowPerformance;
+		app.Sample.GUI.Controls.SetHidden(app.Sample.Performance, !app.ShowPerformance);
+	}
+#if defined(LLC_WINDOWS)
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F4))
+		if_fail_fe(::sampleGUIViewportRendererSet(app, !app.UseD3D));
+#endif
 	cnst ::llc::err_t resultSample = ::sampleGUIViewportUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	cnst ::llc::vcst_t backend =
+#if defined(LLC_WINDOWS)
+		app.UseD3D ? ::llc::vcst_t{"D3D11"} : ::llc::vcst_t{"CPU"};
+#else
+		"CPU";
+#endif
+	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app.Sample, backend, app.Framework.FrameInfo.FrameMeter));
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D)
+		rtrn ::sampleGUIViewportDrawFrame(app);
+#endif
 	::llc::sleep(1);
 	rtrn resultSample;
 }
 
-::llc::err_t draw(SApplication & app) {
+sttc ::llc::err_t sampleGUIViewportDrawFrame(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
-	if(window.NoDraw)
+	if(window.NoDraw || 0 == window.Size.x || 0 == window.Size.y)
 		rtrn 0;
+#if defined(LLC_WINDOWS)
+	if(app.UseD3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		if_fail_fe(::sampleGUIViewportImagesUpdate(app.Sample, app.ClientImages, app.FrameIndex++));
+		if_fail_fe(::llc::guiUpdateMetrics(app.Sample.GUI, window.Size, app.Sample.GUI.LastSize != window.Size || app.Sample.GUI.LastZoom != app.Sample.GUI.Zoom));
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst ::llc::rgbaf clear = ::llc::SColorBGRA{16, 14, 12};
+		context->ClearRenderTargetView(target, &clear.r);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff, app.Sample.GUI, window.Size));
+		rtrn resources.Present();
+	}
+#endif
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
-	rtrn ::sampleGUIViewportDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View);
+	if_fail_fe(::sampleGUIViewportDraw(app.Sample, app.ClientImages, app.FrameIndex++, window.BackBuffer->Color.View));
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		memcpy(app.D3D->GUIStuff.RenderTarget.begin(), window.BackBuffer->Color.begin(), window.BackBuffer->Color.byte_count());
+		for(auto & pixel : app.D3D->GUIStuff.RenderTarget.Texels) pixel.a = 255;
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff));
+		rtrn resources.Present();
+	}
+#endif
+	window.Repaint = true;
+	rtrn 0;
+}
+
+::llc::err_t draw(SApplication & app) {
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D) {
+		::llc::sleep(1);
+		rtrn 0;
+	}
+#endif
+	::llc::lock_guard locked(app.Lock);
+	rtrn ::sampleGUIViewportDrawFrame(app);
 }
 
 LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_VIEWPORT_TITLE)

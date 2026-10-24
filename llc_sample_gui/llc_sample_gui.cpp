@@ -2,9 +2,14 @@
 #include "llc_app_impl.h"
 #include "llc_cstring.h"
 #include "llc_framework.h"
+#include "llc_mutex.h"
 #include "llc_runtime.h"
 #include "llc_string.h"
 #include "llc_system_key.h"
+
+#if defined(LLC_WINDOWS)
+#	include "llc_engine_d3d_app.h"
+#endif
 
 stacxpr ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
 stacxpr ::llc::u0_t PALETTE_SHADE_COUNT = 16;
@@ -294,6 +299,7 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlLive, "LIVE", {{24, 138}, {884, 64}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlInspector, "GUI | HOVER:NONE", {{24, 68}, {884, 56}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlHelp, "TAB FOCUS | ENTER/SPACE ACTIVATE | ESC/EXIT CLOSE | PALETTES SHARE ONE 16-SHADE TONE", {{136, 18}, {772, 36}}, 1, ::llc::ALIGN_BOTTOM_LEFT));
+	if_fail_fe(::sampleGUIControlCreate(app, app.ControlPerformance, "CPU | -- FPS | -- ms avg | F3", {{0, 0}, {560, 18}}, 1, ::llc::ALIGN_CENTER_TOP));
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlExit, "EXIT", {{24, 18}, {96, 36}}, 2, ::llc::ALIGN_BOTTOM_LEFT));
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentTitle, "CONTROL ALIGNMENT / OPPOSITE TEXT ALIGNMENT", {{24, 18}, {332, 42}}, 1, ::llc::ALIGN_TOP_RIGHT));
 	if_fail_fe(::sampleGUIControlCreate(app, app.ControlAlignmentRoot, "", {{24, 76}, {332, 446}}, -1, ::llc::ALIGN_TOP_RIGHT));
@@ -314,6 +320,12 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 	if_fail_fe(::sampleGUILiveTextUpdate(app));
 	if_fail_fe(::sampleGUIInspectorTextUpdate(app, ::llc::CID_INVALID));
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
+}
+
+sttc ::llc::err_t sampleGUIPerformanceUpdate(SSampleGUI & app, ::llc::vcst_t backend, const ::llc::SFrameMeter & frameMeter) {
+	cnst ::llc::err_t length = ::llc::sprintf_s(app.TextPerformance.Storage, "%.*s | %u FPS | %.2f ms avg | %ux%u | F3", LLC_VIEW_ARGS(backend), frameMeter.FramesPerSecond, frameMeter.AverageFrameTime * 1000, app.Window.Size.x, app.Window.Size.y);
+	if_fail_fe(length);
+	rtrn ::llc::controlTextSet(app.GUI, app.ControlPerformance, {app.TextPerformance.Storage, (::llc::u2_t)length});
 }
 
 ::llc::err_t sampleGUIUpdate(SSampleGUI & app, bool systemRequestedExit) {
@@ -347,6 +359,13 @@ sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t id
 stct SApplication {
 	::llc::SFramework	Framework;
 	SSampleGUI			Sample;
+	::llc::mutex		Lock;
+#if defined(LLC_WINDOWS)
+	::llc::pobj<::llc::SD3DApplication> D3D;
+	bool				UseD3D = false;
+	bool				COMInitialized = false;
+#endif
+	bool				ShowPerformance = true;
 
 	SApplication(::llc::SRuntimeValues & runtimeValues)
 		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
@@ -354,36 +373,147 @@ stct SApplication {
 	}
 };
 
+#if defined(LLC_WINDOWS)
+sttc ::llc::err_t sampleGUIRendererSet(SApplication & app, bool useD3D) {
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(useD3D) {
+		if(!app.D3D) {
+			cnst HRESULT result = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+			if(result != RPC_E_CHANGED_MODE) {
+				if_true_fef(FAILED(result), "CoInitializeEx failed: 0x%08X.", (::llc::u2_t)result);
+				app.COMInitialized = true;
+			}
+			if_fail_fe(app.D3D->Initialize(window.PlatformDetail.WindowHandle, app.Sample.Engine.Scene->Graphics));
+			if_fail_fe(app.D3D->CreateDeviceResources(*app.Sample.Engine.Scene->Graphics));
+		}
+		if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		window.BackBuffer = {};
+	}
+	else
+		if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
+	app.UseD3D = useD3D;
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, useD3D
+		? LLC_SAMPLE_GUI_TITLE " - D3D11 | F3: HUD | F4: CPU"
+		: LLC_SAMPLE_GUI_TITLE " - CPU | F3: HUD | F4: D3D11");
+	rtrn 0;
+}
+#endif
+
 ::llc::err_t setup(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 540};
 	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
-	rtrn ::sampleGUISetup(app.Sample);
+	if_fail_fe(::sampleGUISetup(app.Sample));
+#if defined(LLC_WINDOWS)
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_GUI_TITLE " - CPU | F3: HUD | F4: D3D11");
+#endif
+	rtrn 0;
 }
 
 ::llc::err_t cleanup(SApplication & app) {
+	::llc::lock_guard locked(app.Lock);
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->DeviceResources && app.D3D->DeviceResources->m_swapChain)
+			if_fail_e(app.D3D->Shutdown());
+		app.D3D = {};
+	}
+	if(app.COMInitialized) {
+		::CoUninitialize();
+		app.COMInitialized = false;
+	}
+#endif
 	rtrn ::llc::mainWindowDestroy(app.Framework.RootWindow);
 }
 
+sttc ::llc::err_t sampleGUIDrawFrame(SApplication & app);
+
 ::llc::err_t update(SApplication & app, bool systemRequestedExit) {
+	::llc::lock_guard locked(app.Lock);
 	if(systemRequestedExit)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	cnst ::llc::err_t result = ::llc::updateFramework(app.Framework);
 	if(result)
 		rtrn result;
+	::llc::SWindow & window = app.Framework.RootWindow;
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F3)) {
+		app.ShowPerformance = !app.ShowPerformance;
+		app.Sample.GUI.Controls.SetHidden(app.Sample.ControlPerformance, !app.ShowPerformance);
+	}
+#if defined(LLC_WINDOWS)
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F4))
+		if_fail_fe(::sampleGUIRendererSet(app, !app.UseD3D));
+#endif
 	cnst ::llc::err_t resultSample = ::sampleGUIUpdate(app.Sample, false);
+	cnst ::llc::vcst_t backend =
+#if defined(LLC_WINDOWS)
+		app.UseD3D ? ::llc::vcst_t{"D3D11"} : ::llc::vcst_t{"CPU"};
+#else
+		"CPU";
+#endif
+	if_fail_fe(::sampleGUIPerformanceUpdate(app.Sample, backend, app.Framework.FrameInfo.FrameMeter));
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D)
+		rtrn ::sampleGUIDrawFrame(app);
+#endif
 	::llc::sleep(1);
 	rtrn resultSample;
 }
 
-::llc::err_t draw(SApplication & app) {
+sttc ::llc::err_t sampleGUIDrawFrame(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
-	if(window.NoDraw)
+	if(window.NoDraw || 0 == window.Size.x || 0 == window.Size.y)
 		rtrn 0;
+#if defined(LLC_WINDOWS)
+	if(app.UseD3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		if_fail_fe(::llc::guiUpdateMetrics(app.Sample.GUI, window.Size, app.Sample.GUI.LastSize != window.Size || app.Sample.GUI.LastZoom != app.Sample.GUI.Zoom));
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst ::llc::rgbaf clear = ::llc::SColorBGRA{16, 14, 12};
+		context->ClearRenderTargetView(target, &clear.r);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff, app.Sample.GUI, window.Size));
+		rtrn resources.Present();
+	}
+#endif
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
-	rtrn ::sampleGUIDraw(app.Sample, window.BackBuffer->Color.View);
+	if_fail_fe(::sampleGUIDraw(app.Sample, window.BackBuffer->Color.View));
+#if defined(LLC_WINDOWS)
+	if(app.D3D) {
+		if(app.D3D->GUIStuff.RenderTarget.metrics() != window.Size.u2())
+			if_fail_fe(app.D3D->SetWindowSize(window.Size));
+		memcpy(app.D3D->GUIStuff.RenderTarget.begin(), window.BackBuffer->Color.begin(), window.BackBuffer->Color.byte_count());
+		for(auto & pixel : app.D3D->GUIStuff.RenderTarget.Texels) pixel.a = 255;
+		::DX::D3DDeviceResources & resources = *app.D3D->DeviceResources;
+		ID3D11DeviceContext * context = resources.GetD3DDeviceContext();
+		ID3D11RenderTargetView * target = resources.GetBackBufferRenderTargetView();
+		context->OMSetRenderTargets(1, &target, resources.GetDepthStencilView());
+		cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
+		context->RSSetViewports(1, &viewport);
+		if_fail_fe(::llc::d3dGUIDraw(resources, app.D3D->GUIStuff));
+		rtrn resources.Present();
+	}
+#endif
+	window.Repaint = true;
+	rtrn 0;
+}
+
+::llc::err_t draw(SApplication & app) {
+#if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
+	if(app.D3D) {
+		::llc::sleep(1);
+		rtrn 0;
+	}
+#endif
+	::llc::lock_guard locked(app.Lock);
+	rtrn ::sampleGUIDrawFrame(app);
 }
 
 LLC_DEFINE_APPLICATION_ENTRY_POINT(SApplication, LLC_SAMPLE_GUI_TITLE)

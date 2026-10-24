@@ -23,7 +23,19 @@ stacxpr ::llc::bgra SAMPLE_CLEAR_COLOR = {2, 3, 8, 255};
 		app.SelectedBody = iEarth;
 		app.SelectedPlanet = iEarth;
 	}
-	rtrn 0;
+	llc_necs(app.Performance = ::llc::controlCreate(app.GUI));
+	app.GUI.Controls.Placement[app.Performance].Area = {{0, 12}, {560, 30}};
+	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_TOP;
+	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
+	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
+	app.GUI.Controls.Text[app.Performance].Text = "CPU | -- FPS | -- ms avg | F3";
+	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
+}
+
+sttc ::llc::err_t sampleSolarSystemPerformanceUpdate(SSampleSolarSystem & app, ::llc::vcst_t backend, const ::llc::SFrameMeter & frameMeter) {
+	cnst ::llc::err_t length = ::llc::sprintf_s(app.PerformanceText.Storage, "%.*s | %u FPS | %.2f ms avg | %ux%u | F3", LLC_VIEW_ARGS(backend), frameMeter.FramesPerSecond, frameMeter.AverageFrameTime * 1000, app.Window.Size.x, app.Window.Size.y);
+	if_fail_fe(length);
+	rtrn ::llc::controlTextSet(app.GUI, app.Performance, {app.PerformanceText.Storage, (::llc::u2_t)length});
 }
 
 sttc ::llc::err_t selectBody(SSampleSolarSystem & app, ::llc::u2_t iBody) {
@@ -141,6 +153,7 @@ stct SApplication {
 	bool				UseD3D			= false;
 	bool				COMInitialized	= false;
 #endif
+	bool				ShowPerformance	= true;
 
 		SApplication(::llc::SRuntimeValues & runtimeValues)
 		: Framework(runtimeValues, {}), Sample(Framework.RootWindow, *Framework.GUI) {
@@ -170,8 +183,8 @@ sttc ::llc::err_t sampleSolarSystemRendererSet(SApplication & app, bool useD3D) 
 	}
 	app.UseD3D = useD3D;
 	::SetWindowTextA(window.PlatformDetail.WindowHandle, useD3D
-		? LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - D3D | F1: software | Esc: exit"
-		: LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - software | F2: D3D | Esc: exit");
+		? LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - D3D11 | F3: HUD | F4/F1: CPU | Esc: exit"
+		: LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - CPU | F3: HUD | F4/F2: D3D11 | Esc: exit");
 	rtrn 0;
 }
 #endif
@@ -184,7 +197,7 @@ sttc ::llc::err_t sampleSolarSystemRendererSet(SApplication & app, bool useD3D) 
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
 	if_fail_fe(::sampleSolarSystemSetup(app.Sample));
 #if defined(LLC_WINDOWS)
-	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - software | F2: D3D | Esc: exit");
+	::SetWindowTextA(window.PlatformDetail.WindowHandle, LLC_SAMPLE_SOLAR_SYSTEM_TITLE " - CPU | F3: HUD | F4/F2: D3D11 | Esc: exit");
 #endif
 	rtrn 0;
 }
@@ -217,13 +230,26 @@ sttc ::llc::err_t sampleSolarSystemDrawFrame(SApplication & app);
 	::llc::SWindow & window = app.Framework.RootWindow;
 #if defined(LLC_WINDOWS)
 	if(!window.NoDraw && window.Size.x && window.Size.y) {
+		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F4))
+			if_fail_fe(::sampleSolarSystemRendererSet(app, !app.UseD3D));
 		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F1) && app.UseD3D)
 			if_fail_fe(::sampleSolarSystemRendererSet(app, false));
 		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F2) && !app.UseD3D)
 			if_fail_fe(::sampleSolarSystemRendererSet(app, true));
 	}
 #endif
+	if(window.Input->KeyDown(::llc::SYSTEM_KEY_F3)) {
+		app.ShowPerformance = !app.ShowPerformance;
+		app.Sample.GUI.Controls.SetHidden(app.Sample.Performance, !app.ShowPerformance);
+	}
 	cnst ::llc::err_t resultSample = ::sampleSolarSystemUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	cnst ::llc::vcst_t backend =
+#if defined(LLC_WINDOWS)
+		app.UseD3D ? ::llc::vcst_t{"D3D11"} : ::llc::vcst_t{"CPU"};
+#else
+		"CPU";
+#endif
+	if_fail_fe(::sampleSolarSystemPerformanceUpdate(app.Sample, backend, app.Framework.FrameInfo.FrameMeter));
 #if defined(LLC_WINDOWS) && defined(LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME)
 	if(app.D3D)
 		rtrn ::sampleSolarSystemDrawFrame(app);
@@ -249,9 +275,7 @@ sttc ::llc::err_t sampleSolarSystemDrawD3D(SApplication & app) {
 	cnst D3D11_VIEWPORT viewport = resources.GetScreenViewport();
 	context->RSSetViewports(1, &viewport);
 	if_fail_fe(::llc::d3dDrawEngineScene(d3d.Scene, *sample.Engine.Scene, sample.Window.Size.u1(), {}, sample.Camera.Position, sample.Camera.Target, sample.Camera.NearFar, sample.Time));
-	if_fail_fe(d3d.GUIStuff.RenderTarget.View.fill({0, 0, 0, 0}));
-	if_fail_fe(::llc::guiDraw(gui, d3d.GUIStuff.RenderTarget.View));
-	rtrn ::llc::d3dGUIDraw(resources, d3d.GUIStuff);
+	rtrn ::llc::d3dGUIDraw(resources, d3d.GUIStuff, gui, sample.Window.Size);
 }
 #endif
 
