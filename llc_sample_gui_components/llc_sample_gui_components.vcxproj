@@ -156,9 +156,9 @@
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
@@ -179,9 +179,9 @@
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
@@ -203,9 +203,9 @@
       <UndefinePreprocessorDefinitions>LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -227,9 +227,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
@@ -252,9 +252,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <ModuleDefinitionFile>$(SolutionDir)../llc/llc/llc_module_exports.def</ModuleDefinitionFile>
@@ -278,9 +278,9 @@
       <UndefinePreprocessorDefinitions>LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -301,9 +301,9 @@
       <UndefinePreprocessorDefinitions>LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -326,9 +326,9 @@
       <UndefinePreprocessorDefinitions>LLC_AVOID_LOCAL_APPLICATION_MODEL_EXECUTABLE_RUNTIME;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
+      <AdditionalLibraryDirectories>$(OutDir);</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>llc.lib; llc_engine.lib; user32.lib; gdi32.lib; d3d11.lib; dxgi.lib; d2d1.lib; dwrite.lib; windowscodecs.lib; ole32.lib;</AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
