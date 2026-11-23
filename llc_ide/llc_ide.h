@@ -1,6 +1,6 @@
 #include "llc_engine.h"
 #include "llc_window.h"
-#include "llc_gui_viewport.h"
+#include "llc_gui_composite.h"
 #include "llc_path.h"
 #include "llc_ide_common.h"
 #include "llc_gui_inputbox.h"
@@ -34,10 +34,19 @@ stct SSampleGUIViewport {
 	::llc::SJSONFile		JSONDocument	= {};
 	::llc::err_t			JSONParseResult = 0;
 	::llc::aobj<::llc::vcst_t> FileLines		= {};
+	::llc::aobj<::llc::SGUIViewportTextRow> TextRows = {};
 	::llc::acid			FileControls		= {};
 	::llc::u2_t			FileOffset			= 0;
+	::llc::u2_t			FileColumnOffset	= 0;
+	::llc::u2_t			VisibleColumns		= 0;
+	bool					WordWrap		= false;
+	cnst ::llc::sc_t *	TextBytesBegin	= nullptr;
+	::llc::u2_t			TextBytesSize	= 0;
+	::llc::u2_t			TextLineCount	= 0;
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
+	::llc::astatic<::llc::astcid<::llc::GUI_VIEWPORT_ACTION_COUNT>, SAMPLE_GUI_VIEWPORT_COUNT>
+						ViewportActions = {};
 };
 
 ::llc::err_t	sampleGUIViewportSetup				(SSampleGUIViewport & app);

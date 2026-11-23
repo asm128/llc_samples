@@ -11,7 +11,6 @@
 #include "llc_system_key.h"
 
 stxp ::llc::u2_t DESKTOP_VISIBLE_ROWS = 20;
-stxp ::llc::u2_t DESKTOP_LINE_WIDTH = 54;
 stxp ::llc::u2_t DESKTOP_FILE_MAX_BYTES = 1024 * 1024;
 
 stacxpr ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
@@ -141,8 +140,7 @@ sttc void sampleGUIViewportImageUpdate(::llc::img8bgra & image, ::llc::u0_t them
 sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t iViewport, ::llc::vcst_t title, cnst ::llc::rect2s1_t & area) {
 	if_true_fe(iViewport >= app.Viewports.size());
 	::llc::SViewport & viewport = app.Viewports[iViewport];
-	if_fail_fe(::llc::viewportInitialize(app.GUI, viewport));
-	if_fail_fe(::llc::controlSetParent(app.GUI, viewport.IdControl, app.Desktop));
+	if_fail_fe(::llc::guiCreateViewport(app.GUI, viewport, app.Desktop, app.ViewportActions[iViewport], 1 == iViewport, 1 == iViewport, 1 == iViewport));
 	::llc::SControlPlacement & root = app.GUI.Controls.Placement[viewport.IdControl];
 	root.Area = area;
 	root.Border = {3, 3, 3, 3};
@@ -157,6 +155,8 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	::sampleGUIControlThemeApply(app.GUI, viewport.IdControl, iViewport);
 	for(::llc::u0_t iControl = 0; iControl < viewport.IdControls.size(); ++iControl)
 		::sampleGUIControlThemeApply(app.GUI, viewport.IdControls[iControl], iViewport);
+	for(::llc::u0_t iControl = 0; iControl < app.ViewportActions[iViewport].size(); ++iControl)
+		::sampleGUIControlThemeApply(app.GUI, app.ViewportActions[iViewport][iControl], iViewport);
 	viewport.UnfoldedSize = area.Size;
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl);
 }
@@ -209,26 +209,30 @@ sttc ::llc::err_t desktopFolderRowsRefresh(SSampleGUIViewport & app) {
 
 sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 	cnst bool editorText = app.OpenFile.size() && app.FileBytes.find('\0') < 0;
-	cnst ::llc::u2_t lineCount = editorText ? app.Editor.FileLines.size() : app.FileLines.size();
 	for(::llc::u2_t i = 0; i < app.FileControls.size(); ++i) {
 		cnst ::llc::cid_t id = app.FileControls[i];
 		cnst ::llc::u2_t line = app.FileOffset + i;
-		cnst bool visible = line < lineCount || (0 == i && 0 == lineCount);
+		cnst bool visible = line < app.TextRows.size() || (0 == i && 0 == app.TextRows.size());
 		app.GUI.Controls.SetHidden(id, !visible);
 		if(visible) {
-			::llc::vcst_t text = lineCount ? editorText ? app.Editor.FileLines[line] : app.FileLines[line] : ::llc::vcst_t{"Select a file"};
-			if_fail_fe(text.slice(text, 0, ::llc::min(text.size(), DESKTOP_LINE_WIDTH)));
+			::llc::vcst_t text = app.TextRows.size() ? app.TextRows[line].Text : ::llc::vcst_t{"Select a file"};
+			if(!app.WordWrap && app.FileColumnOffset < text.size())
+				if_fail_fe(text.slice(text, app.FileColumnOffset));
+			if(!app.WordWrap && app.FileColumnOffset >= text.size())
+				text = {};
+			if_fail_fe(text.slice(text, 0, ::llc::min(text.size(), ::llc::guiViewportTextColumns(app.GUI, id))));
 			app.GUI.Controls.Text[id].Text = text;
 		}
-		::llc::u1_t selectedMin = 0, selectedMax = 0;
-		if(editorText && visible && line < app.Editor.FileLines.size()) {
-			cnst ::llc::u2_t lineBegin = ::fileViewerLineOffset(app.Editor, line);
+		::llc::u2_t selectedMin = 0, selectedMax = 0;
+		if(editorText && visible && line < app.TextRows.size()) {
+			cnst ::llc::SGUIViewportTextRow & row = app.TextRows[line];
+			cnst ::llc::u2_t lineBegin = ::fileViewerLineOffset(app.Editor, row.SourceLine) + row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset);
 			cnst ::llc::u2_t lineEnd = lineBegin + app.GUI.Controls.Text[id].Text.size();
 			for(::llc::u2_t iSelection = 0; iSelection < app.Editor.TextSelections.size(); ++iSelection) {
 				cnst ::llc::rangeu2_t selection = app.Editor.TextSelections[iSelection];
 				if(selection.Count && selection.Offset < lineEnd && selection.Offset + selection.Count > lineBegin) {
-					cnst ::llc::u1_t begin = (::llc::u1_t)(::llc::max(selection.Offset, lineBegin) - lineBegin);
-					cnst ::llc::u1_t end = (::llc::u1_t)(::llc::min(selection.Offset + selection.Count, lineEnd) - lineBegin);
+					cnst ::llc::u2_t begin = (::llc::u2_t)(::llc::max(selection.Offset, lineBegin) - lineBegin);
+					cnst ::llc::u2_t end = (::llc::u2_t)(::llc::min(selection.Offset + selection.Count, lineEnd) - lineBegin);
 					selectedMin = selectedMax ? ::llc::min(selectedMin, begin) : begin;
 					selectedMax = ::llc::max(selectedMax, end);
 				}
@@ -239,15 +243,34 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter)
 			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, iCharacter >= selectedMin && iCharacter < selectedMax);
 	}
-	cnst bool cursorVisible = editorText && app.Editor.Cursor.y >= app.FileOffset && app.Editor.Cursor.y < app.FileOffset + app.FileControls.size();
-	app.GUI.Controls.SetHidden(app.Editor.IdCursor, false == cursorVisible);
-	if(cursorVisible) {
-		cnst ::llc::cid_t idLine = app.FileControls[app.Editor.Cursor.y - app.FileOffset];
-		cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[2]->CharSize.x);
-		app.GUI.Controls.Placement[app.Editor.IdCursor].Area.Offset = app.GUI.Controls.Placement[idLine].Area.Offset + ::llc::n2s1_t{(::llc::s1_t)(app.Editor.Cursor.x * characterWidth), 0};
-		if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, app.Editor.IdCursor));
-	}
+	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
+	if(editorText)
+		for(::llc::u2_t i = 0; i < app.FileControls.size() && app.FileOffset + i < app.TextRows.size(); ++i) {
+			cnst ::llc::SGUIViewportTextRow & row = app.TextRows[app.FileOffset + i];
+			cnst ::llc::u2_t firstColumn = row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset);
+			if(row.SourceLine != app.Editor.Cursor.y || app.Editor.Cursor.x < firstColumn || app.Editor.Cursor.x > firstColumn + app.GUI.Controls.Text[app.FileControls[i]].Text.size())
+				continue;
+			cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[2]->CharSize.x);
+			app.GUI.Controls.Placement[app.Editor.IdCursor].Area.Offset = app.GUI.Controls.Placement[app.FileControls[i]].Area.Offset + ::llc::n2s1_t{(::llc::s1_t)((app.Editor.Cursor.x - firstColumn) * characterWidth), 0};
+			app.GUI.Controls.SetHidden(app.Editor.IdCursor, false);
+			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, app.Editor.IdCursor));
+			break;
+		}
 	rtrn 0;
+}
+
+sttc ::llc::err_t desktopTextRowsRebuild(SSampleGUIViewport & app) {
+	app.VisibleColumns = ::llc::guiViewportTextColumns(app.GUI, app.FileControls[0]);
+	cnst bool editorText = app.OpenFile.size() && app.FileBytes.find('\0') < 0;
+	if(editorText)
+		if_fail_fe(::llc::guiViewportTextRowsBuild(app.Editor.FileLines, app.VisibleColumns, app.WordWrap, app.TextRows));
+	if(!editorText)
+		if_fail_fe(::llc::guiViewportTextRowsBuild(app.FileLines, app.VisibleColumns, app.WordWrap, app.TextRows));
+	app.TextBytesBegin = app.Editor.FileText.begin();
+	app.TextBytesSize = app.Editor.FileText.size();
+	app.TextLineCount = app.Editor.FileLines.size();
+	app.FileOffset = ::llc::min(app.FileOffset, app.TextRows.size() > DESKTOP_VISIBLE_ROWS ? app.TextRows.size() - DESKTOP_VISIBLE_ROWS : 0);
+	rtrn ::desktopFileRowsRefresh(app);
 }
 
 sttc ::llc::err_t desktopFolderOpen(SSampleGUIViewport & app, ::llc::vcst_t path) {
@@ -264,15 +287,19 @@ sttc ::llc::err_t desktopFolderOpen(SSampleGUIViewport & app, ::llc::vcst_t path
 	for(::llc::u2_t i = 0; i < app.FileControls.size(); ++i)
 		if_fail_fe(::llc::controlTextSet(app.GUI, app.FileControls[i], {}));
 	app.GUI.Controls.Text[app.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].Text = "FILE CONTENT";
+	if_fail_fe(app.TextRows.clear());
 	if_fail_fe(app.FileLines.clear());
 	if_fail_fe(app.FileBytes.clear());
 	if_fail_fe(app.FileDisplay.clear());
 	if_fail_fe(app.OpenFile.clear());
 	app.FileOffset = 0;
+	app.FileColumnOffset = 0;
 	app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdKeyboard, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdSave, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
+	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
+	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], true);
 	rtrn ::desktopFileRowsRefresh(app);
 }
 
@@ -287,12 +314,16 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 		cnst ::llc::cid_t idControl = app.FileControls[iControl];
 		if(app.GUI.Controls.IsHidden(idControl) || false == ::llc::in_range(app.GUI.CursorPos.s1(), app.GUI.Controls.Area[idControl].Total.Global))
 			continue;
-		cnst ::llc::u2_t iLine = app.FileOffset + iControl;
+		cnst ::llc::u2_t iRow = app.FileOffset + iControl;
+		if(iRow >= app.TextRows.size())
+			continue;
+		cnst ::llc::SGUIViewportTextRow & row = app.TextRows[iRow];
+		cnst ::llc::u2_t iLine = row.SourceLine;
 		if(iLine >= editor.FileLines.size())
 			continue;
 		cnst ::llc::s2_t mouseOffsetX = (::llc::s2_t)input.MouseCurrent.Position.x - app.GUI.Controls.Area[idControl].Text.Offset.x;
 		cnst ::llc::u2_t visibleColumn = 0 >= mouseOffsetX ? 0 : (::llc::u2_t)(mouseOffsetX / characterWidth);
-		cnst ::llc::u2_t iColumn = ::llc::min(visibleColumn, editor.FileLines[iLine].size());
+		cnst ::llc::u2_t iColumn = ::llc::min(row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset) + visibleColumn, editor.FileLines[iLine].size());
 		cursor = {iColumn, iLine};
 		characterOffset = ::fileViewerLineOffset(editor, iLine) + iColumn;
 		overTextLine = true;
@@ -325,6 +356,7 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) {
 	for(::llc::u2_t i = 0; i < app.FileControls.size(); ++i)
 		if_fail_fe(::llc::controlTextSet(app.GUI, app.FileControls[i], {}));
+	if_fail_fe(app.TextRows.clear());
 	app.GUI.Controls.Text[app.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].Text = "FILE CONTENT";
 	if_fail_fe(app.Editor.FileLines.clear());
 	if_fail_fe(app.FileLines.clear());
@@ -361,6 +393,8 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		app.GUI.Controls.SetHidden(app.Editor.IdSave, true);
 		app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
 	}
+	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], app.FileBytes.find('\0') >= 0);
+	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], app.FileBytes.find('\0') >= 0);
 	::llc::vcst_t remaining = app.FileBytes;
 	if(0 == fileLength)
 		if_fail_fe(app.FileLines.push_back(::llc::vcst_t{"Empty file"}));
@@ -374,12 +408,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		cnst ::llc::err_t found = ::llc::split('\n', remaining, line, next);
 		if(line.size() && line[line.size() - 1] == '\r')
 			if_fail_fe(line.slice(line, 0, line.size() - 1));
-		do {
-			::llc::vcst_t part = {};
-			if_fail_fe(line.slice(part, 0, ::llc::min(line.size(), DESKTOP_LINE_WIDTH)));
-			if_fail_fe(app.FileLines.push_back(part));
-			if_fail_fe(line.slice(line, part.size()));
-		} while(line.size());
+		if_fail_fe(app.FileLines.push_back(line));
 		if(found < 0)
 			break;
 		remaining = next;
@@ -387,8 +416,9 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	if(fileLength > DESKTOP_FILE_MAX_BYTES)
 		if_fail_fe(app.FileLines.push_back(::llc::vcst_t{"Preview limited to first 1 MiB"}));
 	app.FileOffset = 0;
+	app.FileColumnOffset = 0;
 	app.GUI.Controls.Text[app.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].Text = fileName;
-	rtrn ::desktopFileRowsRefresh(app);
+	rtrn ::desktopTextRowsRebuild(app);
 }
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
@@ -406,7 +436,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Help].Area = {{18, 18}, {1040, 42}};
 	app.GUI.Controls.Placement[app.Help].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Help].Text = "OPEN FILES OR JSON | CLICK TEXT TO EDIT | KEYBOARD AND SAVE IN EDITOR | DRAG TITLES";
+	app.GUI.Controls.Text[app.Help].Text = "OPEN OR EDIT FILE | W WRAP | A SELECT ALL | S SAVE | SHIFT+WHEEL HORIZONTAL | DRAG TITLES";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
 	app.GUI.Controls.Text[app.Help].FontSelected = 1;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
@@ -519,8 +549,18 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 			if_fail_fe(::desktopFolderRowsRefresh(app));
 		}
 		else if(::llc::in_range(app.GUI.CursorPos.s1(), app.GUI.Controls.Area[idFile].Total.Global)) {
-			cnst ::llc::u2_t maxOffset = app.FileLines.size() > DESKTOP_VISIBLE_ROWS ? app.FileLines.size() - DESKTOP_VISIBLE_ROWS : 0;
-			app.FileOffset = wheel > 0 ? (app.FileOffset > 15 ? app.FileOffset - 15 : 0) : ::llc::min(maxOffset, app.FileOffset + 15);
+			if(!app.WordWrap && app.Window.Input->KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Shift]) {
+				::llc::u2_t maxWidth = app.Editor.FileLineWidthMax;
+				if(app.FileBytes.find('\0') >= 0)
+					for(::llc::u2_t i = 0; i < app.FileLines.size(); ++i)
+						maxWidth = ::llc::max(maxWidth, app.FileLines[i].size());
+				cnst ::llc::u2_t maxColumn = maxWidth > app.VisibleColumns ? maxWidth - app.VisibleColumns : 0;
+				app.FileColumnOffset = wheel > 0 ? (app.FileColumnOffset > 8 ? app.FileColumnOffset - 8 : 0) : ::llc::min(maxColumn, app.FileColumnOffset + 8);
+			}
+			else {
+				cnst ::llc::u2_t maxOffset = app.TextRows.size() > DESKTOP_VISIBLE_ROWS ? app.TextRows.size() - DESKTOP_VISIBLE_ROWS : 0;
+				app.FileOffset = wheel > 0 ? (app.FileOffset > 15 ? app.FileOffset - 15 : 0) : ::llc::min(maxOffset, app.FileOffset + 15);
+			}
 			if_fail_fe(::desktopFileRowsRefresh(app));
 		}
 	}
@@ -549,6 +589,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 			break;
 		}
 	if(app.OpenFile.size() && app.FileBytes.find('\0') < 0) {
+		cnst ::llc::n2u2_t cursorBefore = app.Editor.Cursor;
 		if(app.GUI.Controls.IsAction(app.Editor.IdKeyboard))
 			app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, false == app.GUI.Controls.IsHidden(app.Keyboard.IdRoot));
 		if(app.GUI.Controls.IsAction(app.Editor.IdSave))
@@ -556,10 +597,24 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		if_fail_fe(::desktopEditorSelectionUpdate(app));
 		if(app.GUI.Controls.IsSelected(app.Viewports[1].IdControl))
 			if_fail_fe(::fileViewerEditorInput(app.GUI, app.Keyboard, app.Editor, app.Window.EventQueue));
-		if(app.Editor.Cursor.y < app.FileOffset)
-			app.FileOffset = app.Editor.Cursor.y;
-		else if(app.Editor.Cursor.y >= app.FileOffset + DESKTOP_VISIBLE_ROWS)
-			app.FileOffset = app.Editor.Cursor.y - DESKTOP_VISIBLE_ROWS + 1;
+		if(app.TextBytesBegin != app.Editor.FileText.begin() || app.TextBytesSize != app.Editor.FileText.size() || app.TextLineCount != app.Editor.FileLines.size())
+			if_fail_fe(::desktopTextRowsRebuild(app));
+		if(!app.WordWrap && cursorBefore != app.Editor.Cursor) {
+			if(app.Editor.Cursor.x < app.FileColumnOffset)
+				app.FileColumnOffset = app.Editor.Cursor.x;
+			else if(app.Editor.Cursor.x >= app.FileColumnOffset + app.VisibleColumns)
+				app.FileColumnOffset = app.Editor.Cursor.x - app.VisibleColumns + 1;
+		}
+		for(::llc::u2_t iRow = 0; cursorBefore != app.Editor.Cursor && iRow < app.TextRows.size(); ++iRow) {
+			cnst ::llc::SGUIViewportTextRow & row = app.TextRows[iRow];
+			if(row.SourceLine != app.Editor.Cursor.y || app.Editor.Cursor.x < row.SourceColumn || (app.WordWrap && app.Editor.Cursor.x > row.SourceColumn + row.Text.size()))
+				continue;
+			if(iRow < app.FileOffset)
+				app.FileOffset = iRow;
+			else if(iRow >= app.FileOffset + DESKTOP_VISIBLE_ROWS)
+				app.FileOffset = iRow - DESKTOP_VISIBLE_ROWS + 1;
+			break;
+		}
 		if_fail_fe(::desktopFileRowsRefresh(app));
 	}
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
@@ -613,6 +668,33 @@ stct SApplication {
 	if(result)
 		rtrn result;
 	cnst ::llc::err_t resultSample = ::sampleGUIViewportUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
+	if(resultSample)
+		rtrn resultSample;
+	::llc::GUI_VIEWPORT_ACTION action = ::llc::GUI_VIEWPORT_ACTION_NONE;
+	bool resized = false;
+	cnst ::llc::cid_t idFile = app.Sample.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
+	if_fail_fe(::llc::guiViewportEvents(app.Sample.GUI, app.Sample.ViewportActions[1], idFile, action, resized));
+	if(::llc::GUI_VIEWPORT_ACTION_WRAP == action) {
+		app.Sample.WordWrap = !app.Sample.WordWrap;
+		app.Sample.FileColumnOffset = 0;
+		app.Sample.GUI.Controls.SetSelected(app.Sample.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_WRAP], app.Sample.WordWrap);
+	}
+	if(app.Sample.OpenFile.size() && app.Sample.FileBytes.find('\0') < 0) {
+		if(::llc::GUI_VIEWPORT_ACTION_SAVE == action)
+			if_fail_fe(::llc::fileFromMemory(app.Sample.Editor.FilePath, app.Sample.Editor.FileText.cc()));
+		if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
+			if_fail_fe(app.Sample.Editor.TextSelections.clear());
+			if_fail_fe(app.Sample.Editor.TextSelections.push_back({0, app.Sample.Editor.FileText.size()}));
+			app.Sample.Editor.SelectionAnchor = (::llc::u2_t)-1;
+			app.Sample.Editor.SelectionActive = (::llc::u2_t)-1;
+		}
+	}
+	if(resized || ::llc::GUI_VIEWPORT_ACTION_WRAP == action || app.Sample.VisibleColumns != ::llc::guiViewportTextColumns(app.Sample.GUI, app.Sample.FileControls[0])) {
+		if_fail_fe(::desktopTextRowsRebuild(app.Sample));
+	}
+	else if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
+		if_fail_fe(::desktopFileRowsRefresh(app.Sample));
+	}
 	::llc::sleep(1);
 	rtrn resultSample;
 }

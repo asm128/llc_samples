@@ -1,6 +1,6 @@
 #include "llc_engine.h"
 #include "llc_window.h"
-#include "llc_gui_viewport.h"
+#include "llc_gui_composite.h"
 #include "llc_path.h"
 
 #ifndef LLC_DESKTOP_H_23627
@@ -27,10 +27,18 @@ stct SSampleGUIViewport {
 	::llc::string			FileBytes			= {};
 	::llc::string			FileDisplay		= {};
 	::llc::aobj<::llc::vcst_t> FileLines		= {};
+	::llc::aobj<::llc::SGUIViewportTextRow> TextRows = {};
 	::llc::acid			FileControls		= {};
 	::llc::u2_t			FileOffset			= 0;
+	::llc::u2_t			FileColumnOffset	= 0;
+	::llc::u2_t			FileLineWidthMax	= 0;
+	::llc::u2_t			VisibleColumns		= 0;
+	bool					WordWrap		= false;
+	bool					SelectAll		= false;
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
+	::llc::astatic<::llc::astcid<::llc::GUI_VIEWPORT_ACTION_COUNT>, SAMPLE_GUI_VIEWPORT_COUNT>
+						ViewportActions = {};
 	::llc::astatic<::llc::n2s1_t, SAMPLE_GUI_VIEWPORT_COUNT>
 						UnfoldedSize		= {};
 	::llc::astatic<bool, SAMPLE_GUI_VIEWPORT_COUNT>
