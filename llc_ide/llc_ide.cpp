@@ -234,7 +234,10 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 				}
 			}
 		}
-		app.GUI.Controls.Text[id].Selection = {selectedMin, selectedMax};
+		::llc::apod<::llc::STextState> & textStates = app.GUI.Controls.TextState[id];
+		if_fail_fe(textStates.resize(app.GUI.Controls.Text[id].Text.size()));
+		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter)
+			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, iCharacter >= selectedMin && iCharacter < selectedMax);
 	}
 	cnst bool cursorVisible = editorText && app.Editor.Cursor.y >= app.FileOffset && app.Editor.Cursor.y < app.FileOffset + app.FileControls.size();
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, false == cursorVisible);
