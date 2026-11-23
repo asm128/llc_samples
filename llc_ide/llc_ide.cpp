@@ -239,7 +239,7 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 			}
 		}
 		::llc::apod<::llc::STextState> & textStates = app.GUI.Controls.TextState[id];
-		if_fail_fe(textStates.resize(app.GUI.Controls.Text[id].Text.size()));
+		if_fail_fe(textStates.resize(app.GUI.Controls.Text[id].Text.size(), ::llc::STextState{}));
 		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter) {
 			cnst bool selected = iCharacter >= selectedMin && iCharacter < selectedMax;
 			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
