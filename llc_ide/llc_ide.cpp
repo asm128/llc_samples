@@ -148,7 +148,7 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	cnst ::llc::cid_t idTitle = viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE];
 	cnst ::llc::cid_t idClient = viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 	app.GUI.Controls.Text[idTitle].Text = title;
-	app.GUI.Controls.Text[idTitle].FontSelected = 2;
+	app.GUI.Controls.Text[idTitle].FontSelected = 7;
 	app.GUI.Controls.Placement[idTitle].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[idClient].Area.Size = {(::llc::s1_t)(area.Size.x - 8), (::llc::s1_t)(area.Size.y - 32)};
 	app.GUI.Controls.Placement[idClient].Border = {1, 1, 1, 1};
@@ -185,7 +185,7 @@ sttc ::llc::err_t desktopListCreate(SSampleGUIViewport & app, ::llc::u0_t iViewp
 	cnst ::llc::cid_t parent = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 	if_fail_fe(::llc::guiCreateControlList(app.GUI, ::llc::DIRECTION_DOWN, {labels, DESKTOP_VISIBLE_ROWS}, parent, row, ::llc::ALIGN_CENTER_LEFT, controls));
 	for(::llc::u2_t i = 0; i < controls.size(); ++i) {
-		app.GUI.Controls.Text[controls[i]].FontSelected = 2;
+		app.GUI.Controls.Text[controls[i]].FontSelected = 7;
 		::sampleGUIControlThemeApply(app.GUI, controls[i], iViewport);
 	}
 	rtrn 0;
@@ -240,8 +240,11 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 		}
 		::llc::apod<::llc::STextState> & textStates = app.GUI.Controls.TextState[id];
 		if_fail_fe(textStates.resize(app.GUI.Controls.Text[id].Text.size()));
-		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter)
-			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, iCharacter >= selectedMin && iCharacter < selectedMax);
+		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter) {
+			cnst bool selected = iCharacter >= selectedMin && iCharacter < selectedMax;
+			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
+			textStates[iCharacter].Flag = ::llc::setSwapColors(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
+		}
 	}
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
 	if(editorText)
@@ -250,7 +253,7 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 			cnst ::llc::u2_t firstColumn = row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset);
 			if(row.SourceLine != app.Editor.Cursor.y || app.Editor.Cursor.x < firstColumn || app.Editor.Cursor.x > firstColumn + app.GUI.Controls.Text[app.FileControls[i]].Text.size())
 				continue;
-			cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[2]->CharSize.x);
+			cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[7]->CharSize.x);
 			app.GUI.Controls.Placement[app.Editor.IdCursor].Area.Offset = app.GUI.Controls.Placement[app.FileControls[i]].Area.Offset + ::llc::n2s1_t{(::llc::s1_t)((app.Editor.Cursor.x - firstColumn) * characterWidth), 0};
 			app.GUI.Controls.SetHidden(app.Editor.IdCursor, false);
 			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, app.Editor.IdCursor));
@@ -296,7 +299,6 @@ sttc ::llc::err_t desktopFolderOpen(SSampleGUIViewport & app, ::llc::vcst_t path
 	app.FileColumnOffset = 0;
 	app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdKeyboard, true);
-	app.GUI.Controls.SetHidden(app.Editor.IdSave, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], true);
@@ -309,7 +311,7 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 	::llc::n2u2_t cursor = {};
 	::llc::u2_t characterOffset = 0;
 	bool overTextLine = false;
-	cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[2]->CharSize.x);
+	cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[7]->CharSize.x);
 	for(::llc::u2_t iControl = 0; iControl < app.FileControls.size(); ++iControl) {
 		cnst ::llc::cid_t idControl = app.FileControls[iControl];
 		if(app.GUI.Controls.IsHidden(idControl) || false == ::llc::in_range(app.GUI.CursorPos.s1(), app.GUI.Controls.Area[idControl].Total.Global))
@@ -386,11 +388,9 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		app.Editor.FileText = app.FileBytes;
 		if_fail_fe(::fileViewerTextViewsRebuild(app.Editor));
 		app.GUI.Controls.SetHidden(app.Editor.IdKeyboard, false);
-		app.GUI.Controls.SetHidden(app.Editor.IdSave, false);
 	}
 	else {
 		app.GUI.Controls.SetHidden(app.Editor.IdKeyboard, true);
-		app.GUI.Controls.SetHidden(app.Editor.IdSave, true);
 		app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
 	}
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], app.FileBytes.find('\0') >= 0);
@@ -422,7 +422,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 }
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
-	app.GUI.SelectedFont = 2;
+	app.GUI.SelectedFont = 7;
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 	app.Desktop = ::llc::controlCreate(app.GUI);
@@ -438,7 +438,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Help].Text = "OPEN OR EDIT FILE | W WRAP | A SELECT ALL | S SAVE | SHIFT+WHEEL HORIZONTAL | DRAG TITLES";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
-	app.GUI.Controls.Text[app.Help].FontSelected = 1;
+	app.GUI.Controls.Text[app.Help].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
 	if_fail_fe(::sampleGUIViewportCreate(app, 0, "FOLDER", {{24, 92}, {350, 500}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, "FILE CONTENT", {{386, 92}, {490, 500}}));
@@ -454,7 +454,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	if_true_fe(app.Editor.IdCursor < 0);
 	app.GUI.Controls.Placement[app.Editor.IdCursor].Area.Size = {10, 21};
 	app.GUI.Controls.Text[app.Editor.IdCursor].Text = "|";
-	app.GUI.Controls.Text[app.Editor.IdCursor].FontSelected = 2;
+	app.GUI.Controls.Text[app.Editor.IdCursor].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Editor.IdCursor, 1);
 	app.GUI.Controls.SetDisabled(app.Editor.IdCursor, true);
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
@@ -465,18 +465,12 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	for(::llc::u2_t iCommand = 0; iCommand < app.Keyboard.Commands.size(); ++iCommand)
 		::sampleGUIControlThemeApply(app.GUI, app.Keyboard.Commands[iCommand].IdControl, 2);
 	app.Editor.IdKeyboard = ::llc::controlCreateChild(app.GUI, app.Viewports[1].IdControl);
-	app.Editor.IdSave = ::llc::controlCreateChild(app.GUI, app.Viewports[1].IdControl);
-	if_true_fe(app.Editor.IdKeyboard < 0 || app.Editor.IdSave < 0);
+	if_true_fe(app.Editor.IdKeyboard < 0);
 	app.GUI.Controls.Placement[app.Editor.IdKeyboard].Area = {{18, 18}, {100, 24}};
 	app.GUI.Controls.Placement[app.Editor.IdKeyboard].Align = ::llc::ALIGN_BOTTOM_RIGHT;
 	app.GUI.Controls.Text[app.Editor.IdKeyboard].Text = "KEYBOARD";
 	::sampleGUIControlThemeApply(app.GUI, app.Editor.IdKeyboard, 2);
-	app.GUI.Controls.Placement[app.Editor.IdSave].Area = {{124, 18}, {72, 24}};
-	app.GUI.Controls.Placement[app.Editor.IdSave].Align = ::llc::ALIGN_BOTTOM_RIGHT;
-	app.GUI.Controls.Text[app.Editor.IdSave].Text = "SAVE";
-	::sampleGUIControlThemeApply(app.GUI, app.Editor.IdSave, 1);
 	app.GUI.Controls.SetHidden(app.Editor.IdKeyboard, true);
-	app.GUI.Controls.SetHidden(app.Editor.IdSave, true);
 	::llc::string initialFolder = {};
 	if_fail_fe(::llc::pathAbsolute(".", initialFolder));
 	if_fail_fe(::desktopFolderOpen(app, initialFolder));
@@ -488,7 +482,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
-	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
+	app.GUI.Controls.Text[app.Performance].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	app.Exit = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Exit < 0);
@@ -497,7 +491,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Exit].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Exit].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Exit].Text = "EXIT";
-	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
+	app.GUI.Controls.Text[app.Exit].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
@@ -592,8 +586,6 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		cnst ::llc::n2u2_t cursorBefore = app.Editor.Cursor;
 		if(app.GUI.Controls.IsAction(app.Editor.IdKeyboard))
 			app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, false == app.GUI.Controls.IsHidden(app.Keyboard.IdRoot));
-		if(app.GUI.Controls.IsAction(app.Editor.IdSave))
-			if_fail_fe(::llc::fileFromMemory(app.Editor.FilePath, app.Editor.FileText.cc()));
 		if_fail_fe(::desktopEditorSelectionUpdate(app));
 		if(app.GUI.Controls.IsSelected(app.Viewports[1].IdControl))
 			if_fail_fe(::fileViewerEditorInput(app.GUI, app.Keyboard, app.Editor, app.Window.EventQueue));

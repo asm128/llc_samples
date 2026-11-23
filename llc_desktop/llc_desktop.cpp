@@ -165,7 +165,7 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	cnst ::llc::cid_t idTitle = viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE];
 	cnst ::llc::cid_t idClient = viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 	app.GUI.Controls.Text[idTitle].Text = title;
-	app.GUI.Controls.Text[idTitle].FontSelected = 2;
+	app.GUI.Controls.Text[idTitle].FontSelected = 7;
 	app.GUI.Controls.Placement[idTitle].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[idClient].Area.Size = {(::llc::s1_t)(area.Size.x - 8), (::llc::s1_t)(area.Size.y - 32)};
 	app.GUI.Controls.Placement[idClient].Border = {1, 1, 1, 1};
@@ -215,7 +215,7 @@ sttc ::llc::err_t desktopListCreate(SSampleGUIViewport & app, ::llc::u0_t iViewp
 	cnst ::llc::cid_t parent = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 	if_fail_fe(::llc::guiCreateControlList(app.GUI, ::llc::DIRECTION_DOWN, {labels, DESKTOP_VISIBLE_ROWS}, parent, row, ::llc::ALIGN_CENTER_LEFT, controls));
 	for(::llc::u2_t i = 0; i < controls.size(); ++i) {
-		app.GUI.Controls.Text[controls[i]].FontSelected = 2;
+		app.GUI.Controls.Text[controls[i]].FontSelected = 7;
 		::sampleGUIControlThemeApply(app.GUI, controls[i], iViewport);
 	}
 	rtrn 0;
@@ -253,8 +253,10 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 			app.GUI.Controls.Text[id].Text = text;
 			::llc::apod<::llc::STextState> & states = app.GUI.Controls.TextState[id];
 			if_fail_fe(states.resize(text.size()));
-			for(::llc::u2_t iCharacter = 0; iCharacter < states.size(); ++iCharacter)
-				states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, app.SelectAll);
+		for(::llc::u2_t iCharacter = 0; iCharacter < states.size(); ++iCharacter) {
+			states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, app.SelectAll);
+			states[iCharacter].Flag = ::llc::setSwapColors(states[iCharacter].Flag, states[iCharacter].Mask, app.SelectAll);
+		}
 		}
 	}
 	rtrn 0;
@@ -338,7 +340,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 }
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
-	app.GUI.SelectedFont = 2;
+	app.GUI.SelectedFont = 7;
 	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 	app.Desktop = ::llc::controlCreate(app.GUI);
@@ -354,7 +356,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Help].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Help].Text = "OPEN FILE | W WRAP | A SELECT ALL | S SAVE | WHEEL SCROLL | SHIFT+WHEEL HORIZONTAL | DRAG TITLES";
 	app.GUI.Controls.Text[app.Help].Align = ::llc::ALIGN_CENTER_LEFT;
-	app.GUI.Controls.Text[app.Help].FontSelected = 1;
+	app.GUI.Controls.Text[app.Help].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Help, 2);
 	if_fail_fe(::sampleGUIViewportCreate(app, 0, "FOLDER", {{24, 92}, {350, 500}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, "FILE CONTENT", {{386, 92}, {490, 500}}));
@@ -372,7 +374,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
 	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
-	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
+	app.GUI.Controls.Text[app.Performance].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
 	app.Exit = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Exit < 0);
@@ -381,7 +383,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	app.GUI.Controls.Placement[app.Exit].Border = {2, 2, 2, 2};
 	app.GUI.Controls.Placement[app.Exit].Margin = {1, 1, 1, 1};
 	app.GUI.Controls.Text[app.Exit].Text = "EXIT";
-	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
+	app.GUI.Controls.Text[app.Exit].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }

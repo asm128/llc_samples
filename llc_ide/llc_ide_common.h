@@ -50,7 +50,6 @@ stct SFileEditor {
 	u2_t				SelectionActive		= (u2_t)-1;
 	n2u2_t				Cursor				= {};
 	cid_t				IdCursor			= -1;
-	cid_t				IdSave				= -1;
 	cid_t				IdKeyboard			= -1;
 	cid_t				IdTab				= -1;
 	u2_t				FileLineWidthMax	= 0;
