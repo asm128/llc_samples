@@ -22,7 +22,7 @@ stct SSampleSlider {
 	::llc::s3_t		ValueStep	= 1;
 	::llc::s3_t		ValuePage	= 10;
 	bool			Vertical	= false;
-	::llc::astchar<64>	ValueText	= {};
+	::llc::astsc_t<64>	ValueText	= {};
 };
 
 stct SSampleGUIComponents {
@@ -32,7 +32,7 @@ stct SSampleGUIComponents {
 	::llc::cid_t			Desktop			= ::llc::CID_INVALID;
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
-	::llc::astchar<96>		PerformanceText	= {};
+	::llc::astsc_t<96>		PerformanceText	= {};
 	::llc::cid_t			ComponentsPanel	= ::llc::CID_INVALID;
 	::llc::cid_t			ControlEdit		= ::llc::CID_INVALID;
 	::llc::cid_t			ControlExit		= ::llc::CID_INVALID;

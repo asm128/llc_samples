@@ -673,7 +673,7 @@ stct SApplication {
 	}
 	if(app.Sample.OpenFile.size() && app.Sample.FileBytes.find('\0') < 0) {
 		if(::llc::GUI_VIEWPORT_ACTION_SAVE == action)
-			if_fail_fe(::llc::fileFromMemory(app.Sample.Editor.FilePath, app.Sample.Editor.FileText.cc()));
+			if_fail_fe(::llc::fileFromMemory(app.Sample.Editor.FilePath, app.Sample.Editor.FileText.as<::llc::u0_c>()));
 		if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
 			if_fail_fe(app.Sample.Editor.TextSelections.clear());
 			if_fail_fe(app.Sample.Editor.TextSelections.push_back({0, app.Sample.Editor.FileText.size()}));

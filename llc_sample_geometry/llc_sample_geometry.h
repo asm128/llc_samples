@@ -21,8 +21,8 @@ stct SSampleGeometry {
 	::llc::cid_t			Scale			= ::llc::CID_INVALID;
 	::llc::cid_t			ScaleThumb		= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
-	::llc::astchar<32>		ScaleText		= {};
-	::llc::astchar<96>		PerformanceText	= {};
+	::llc::astsc_t<32>		ScaleText		= {};
+	::llc::astsc_t<96>		PerformanceText	= {};
 	::llc::s1_t				ClientTheme		= 0;
 	::llc::s1_t				Maximized		= -1;
 	::llc::rect2s1_t			RestoreArea		= {};

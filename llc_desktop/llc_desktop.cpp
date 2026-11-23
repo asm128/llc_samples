@@ -532,7 +532,7 @@ stct SApplication {
 	if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action)
 		app.Sample.SelectAll = true;
 	if(::llc::GUI_VIEWPORT_ACTION_SAVE == action && app.Sample.OpenFile.size() && ::llc::fileSize(app.Sample.OpenFile) == app.Sample.FileBytes.size())
-		if_fail_fe(::llc::fileFromMemory(app.Sample.OpenFile, app.Sample.FileBytes.cc()));
+		if_fail_fe(::llc::fileFromMemory(app.Sample.OpenFile, app.Sample.FileBytes.as<::llc::u0_c>()));
 	if(resized || ::llc::GUI_VIEWPORT_ACTION_WRAP == action || ::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action || app.Sample.VisibleColumns != ::llc::guiViewportTextColumns(app.Sample.GUI, app.Sample.FileControls[0]))
 		if_fail_fe(::desktopTextRowsRebuild(app.Sample));
 	::llc::sleep(1);
