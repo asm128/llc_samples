@@ -1,0 +1,381 @@
+#include "llc_galaxy_hell.h"
+#include "llc_dialog_controls.h"
+#include "llc_gui_control_list.h"
+#include "llc_deflate.h"
+#include "llc_file.h"
+#include "llc_circle.h"
+#include "llc_gui_inputbox.h"
+#include "llc_chrono.h"
+
+namespace ghg
+{
+
+	GDEFINE_ENUM_TYPE (UI_HOME, u0_t);
+	GDEFINE_ENUM_VALUE(UI_HOME, Continue		, 0);
+	GDEFINE_ENUM_VALUE(UI_HOME, Shop			, 1);
+	GDEFINE_ENUM_VALUE(UI_HOME, Save			, 2);
+	GDEFINE_ENUM_VALUE(UI_HOME, Load			, 3);
+	GDEFINE_ENUM_VALUE(UI_HOME, Start			, 4);
+	GDEFINE_ENUM_VALUE(UI_HOME, Leaderboards	, 5);
+	GDEFINE_ENUM_VALUE(UI_HOME, Credits			, 6);
+	GDEFINE_ENUM_VALUE(UI_HOME, Settings		, 7);
+	GDEFINE_ENUM_VALUE(UI_HOME, Exit			, 8);
+	
+	GDEFINE_ENUM_TYPE (UI_PROFILE, u0_t);
+	GDEFINE_ENUM_VALUE(UI_PROFILE, Name				, 0);
+	GDEFINE_ENUM_VALUE(UI_PROFILE, Score			, 1);
+
+	GDEFINE_ENUM_TYPE (UI_PLAY, u0_t);
+	GDEFINE_ENUM_VALUE(UI_PLAY, Menu			, 0);
+	GDEFINE_ENUM_VALUE(UI_PLAY, Level			, 1);
+	GDEFINE_ENUM_VALUE(UI_PLAY, TimeReal		, 2);
+	GDEFINE_ENUM_VALUE(UI_PLAY, TimeStage		, 3);
+	
+	GDEFINE_ENUM_TYPE (UI_PILOT, u0_t);
+	GDEFINE_ENUM_VALUE(UI_PILOT, Name				, 0);
+	GDEFINE_ENUM_VALUE(UI_PILOT, Score				, 1);
+	
+	GDEFINE_ENUM_TYPE (UI_PLAYER_SCORE, u0_t);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, Score				, 0);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, Hits				, 1);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, Shots				, 2);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, Bullets				, 3);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, DamageDone			, 4);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, DamageReceived		, 5);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, HitsSurvived		, 6);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, OrbitersLost		, 7);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, KilledShips			, 8);
+	GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, KilledOrbiters		, 9);
+	//GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, TimeReal			,10);
+	//GDEFINE_ENUM_VALUE(UI_PLAYER_SCORE, TimeSim			,11);
+
+	GDEFINE_ENUM_TYPE (UI_LOAD, u0_t	);
+	GDEFINE_ENUM_TYPE (UI_DESKTOP, u0_t);
+
+	GDEFINE_ENUM_TYPE (UI_SETTINGS, u0_t);
+	GDEFINE_ENUM_VALUE(UI_SETTINGS, Back		, 0);
+	GDEFINE_ENUM_VALUE(UI_SETTINGS, Game		, 1);
+	GDEFINE_ENUM_VALUE(UI_SETTINGS, Graphics	, 2);
+	GDEFINE_ENUM_VALUE(UI_SETTINGS, Audio		, 3);
+
+	GDEFINE_ENUM_TYPE (UI_SHOP, u0_t);
+	GDEFINE_ENUM_VALUE(UI_SHOP, Back			, 0);
+
+	GDEFINE_ENUM_TYPE (UI_WELCOME, u0_t);
+	GDEFINE_ENUM_VALUE(UI_WELCOME, Confirm		, 0);
+
+	GDEFINE_ENUM_TYPE (UI_CREDITS, u0_t);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Back			, 0);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, __________	, 1);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Idea			, 2);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Gontrill		, 3);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, _________	, 4);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Programming	, 5);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, asm128		, 6);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, ________		, 7);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Sounds		, 8);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Microph		, 9);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, _______		, 10);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Graphics		, 11);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, PabloAriel	, 12);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, ______		, 13);
+	GDEFINE_ENUM_VALUE(UI_CREDITS, Home			, 14);
+
+	GDEFINE_ENUM_TYPE(UI_BRIEF, u0_t);
+	GDEFINE_ENUM_TYPE(UI_STAGE, u0_t);
+	GDEFINE_ENUM_TYPE(UI_STATS, u0_t);
+	GDEFINE_ENUM_TYPE(UI_STORE, u0_t);
+	GDEFINE_ENUM_TYPE(UI_SCORE, u0_t);
+
+	struct SUIRadialGauge {
+		::llc::apod<::llc::n3f2_t>		Vertices				= {};
+		::llc::apod<::llc::tris1_t>		Indices					= {};
+		s1_t							CurrentValue			= 0;
+		s1_t							MaxValue				= 64;
+		::llc::img<::llc::bgra>			Image					= {};
+
+		stxp	::llc::rgbaf			COLOR_MIN_DEFAULT		= ::llc::GREEN;
+		stxp	::llc::rgbaf			COLOR_MID_DEFAULT		= ::llc::ORANGE;
+		stxp	::llc::rgbaf			COLOR_MAX_DEFAULT		= ::llc::RED;
+		stxp	::llc::rgbaf			COLOR_BKG_DEFAULT		= ::llc::BROWN * .5 + ::llc::DARKBLUE * .5;
+		
+		inline	s1_t					SetValue				(float weight)							noexcept	{ return CurrentValue = s1_t(weight * MaxValue); }
+				s1_t					SetValue				(float currentValue, u2_t maxValue)	noexcept	{ return SetValue(currentValue / maxValue); }
+	};
+
+			llc::err_t			gaugeBuildRadial		(::ghg::SUIRadialGauge & gauge, const ::llc::circlef2_t & gaugeMetrics, s1_t resolution, s1_t width);
+			llc::err_t			gaugeImageUpdate		(::ghg::SUIRadialGauge & gauge, ::llc::g8bgra target, ::llc::rgbaf colorMin = ::ghg::SUIRadialGauge::COLOR_MIN_DEFAULT, ::llc::rgbaf colorMid = ::ghg::SUIRadialGauge::COLOR_MID_DEFAULT, ::llc::rgbaf colorMax = ::ghg::SUIRadialGauge::COLOR_MAX_DEFAULT, ::llc::bgra colorEmpty = ::ghg::SUIRadialGauge::COLOR_BKG_DEFAULT, bool radialColor = false);
+	inline	llc::err_t			gaugeImageUpdate		(::ghg::SUIRadialGauge & gauge, ::llc::rgbaf colorMin = ::ghg::SUIRadialGauge::COLOR_MIN_DEFAULT, ::llc::rgbaf colorMid = ::ghg::SUIRadialGauge::COLOR_MID_DEFAULT, ::llc::rgbaf colorMax = ::ghg::SUIRadialGauge::COLOR_MAX_DEFAULT, ::llc::bgra colorEmpty = ::ghg::SUIRadialGauge::COLOR_BKG_DEFAULT, bool radialColor = false) {
+		//gauge.Image.Texels.fill({0, 0, 0, 0});
+		return ::ghg::gaugeImageUpdate(gauge, gauge.Image, colorMin, colorMid, colorMax, colorEmpty, radialColor);
+	}
+
+	struct SUIPlayShipPartViewport {
+		::llc::cid_t					Viewport		;
+		::llc::SCameraPoints			Camera			;
+		SUIRadialGauge					GaugeLife		;
+		SUIRadialGauge					GaugeCooldown	;
+		SUIRadialGauge					GaugeDelay		;
+		::llc::m4f2_t					MatrixProjection;
+		::ghg::TRenderTarget			RenderTargetOrbiter	;
+		::ghg::TRenderTarget			RenderTargetWeaponLoad	;
+		::ghg::TRenderTarget			RenderTargetWeaponType	;
+	};
+
+
+	GDEFINE_ENUM_TYPE (SHIP_CONTROLLER, u1_t);
+	GDEFINE_ENUM_VALUE(SHIP_CONTROLLER, Forward	, 0x01);
+	GDEFINE_ENUM_VALUE(SHIP_CONTROLLER, Back	, 0x02);
+	GDEFINE_ENUM_VALUE(SHIP_CONTROLLER, Left	, 0x03);
+	GDEFINE_ENUM_VALUE(SHIP_CONTROLLER, Right	, 0x04);
+	GDEFINE_ENUM_VALUE(SHIP_CONTROLLER, Turbo	, 0x05);
+
+	struct SUIPlayer {
+		::llc::apobj<::ghg::SUIPlayShipPartViewport>	
+								ModuleViewports			= {};
+		::llc::SDialog			DialogPlay				= {};
+		::llc::SDialog			DialogHome				= {};
+
+		::llc::acid				ControlsDialogPlay		= {};
+		::llc::acid				ControlsDialogHome		= {};
+
+		::llc::SInputBox		InputBox				= {};
+	
+		::llc::astsc_t<128>	TextScore				= {};
+		::llc::astsc_t<128>	TextHits				= {};
+		::llc::astsc_t<128>	TextShots				= {};
+		::llc::astsc_t<128>	TextBullets				= {};
+		::llc::astsc_t<128>	TextDamageDone			= {};
+		::llc::astsc_t<128>	TextDamageReceived		= {};
+		::llc::astsc_t<128>	TextHitsSurvived		= {};
+		::llc::astsc_t<128>	TextOrbitersLost		= {};
+		::llc::astsc_t<128>	TextKilledShips			= {};
+		::llc::astsc_t<128>	TextKilledOrbiters		= {};
+	};
+
+	struct SUIPlay {
+		::llc::aobj<::ghg::SUIPlayer>	PlayerUI				= {};
+		::ghg::SGalaxyHellDrawCache		DrawCache				= {};
+
+		::llc::astatic<sc_t, 128>		TextLevel				= {};
+		::llc::astatic<sc_t, 128>		TextTimeStage			= {};
+		::llc::astatic<sc_t, 128>		TextTimeWorld			= {};
+		::llc::astatic<sc_t, 128>		TextTimeReal			= {};
+	};
+
+
+	struct SPlayerShip { 
+		::llc::SSpaceshipCore			Core;
+		::llc::SSpaceshipScore			Score;
+		::llc::au2_t						Parts;
+		::llc::au2_t						Weapons;
+
+		llc::err_t					Save					(::llc::au0_t & output) const {
+			if_fail_fe(::llc::savePOD (output, Core	));
+			if_fail_fe(::llc::savePOD (output, Score	));
+			if_fail_fe(::llc::saveView(output, Parts	));
+			if_fail_fe(::llc::saveView(output, Weapons));
+			return 0;
+		}
+
+		llc::err_t					Load					(::llc::vcu0_t & input) {
+			if_fail_fe(::llc::loadPOD	(input, Core	));
+			if_fail_fe(::llc::loadPOD	(input, Score	));
+			if_fail_fe(::llc::loadView(input, Parts	));
+			if_fail_fe(::llc::loadView(input, Weapons	));
+			return 0;
+		}
+	};
+
+
+#pragma pack(push, 1)
+	GDEFINE_ENUM_TYPE (PLAYER_TYPE, u0_t);
+	GDEFINE_ENUM_VALUE(PLAYER_TYPE, Human	, 0);
+	GDEFINE_ENUM_VALUE(PLAYER_TYPE, AI		, 1);
+	GDEFINE_ENUM_VALUE(PLAYER_TYPE, Network	, 2);
+
+	struct SPlayerScore { 
+		u3_t			TimePlayed;
+		u3_t			TimeDead;
+		u3_t			KeyPresses;
+	};
+
+	struct SPlayerState {
+		PLAYER_TYPE			Type;
+		::llc::bgra			Color;
+		s2_t				ShipSelected;
+		::ghg::SPlayerScore	Score;
+	};
+#pragma pack(pop)
+
+	struct SPlayer {
+		::llc::vcst_t							Name			= {};
+		::ghg::SPlayerState						State			= {};
+		::llc::apod<::llc::SWeapon>				Weapons			= {};
+		::llc::apod<::llc::SSpaceshipOrbiter>	Orbiters		= {};
+		::llc::aobj<::ghg::SPlayerShip>			Ships			= {};
+
+		llc::err_t					Save			(const ::llc::vcsc_t & filename) const {
+			::llc::au0_t					serialized;
+			if_fail_fe(Save(serialized));
+			::llc::au0_t							deflated;
+			if_fail_fe(::llc::arrayDeflate(serialized, deflated));
+			info_printf("Player size in bytes: %u.", serialized.size());
+			info_printf("Player file size: %u.", deflated.size());
+			if_fail_fef(::llc::fileFromMemory({filename}, deflated), "fileName: %.*s", LLC_VIEW_ARGS(filename));
+			return 0;
+		}
+
+		llc::err_t					Load			(const ::llc::vcsc_t & filename) {
+			::llc::au0_t							serialized;
+			if_fail_fef(::llc::fileToMemory({filename}, serialized), "fileName: %.*s", LLC_VIEW_ARGS(filename));
+			::llc::au0_t							inflated;
+			if_fail_fe(::llc::arrayInflate(serialized, inflated));
+			info_printf("Player file size: %u.", inflated.size());
+			info_printf("Player size in bytes: %u.", serialized.size());
+			::llc::vcu0_t							input		= inflated;
+			return Load(input);
+		}
+
+		llc::err_t					Save			(::llc::au0_t & output) const {
+			if_fail_fe(::llc::saveView(output, Name));
+			if_fail_fe(::llc::savePOD(output, State));
+			if_fail_fe(::llc::saveView(output, Weapons));
+			if_fail_fe(::llc::saveView(output, Orbiters));
+			if_fail_fe(output.append(::llc::vcu0_t{(const u0_t*)&Ships.size(), 4}));
+			for(u2_t iShip = 0; iShip < Ships.size(); ++iShip) {
+				if_fail_fef(Ships[iShip].Save(output), "iShip: %u", iShip);
+			}
+			return 0;
+		}
+
+		llc::err_t					Load			(::llc::vcu0_t & input) {
+			if_fail_fe(::llc::loadLabel	(input, Name	));
+			if_fail_fe(::llc::loadPOD		(input, State	));
+			if_fail_fe(::llc::loadView	(input, Weapons	));
+			if_fail_fe(::llc::loadView	(input, Orbiters));
+			if_fail_fe(Ships.resize(*(u2_t*)input.begin()));
+			input							= {input.begin() + sizeof(u2_t), input.size() - 4};
+			for(u2_t iShip = 0; iShip < Ships.size(); ++iShip) {
+				if_fail_fef(Ships[iShip].Load(input), "iShip: %u", iShip);
+			}
+			return 0;
+		}
+	};
+
+	struct SPlayerManager {
+
+	};
+
+	struct SUserCredentials {
+		::llc::vcsc_t		Username;
+		::llc::vcsc_t		Password;
+	};
+
+	enum SAVE_MODE { SAVE_MODE_AUTO, SAVE_MODE_QUICK, SAVE_MODE_STAGE, SAVE_MODE_USER };
+
+	GDEFINE_ENUM_TYPE(APP_STATE, u0_t);
+	GDEFINE_ENUM_VALUE(APP_STATE, Init		,  0);
+	GDEFINE_ENUM_VALUE(APP_STATE, Welcome	,  1);
+	GDEFINE_ENUM_VALUE(APP_STATE, Home		,  2);
+	GDEFINE_ENUM_VALUE(APP_STATE, Profile	,  3);
+	GDEFINE_ENUM_VALUE(APP_STATE, Shop		,  4);
+	GDEFINE_ENUM_VALUE(APP_STATE, Play		,  5);
+	GDEFINE_ENUM_VALUE(APP_STATE, Brief		,  6);
+	GDEFINE_ENUM_VALUE(APP_STATE, Stage		,  7);
+	GDEFINE_ENUM_VALUE(APP_STATE, Stats		,  8);
+	GDEFINE_ENUM_VALUE(APP_STATE, Store		,  9);
+	GDEFINE_ENUM_VALUE(APP_STATE, Score		, 10);
+	GDEFINE_ENUM_VALUE(APP_STATE, About		, 11);
+	GDEFINE_ENUM_VALUE(APP_STATE, Settings	, 12);
+	GDEFINE_ENUM_VALUE(APP_STATE, Load		, 13);
+	GDEFINE_ENUM_VALUE(APP_STATE, Quit		, 14);
+	GDEFINE_ENUM_VALUE(APP_STATE, COUNT		, 15);
+
+	struct SGalaxyHellApp {
+		::llc::apobj<TRenderTarget>			RenderTargetPool			= {};
+		::llc::apobj<TRenderTarget>			RenderTargetQueue			= {};
+		::std::mutex						RenderTargetLockPool		= {};
+		::std::mutex						RenderTargetLockQueue		= {};
+		vltl	u3_t					CurrentRenderTarget			= 0;
+		s2_t								PlayerSelected				= 0;
+
+		bool								Exit						= false;
+		::llc::astatic<::llc::SDialog, ::ghg::APP_STATE_COUNT>	
+											DialogPerState				= {};
+
+		::llc::astatic<::llc::acid, APP_STATE_COUNT>	
+											DialogControls				= {}; 	
+
+		::llc::SVirtualKeyboard				VirtualKeyboard				= {};
+		::ghg::SUIPlay						UIPlay;
+
+		::llc::SDialog						DialogDesktop				= {};
+		::llc::aobj<::ghg::SPlayer>			Players						= {};
+		::llc::pnco<::llc::SDialogTuner<u0_t>>	TunerPlayerCount;
+		::llc::acid							DesktopControls			= {}; 	
+
+		::ghg::SGalaxyHell						Game;
+		::llc::aobj<::ghg::SUserCredentials>	UserCredentials				= {};
+
+		::llc::pobj<::llc::SDialogViewport>	Inputbox;
+		::llc::apod<sc_t>					InputboxText;
+
+		::llc::aobj<::llc::apod<sc_t>>	FileNames					= {};
+		::llc::vcst_t						SavegameFolder				= ".";
+		::llc::vcst_t						ExtensionSaveAuto			= ".auto.ghz";
+		::llc::vcst_t						ExtensionSaveStage			= ".stage.ghz";
+		::llc::vcst_t						ExtensionSaveQuick			= ".quick.ghz";
+		::llc::vcst_t						ExtensionSaveUser			= ".user.ghz";
+		::llc::vcst_t						ExtensionSave				= ".ghz";
+		::llc::vcst_t						ExtensionImages				= ".png";
+
+		::llc::vcst_t						ExtensionProfile			= ".ghp";
+		::llc::vcst_t						ExtensionCredentials		= ".ghc";
+
+		::ghg::APP_STATE				ActiveState					= APP_STATE_Init;
+
+		llc::err_t					AddNewPlayer				(::llc::vcsc_t playerName)			{
+			::llc::trim(playerName);
+			return Players.push_back({::llc::label(::llc::vcst_t{playerName})});
+		}
+
+		llc::err_t					Save						(SAVE_MODE autosaveMode)				{
+			sc_t								fileName[4096]				= {};
+			::llc::au0_t							b64PlayerName				= {};
+			for(u2_t iPlayer = 0; iPlayer < Players.size(); ++iPlayer) {
+				b64PlayerName.clear();
+				const ::ghg::SPlayer				& player					= Players[iPlayer];
+				::llc::base64Encode(player.Name, b64PlayerName);
+				::llc::sprintf_s(fileName, "%.*s/%.*s.%llu%s", LLC_VIEW_ARGS(SavegameFolder), LLC_VIEW_ARGS(b64PlayerName), 0ULL, ExtensionProfile.begin());
+				if_fail_fef(player.Save(fileName), "iPlayer: %i", iPlayer);
+			}
+			::llc::vcsc_t							extension;
+			switch(autosaveMode) {
+			case SAVE_MODE_USER		: extension = ExtensionSaveUser		; break;
+			case SAVE_MODE_STAGE	: extension = ExtensionSaveStage	; break;
+			case SAVE_MODE_QUICK	: extension = ExtensionSaveQuick	; break;
+			case SAVE_MODE_AUTO		: extension = ExtensionSaveAuto		; break;
+			}
+
+			const u3_t						timeCurrent					= (SAVE_MODE_USER != autosaveMode) ? 0 : ::llc::timeCurrent();
+			const u3_t						timeStart					= (SAVE_MODE_AUTO == autosaveMode) ? 0 : Game.PlayState.GlobalState.UserTime.Started;
+			::llc::sprintf_s(fileName, "%.*s/%llu.%llu%.*s", LLC_VIEW_ARGS(SavegameFolder), timeStart, timeCurrent, LLC_VIEW_ARGS(extension));
+
+			const s2_t						totalHealth					= Game.ShipState.SpaceshipManager.GetTeamHealth(0);
+			if(totalHealth > 0) // Save only if a player is alive
+				return ::ghg::solarSystemSave(Game, fileName);
+			return 0;
+		}
+	};
+
+	llc::err_t	guiSetup			(::ghg::SGalaxyHellApp & gameui, const ::llc::pobj<::llc::SInput> & inputState);
+	llc::err_t	guiUpdate			(::ghg::SGalaxyHellApp & gameui, ::llc::vpobj<::llc::SEventSystem> sysEvents);
+	
+	llc::err_t	galaxyHellUpdate	(::ghg::SGalaxyHellApp & app, double lastTimeSeconds, const ::llc::pobj<::llc::SInput> & inputState, ::llc::vpobj<::llc::SEventSystem> systemEventsNew);
+	llc::err_t	galaxyHellDraw		(::ghg::SGalaxyHellApp & app, ::llc::n2u1_t renderTargetSize);
+
+	llc::err_t	listFilesSavegame	(::ghg::SGalaxyHellApp & app, const ::llc::vcsc_t & saveGameFolder, ::llc::aobj<::llc::vcst_t> & savegameFilenames);
+	llc::err_t	listFilesProfile	(::ghg::SGalaxyHellApp & app, const ::llc::vcsc_t & saveGameFolder, ::llc::aobj<::llc::vcst_t> & savegameFilenames);
+
+}
