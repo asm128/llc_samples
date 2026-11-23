@@ -1,6 +1,7 @@
 #include "llc_engine.h"
 #include "llc_window.h"
 #include "llc_gui_viewport.h"
+#include "llc_path.h"
 
 #ifndef LLC_DESKTOP_H_23627
 #define LLC_DESKTOP_H_23627
@@ -18,6 +19,16 @@ stct SSampleGUIViewport {
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
 	::llc::cid_t			Exit			= ::llc::CID_INVALID;
 	::llc::astchar<96>		PerformanceText		= {};
+	::llc::string			FolderPath			= {};
+	::llc::SPathTree		FolderEntries		= {};
+	::llc::acid			FolderControls		= {};
+	::llc::u2_t			FolderOffset		= 0;
+	::llc::string			OpenFile			= {};
+	::llc::string			FileBytes			= {};
+	::llc::string			FileDisplay		= {};
+	::llc::aobj<::llc::vcst_t> FileLines		= {};
+	::llc::acid			FileControls		= {};
+	::llc::u2_t			FileOffset			= 0;
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
 	::llc::astatic<::llc::n2s1_t, SAMPLE_GUI_VIEWPORT_COUNT>
