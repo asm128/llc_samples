@@ -35,6 +35,25 @@
   <Project Path="llc_sample_comm/llc_sample_comm.vcxproj" Id="da5a4789-32aa-440e-bd88-ffb0ee5cb5b1">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
   </Project>
+  <Project Path="ssiege/ssiege.vcxproj" Id="2054e582-b7be-4568-93ce-de0dbc0c56eb">
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.client.win32/ssiege.client.win32.vcxproj" Id="968bf5b5-d090-4685-82bf-ebadbbf4e68c">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.server.win32/ssiege.server.win32.vcxproj" Id="aca370ac-6def-4387-8221-bc558dc9fdbe">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.win32/ssiege.win32.vcxproj" Id="8221a834-2765-4bcf-bd79-e181cf046c4c">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
   <Project Path="../llc/llc_test_core/llc_test_core.vcxproj" Id="6ac63b34-f2af-481d-9f2f-d7336a272638">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />

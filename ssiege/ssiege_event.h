@@ -1,0 +1,43 @@
+#include "ssiege_event_animal.h"
+#include "ssiege_event_world.h"
+#include "ssiege_event_vehicle.h"
+#include "ssiege_event_user.h"
+
+#ifndef SSG_EVENT_H_23701
+#define SSG_EVENT_H_23701
+
+namespace ssg
+{
+#pragma pack(push, 1)
+	GDEFINE_ENUM_TYPE (SSG_EVENT, u0_t);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, WORLD_EVENT, 0);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, WORLD_ADMIN, 1);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, ACTION_CHAR, 2);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, ACT_WHEELED, 3);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, ACT_AIRSHIP, 4);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, ACT_SAILING, 5);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, ACT_ENGINES, 6);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, CLIENT_ASKS, 7);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, WORLD_SETUP, 8);
+	GDEFINE_ENUM_VALUE(SSG_EVENT, WORLD_VALUE, 9);
+	typedef	::llc::SEvent		<SSG_EVENT>	EventSSiege;
+	typedef	::llc::SEventView	<SSG_EVENT>	EViewSSiege;
+
+	tplt<tpnm _tChildEvent>
+	stin	llc::err_t	eventExtractAndHandle		(const EventSSiege & parentEvent, const ::std::function<llc::err_t(const ::llc::SEventView<_tChildEvent>&)> & funcHandleChild) {
+		return ::llc::eventExtractAndHandle<_tChildEvent, SSG_EVENT>(parentEvent, funcHandleChild);
+	}
+
+#define HANDLE_SSG_EVENT(_result, _state, _ssgEventName, _outputEvents) \
+	if_fail_e(_result = ::ssg::eventExtractAndHandle<::ssg::_ssgEventName>(eventToProcess, [&_state, &_outputEvents, &eventToProcess](auto ev){ \
+		return ::ssg::handle##_ssgEventName(_state, ev, _outputEvents); \
+	}))
+
+#define CASE_SSG_EVENT(_result, _state, _ssgEventName, _outputEvents) \
+	case ::ssg::SSG_EVENT_##_ssgEventName: \
+		HANDLE_SSG_EVENT(_result, _state, _ssgEventName, _outputEvents); \
+		break; 
+#pragma pack(pop)
+} // namespace
+
+#endif // SSG_EVENT_H_23701
