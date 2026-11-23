@@ -252,7 +252,7 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 			if_fail_fe(text.slice(text, 0, ::llc::min(text.size(), ::llc::guiViewportTextColumns(app.GUI, id))));
 			app.GUI.Controls.Text[id].Text = text;
 			::llc::apod<::llc::STextState> & states = app.GUI.Controls.TextState[id];
-			if_fail_fe(states.resize(text.size()));
+			if_fail_fe(states.resize(text.size(), ::llc::STextState{}));
 		for(::llc::u2_t iCharacter = 0; iCharacter < states.size(); ++iCharacter) {
 			states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, app.SelectAll);
 			states[iCharacter].Flag = ::llc::setSwapColors(states[iCharacter].Flag, states[iCharacter].Mask, app.SelectAll);
