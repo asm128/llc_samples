@@ -207,7 +207,7 @@ sttc ::llc::err_t sampleGUIStateDescribe(cnst ::llc::SControlState & state, bool
 	rtrn text.size();
 }
 
-sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t idControl, ::llc::astchar<512> & storage, ::llc::vcst_t text) {
+sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t idControl, ::llc::astsc_t<512> & storage, ::llc::vcst_t text) {
 	if(app.GUI.Controls.Text[idControl].Text == text)
 		rtrn 0;
 	if_true_fe(text.size() >= storage.size());
@@ -245,7 +245,7 @@ sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
 	cnst ::llc::GUI_CONTROL_PALETTE palette = ::sampleGUIControlPalette(disabled, state);
 	cnst ::llc::vcst_t paletteName = ::llc::get_value_namev(palette);
 	cnst ::llc::s1_t paletteSlot = app.GUI.Controls.Draw[app.ControlLive].Palettes[palette];
-	::llc::astchar<512> text = {};
+	::llc::astsc_t<512> text = {};
 	cnst ::llc::err_t length = ::llc::sprintf_s(text.Storage, "LIVE | STATE:%.*s | PALETTE:%.*s [%i] | CLICK TO TOGGLE SELECTED", (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot);
 	if_fail_fe(length);
 	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlLive, app.TextLive, {text.Storage, (::llc::u2_t)length});
@@ -254,7 +254,7 @@ sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
 sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t idHovered) {
 	cnst ::llc::vcst_t themeName = ::sampleGUIThemeName(app.Theme);
 	cnst ::llc::vcst_t modeName = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::vcst_t{"3D"} : ::llc::vcst_t{"FLAT"};
-	::llc::astchar<512> text = {};
+	::llc::astsc_t<512> text = {};
 	::llc::err_t length = 0;
 	if(::llc::controlInvalid(app.GUI, idHovered))
 		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER:NONE", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin());
