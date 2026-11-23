@@ -5,16 +5,12 @@
 #include "llc_raster_lh.h"
 
 #include <time.h>
-#if defined(LLC_WINDOWS)
 #include <direct.h>
-#endif
 
 //#include <joystickapi.h>
 
 //#define LLC_AVOID_LOCAL_APPLICATION_MODULE_MODEL_EXECUTABLE_RUNTIME
 #include "llc_app_impl.h"
-
-LLC_USING_TYPEINT();
 
 //#define USE_STEAM_CLIENT
 //#define STEAM_CEG
@@ -38,27 +34,29 @@ LLC_USING_TYPEINT();
 
 LLC_DEFINE_APPLICATION_ENTRY_POINT(::SApplication, "Galaxy Hell v0.4");
 
-static	llc::err_t	processScreenEvent		(::SApplication & /*app*/, const ::llc::SEventView<::llc::EVENT_SCREEN> & screenEvent) { 
+static	::llc::err_t	processScreenEvent		(::SApplication & /*app*/, const ::llc::SEventView<::llc::EVENT_SCREEN> & screenEvent) { 
 	switch(screenEvent.Type) {
 	default: break;
 	case ::llc::EVENT_SCREEN_Create:
 //#if !defined(DISABLE_D3D11)
-//		if_fail_fe(app.D3DApp.Initialize(app.Framework.RootWindow.PlatformDetail.WindowHandle, app.Engine.Scene->Graphics));
+//		llc_necs(app.D3DApp.Initialize(app.Framework.RootWindow.PlatformDetail.WindowHandle, app.Engine.Scene->Graphics));
 //#endif
 	case ::llc::EVENT_SCREEN_Resize: 
-		//if_fail_fe(::updateSizeDependentResources(app));
+		//llc_necs(::updateSizeDependentResources(app));
 		break;
 	}
 	return 0;
 }
 
-static	llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { 
+static	::llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { 
 	switch(screenEvent.Type) {
 	default: break;
+	case ::llc::EVENT_KEYBOARD_Down:
 	case ::llc::EVENT_KEYBOARD_SysDown:
 		switch(screenEvent.Data[0]) {
-		case '\r':
-			if_fail_fe(::llc::fullScreenToggle(app.Framework.RootWindow));
+		case VK_RETURN:
+			if(GetAsyncKeyState(VK_MENU) & 0xFFF0)
+				llc_necs(::llc::fullScreenToggle(app.Framework.RootWindow));
 			break;
 		}
 		break;
@@ -66,23 +64,27 @@ static	llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEven
 	return 0;
 }
 
-static	llc::err_t	processSystemEvent	(::SApplication & app, const ::llc::SEventSystem & sysEvent) { 
+static	::llc::err_t	processSystemEvent	(::SApplication & app, const ::llc::SEventSystem & sysEvent) { 
 	switch(sysEvent.Type) {
 	default: break;
-	case ::llc::SYSTEM_EVENT_Screen		: if_fail_fe(::llc::eventExtractAndHandle<::llc::EVENT_SCREEN  >(sysEvent, [&app](const ::llc::SScreenEventView & screenEvent) { return ::processScreenEvent  (app, screenEvent); })); break;
-	case ::llc::SYSTEM_EVENT_Keyboard	: if_fail_fe(::llc::eventExtractAndHandle<::llc::EVENT_KEYBOARD>(sysEvent, [&app](const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { return ::processKeyboardEvent(app, screenEvent); })); break;
+	case ::llc::SYSTEM_EVENT_Screen		: llc_necs(::llc::eventExtractAndHandle<::llc::EVENT_SCREEN  >(sysEvent, [&app](const ::llc::SScreenEventView & screenEvent) { return ::processScreenEvent  (app, screenEvent); })); break;
+	case ::llc::SYSTEM_EVENT_Keyboard	: llc_necs(::llc::eventExtractAndHandle<::llc::EVENT_KEYBOARD>(sysEvent, [&app](const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { return ::processKeyboardEvent(app, screenEvent); })); break;
 	}
 	return 0;
 }
 
-llc::err_t			cleanup				(::SApplication & app)						{ 
+::llc::err_t			cleanup				(::SApplication & app)						{ 
 	::llc::SFramework			& framework			= app.Framework;
 	::llc::SWindow				& mainWindow		= framework.RootWindow;
 	::ghg::galaxyHellUpdate(app.GalaxyHellApp, framework.FrameInfo.Seconds.LastFrame, framework.RootWindow.Input, mainWindow.EventQueue);
-#if defined(LLC_WINDOWS)
 	app.AudioState.CleanupAudio(); 
-#endif
 
+	// --- when the rendering context is no longer needed ...   
+ 	// make the rendering context not current  
+	if(app.GLRenderContext) {
+		wglMakeCurrent		(NULL, NULL) ; 
+		wglDeleteContext	(app.GLRenderContext);	// delete the rendering context  
+	}
 #ifdef USE_STEAM_CLIENT
 	SteamAPI_Shutdown();
 	Steamworks_TermCEGLibrary();
@@ -126,7 +128,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 }
 #endif
 
-llc::err_t			setup				(::SApplication & app)						{
+::llc::err_t			setup				(::SApplication & app)						{
 #ifdef USE_STEAM_CLIENT
 	// if Steam is not running or the game wasn't started through Steam, SteamAPI_RestartAppIfNecessary starts the local Steam client and also launches this game again.
 	// Once you get a public Steam AppID assigned for this game, you need to replace k_uAppIdInvalid with it and removed steam_appid.txt from the game depot.
@@ -168,25 +170,23 @@ llc::err_t			setup				(::SApplication & app)						{
 
 #endif // USE_STEAM_CLIENT
 
-	//if_fail_fef(::llc::tcpipInitialize(), "Failed to initialize network subsystem: '%s'.", "Unknown error");
+	//llc_necall(::llc::tcpipInitialize(), "Failed to initialize network subsystem: '%s'.", "Unknown error");
 
 	::llc::SFramework			& framework			= app.Framework;
 	::llc::SWindow				& mainWindow		= framework.RootWindow;
 
 	mainWindow.Size			= {1280, 720};
 
-	if_fail_fe(::llc::mainWindowCreate(mainWindow, framework.RuntimeValues.PlatformDetail, mainWindow.Input));
-	if_fail_fe(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
+	if_true_e(::llc::failed(::llc::mainWindowCreate(mainWindow, framework.RuntimeValues.PlatformDetail, mainWindow.Input)));
+	llc_necs(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
 
-	srand((u2_t)time(0));
+	srand((uint32_t)time(0));
 
 	::ghg::SGalaxyHellDrawCache	& drawCache			= app.GalaxyHellApp.Game.DrawCache;
 	::llc::resize(4096 * 1024, drawCache.PixelCoords, drawCache.PixelVertexWeights, drawCache.LightColorsModel, drawCache.LightColorsWorld, drawCache.LightPointsModel, drawCache.LightPointsWorld);
 
-#if defined(LLC_WINDOWS)
 	app.AudioState.InitAudio();
 	app.AudioState.PrepareAudio("./../llc_data/sounds/thrust.wav");
-#endif
 
 	//app.Client.AddressConnect	= {};
 	//::llc::tcpipAddress(9898, 0, ::llc::TRANSPORT_PROTOCOL_UDP, app.Client.AddressConnect);	// If loading the remote IP from the json fails, we fall back to the local address.
@@ -202,21 +202,31 @@ llc::err_t			setup				(::SApplication & app)						{
 	//joySetCapture(framework.RootWindow.PlatformDetail.WindowHandle, JOYSTICKID2, 10, 0);
 
 	framework.RootWindow.Input->JoystickCurrent.resize(4, {});
-	//for(u2_t i = 0; i < 4; ++i) 
+	//for(uint32_t i = 0; i < 4; ++i) 
 	//	app.GamePad.Resume();
 
+
+	// create a rendering context  
+	app.DrawingContext		= GetDC(framework.RootWindow.PlatformDetail.WindowHandle);
+	app.GLRenderContext		= wglCreateContext(app.DrawingContext); 
+ 
+	// make it the calling thread's current rendering context 
+	wglMakeCurrent (app.DrawingContext, app.GLRenderContext);
+ 
+	// call OpenGL APIs as desired ... 
+ 
 
 	return 0;
 }
 
-llc::err_t			update				(SApplication & app, bool exitSignal)	{
+::llc::err_t			update				(SApplication & app, bool exitSignal)	{
 	if_true_vi(::llc::APPLICATION_STATE_EXIT, exitSignal);
 
 	::llc::SFramework			& framework			= app.Framework;
 	::llc::SWindow				& mainWindow		= framework.RootWindow;
 	//::llc::STimer				timer;
 
-	if_fail_fe(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
+	llc_necs(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
 
 	if_true_vi(::llc::APPLICATION_STATE_EXIT, 1 == ::ghg::galaxyHellUpdate(app.GalaxyHellApp, framework.FrameInfo.Seconds.LastFrame, mainWindow.Input, mainWindow.EventQueue));
 
@@ -228,13 +238,12 @@ llc::err_t			update				(SApplication & app, bool exitSignal)	{
 			app.GalaxyHellApp.RenderTargetPool.push_back(app.Framework.RootWindow.BackBuffer);
 			app.Framework.RootWindow.BackBuffer		= app.GalaxyHellApp.RenderTargetQueue[app.GalaxyHellApp.RenderTargetQueue.size() - 1];
 			app.GalaxyHellApp.RenderTargetQueue.pop_back();
-			for(u2_t iRT = 0; iRT < app.GalaxyHellApp.RenderTargetQueue.size(); ++iRT) {
+			for(uint32_t iRT = 0; iRT < app.GalaxyHellApp.RenderTargetQueue.size(); ++iRT) {
 				app.GalaxyHellApp.RenderTargetPool.push_back(app.GalaxyHellApp.RenderTargetQueue[iRT]);
 			}
 			app.GalaxyHellApp.RenderTargetQueue.clear();
 		}
 	}
-#ifdef LLC_WINDOWS
 	app.AudioState.vListenerPos			= app.GalaxyHellApp.Game.ShipState.Scene.Global.Camera[app.GalaxyHellApp.Game.ShipState.Scene.Global.CameraMode].Position; 
 	app.AudioState.listener.OrientTop	= {0, 1, 0}; 
 	app.AudioState.listener.OrientFront	= {1, 0, 0};  
@@ -262,14 +271,13 @@ llc::err_t			update				(SApplication & app, bool exitSignal)	{
 	}
 
 	app.AudioState.UpdateAudio(framework.FrameInfo.Seconds.LastFrame);// / (app.GalaxyHellApp.World.ShipState.Ships.size() - 1));
-#endif
-#ifdef USE_STEAM_CLIENT
+#if defined(USE_STEAM_CLIENT)
 	SteamAPI_RunCallbacks();
 #endif
 
 	if_true_vi(::llc::APPLICATION_STATE_EXIT, ::llc::APPLICATION_STATE_EXIT == ::llc::updateFramework(app.Framework));
 
-	//for(u2_t i = 0; i < 4; ++i) {
+	//for(uint32_t i = 0; i < 4; ++i) {
 	//	DirectX::GamePad::State padState = app.GamePad.GetState(i);
 	//	if(false == padState.IsConnected())
 	//		warning_printf("Pad %i not connected", i);
@@ -287,7 +295,7 @@ llc::err_t			update				(SApplication & app, bool exitSignal)	{
 	return 0;
 }
 
-llc::err_t			draw					(SApplication & app) {
+::llc::err_t			draw					(SApplication & app) {
     /* rotate a triangle around */
     //glClear(GL_COLOR_BUFFER_BIT);
     //glBegin(GL_TRIANGLES);
@@ -299,7 +307,7 @@ llc::err_t			draw					(SApplication & app) {
     //glVertex2i(1, -1);
     //glEnd();
     //glFlush();
-	return ::ghg::galaxyHellDraw(app.GalaxyHellApp, app.Framework.RootWindow.Size.u1());
+	return ::ghg::galaxyHellDraw(app.GalaxyHellApp, app.Framework.RootWindow.Size .u1());
 }
 
 

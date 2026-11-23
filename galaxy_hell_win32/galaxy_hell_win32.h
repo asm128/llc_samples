@@ -15,13 +15,12 @@ struct SApplication {
 	::std::mutex			LockGUI;
 	::std::mutex			LockRender;
 
+	::llc::AUDIO_STATE		AudioState;
+
 	::ghg::SGalaxyHellApp	GalaxyHellApp;
 
-#ifdef LLC_WINDOWS
-	::llc::AUDIO_STATE		AudioState;
-#elif defined(LLC_XCB)
-	// Your sound and linux bs apis here.
-#endif
+	HDC						DrawingContext		= {};
+	HGLRC					GLRenderContext	= {}; 
  
 	//::llc::SClient		Client;
 

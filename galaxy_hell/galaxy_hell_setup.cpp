@@ -8,27 +8,30 @@
 #include "llc_engine_orbit.h"
 #include "llc_chrono.h"
 
+#include <windows.h>
+#include <mmsystem.h>
+
 using ::llc::get_value_namep, ::llc::get_enum_namep, ::llc::failed;
 LLC_USING_TYPEINT();
 
-llc::err_t			ghg::solarSystemSave	(const ::ghg::SGalaxyHell & game, ::llc::vcsc_t fileName) {
+::llc::err_t			ghg::solarSystemSave	(const ::ghg::SGalaxyHell & game, ::llc::vcst_t fileName) {
 	::llc::au0_t					serialized;
-	if_fail_fe(game.Save(serialized));
+	llc_necs(game.Save(serialized));
 	::llc::au0_t					deflated;
-	if_fail_fe(::llc::arrayDeflate(serialized, deflated));
-	if_fail_fe(::llc::fileFromMemory({fileName}, deflated));
+	llc_necs(::llc::arrayDeflate(serialized, deflated));
+	llc_necs(::llc::fileFromMemory({fileName}, deflated));
 	return 0;
 }
 
-llc::err_t			ghg::solarSystemLoad	(::ghg::SGalaxyHell & world,::llc::vcsc_t filename) {
+::llc::err_t			ghg::solarSystemLoad	(::ghg::SGalaxyHell & world,::llc::vcst_t filename) {
 	::llc::au0_t					deflated;
-	if_fail_fe(::llc::fileToMemory({filename}, deflated));
+	llc_necs(::llc::fileToMemory({filename}, deflated));
 	::llc::au0_t					serialized;
-	if_fail_fe(::llc::arrayInflate(deflated, serialized));
+	llc_necs(::llc::arrayInflate(deflated, serialized));
 
 	::llc::vcu0_t					viewSerialized			= serialized;
 	if (failed(world.Load(viewSerialized))) {
-		if_fail_fe(::ghg::solarSystemReset(world));
+		llc_necs(::ghg::solarSystemReset(world));
 		return -1;
 	}
 
@@ -37,14 +40,14 @@ llc::err_t			ghg::solarSystemLoad	(::ghg::SGalaxyHell & world,::llc::vcsc_t file
 	return 0;
 }
 
-static	llc::err_t	shipCreate				(::ghg::SShipManager & shipState, s2_t teamId, s2_t iGeometry, s2_t iImage)	{
+static	::llc::err_t	shipCreate				(::ghg::SShipManager & shipState, int32_t teamId, int32_t iGeometry, int32_t iImage)	{
 	::ghg::SShipScene			& scene					= shipState.Scene;
-	const u2_t				countParts				= 6;
+	const uint32_t				countParts				= 6;
 
 	::llc::SSpaceshipCore		ship					= {};
 	//shipState.Engine.CreateSphere();
 
-	s2_t						iEntityMain;
+	int32_t						iEntityMain;
 	{	// Create main ship entity
 		::ghg::SGHEntity			entity					= {-1};
 		entity					= {-1};
@@ -52,18 +55,18 @@ static	llc::err_t	shipCreate				(::ghg::SShipManager & shipState, s2_t teamId, s
 		entity.Transform		= scene.Transforms.push_back(shipState.Engine.Integrator.MatrixIdentity4);
 		entity.Image			= -1;	//iImage % 5;
 		entity.Body				= shipState.Engine.Integrator.Create();
-		if_fail_fe(shipState.ShipCoreEntity.push_back(iEntityMain = shipState.EntitySystem.Create(entity, {})));
+		llc_necs(shipState.ShipCoreEntity.push_back(iEntityMain = shipState.EntitySystem.Create(entity, {})));
 		ship.Team				= teamId;
-		//const s2_t				indexBody				= shipState.ShipPhysics.Create(); 
+		//const int32_t				indexBody				= shipState.ShipPhysics.Create(); 
 		//(void)indexBody;
 	}
-	const s2_t				indexShip				= shipState.SpaceshipManager.ShipCores.push_back(ship);
+	const int32_t				indexShip				= shipState.SpaceshipManager.ShipCores.push_back(ship);
 	shipState.SpaceshipManager.ShipParts.push_back({});
 	shipState.SpaceshipManager.ShipScores.push_back({});
 
 	//ship.Parts.reserve(countParts);
 	::ghg::SGHEntity			entityOrbit				= {};
-	for(u2_t iPart = 0; iPart < countParts; ++iPart) {	// Create child parts
+	for(uint32_t iPart = 0; iPart < countParts; ++iPart) {	// Create child parts
 		::ghg::SGHEntity			entityPart				= {-1};
 		entityOrbit.Parent		= iEntityMain;
 		entityOrbit.Geometry	= -1;
@@ -88,14 +91,14 @@ static	llc::err_t	shipCreate				(::ghg::SShipManager & shipState, s2_t teamId, s
 		entityPart.Transform	= scene.Transforms.push_back(shipState.Engine.Integrator.MatrixIdentity4);
 		entityPart.Image		= iImage % shipState.Scene.Image.size();
 		entityPart.Body			= entityOrbit.Body + 1;
-		s2_t						indexEntityPart			= shipState.EntitySystem.Create(entityPart, {});
+		int32_t						indexEntityPart			= shipState.EntitySystem.Create(entityPart, {});
 		shipState.EntitySystem.EntityChildren[entityPart.Parent].push_back(indexEntityPart);
 		//solarSystem.ShipPhysics.Transforms[entityOrbit.Body].Orientation.Normalize();
 		shipState.Engine.Integrator.SetActive(entityPart.Body, true);
 
 		::llc::SSpaceshipOrbiter				shipPart				= {};
 		shipState.ShipPartEntity.push_back(entityPart.Parent);
-		shipState.SpaceshipManager.ShipParts[indexShip].push_back((u1_t)shipState.SpaceshipManager.Orbiters.push_back(shipPart));
+		shipState.SpaceshipManager.ShipParts[indexShip].push_back((uint16_t)shipState.SpaceshipManager.Orbiters.push_back(shipPart));
 		shipState.SpaceshipManager.ShipOrbiterActionQueue.push_back({});
 
 		::llc::au2_t					& parentEntityChildren	= shipState.EntitySystem.EntityChildren[iEntityMain];
@@ -104,11 +107,11 @@ static	llc::err_t	shipCreate				(::ghg::SShipManager & shipState, s2_t teamId, s
 	return indexShip;
 }
 
-//static	int			engineCreate		(::ghg::SGalaxyHell & solarSystem, s2_t iImage)	{
+//static	int			engineCreate		(::ghg::SGalaxyHell & solarSystem, int32_t iImage)	{
 //	return 0;
 //}
 
-static	llc::err_t	shipGeometryBuildEngine			(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildEngine			(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildHelix(geometry, 8U, 8U, 0.15f, {0, 1.1f, 0}, {1, 1, 1});
 	//::llc::geometryBuildCylinder(geometry, 1U, 6U, .05f, .05f, {0, 1, 0}, {1, 1, 1});
 	::llc::geometryBuildCylinder(geometry, 1U, 8U, .35f, .25f, {0, 1, 0}, {1, 1, 1});
@@ -116,7 +119,7 @@ static	llc::err_t	shipGeometryBuildEngine			(::llc::SGeometryQuads & geometry)		
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildWafer			(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildWafer			(::llc::SGeometryQuads & geometry)			{
 	::shipGeometryBuildEngine(geometry);
 	::llc::geometryBuildCube(geometry, {1.2f, 0.5f, 1.2f});
 	::llc::geometryBuildGrid(geometry, {1U, 1U}, { 0.75f, .75f}, { 1.5, 1, 1.5});
@@ -124,7 +127,7 @@ static	llc::err_t	shipGeometryBuildWafer			(::llc::SGeometryQuads & geometry)			
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildWaferShotgun	(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildWaferShotgun	(::llc::SGeometryQuads & geometry)			{
 	::shipGeometryBuildEngine(geometry);
 	::llc::geometryBuildCube(geometry, {.3f, 1.5f, .3f}, {-.25f, 0, -.25f});
 	::llc::geometryBuildCube(geometry, {.3f, 1.5f, .3f}, {-.25f, 0, .25f});
@@ -135,7 +138,7 @@ static	llc::err_t	shipGeometryBuildWaferShotgun	(::llc::SGeometryQuads & geometr
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildGun		(::llc::SGeometryQuads & geometry)						{
+static	::llc::err_t	shipGeometryBuildGun		(::llc::SGeometryQuads & geometry)						{
 	::shipGeometryBuildEngine(geometry);
 	::llc::geometryBuildSphere	(geometry, 8U, 5U, .7f, {0, 0});
 	::llc::geometryBuildFigure0	(geometry, 2U, 8U, 1, {});
@@ -144,7 +147,7 @@ static	llc::err_t	shipGeometryBuildGun		(::llc::SGeometryQuads & geometry)						
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildShotgun	(::llc::SGeometryQuads & geometry)						{
+static	::llc::err_t	shipGeometryBuildShotgun	(::llc::SGeometryQuads & geometry)						{
 	::shipGeometryBuildEngine(geometry);
 	::llc::geometryBuildSphere	(geometry, 8U, 5U, .35f, {0, 0});
 	::llc::geometryBuildFigure0	(geometry, 2U, 8U, 1, {});
@@ -155,7 +158,7 @@ static	llc::err_t	shipGeometryBuildShotgun	(::llc::SGeometryQuads & geometry)			
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildCannon		(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildCannon		(::llc::SGeometryQuads & geometry)			{
 	::shipGeometryBuildEngine(geometry);
 	::llc::geometryBuildSphere	(geometry, 8U, 5U, .8f, {0, 0});
 	::llc::geometryBuildTender	(geometry, 8U, 8U, .75f, {0, -.5, 0}, { .25, .8f, .25});
@@ -163,36 +166,36 @@ static	llc::err_t	shipGeometryBuildCannon		(::llc::SGeometryQuads & geometry)			
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildCannonball	(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildCannonball	(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildSphere		(geometry, 6U, 4U, .5f, {0, 0});
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildRocket		(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildRocket		(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {1, 1, 1});
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {-1, 1, 1});
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildMissile	(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildMissile	(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {1, 1, 1});
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {-1, 1, 1});
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildBullet		(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildBullet		(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {1, 1, 1});
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .001f, {}, {-1, 1, 1});
 	return 0;
 }
 
-static	llc::err_t	shipGeometryBuildShred		(::llc::SGeometryQuads & geometry)			{
+static	::llc::err_t	shipGeometryBuildShred		(::llc::SGeometryQuads & geometry)			{
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .125f, {}, {1, 1, 1});
 	::llc::geometryBuildCylinder(geometry, 2U, 8U, .125f, .001f, {}, {-1, 1, 1});
 	return 0;
 }
 
-static	llc::err_t	modelsSetupOld			(::ghg::SShipScene & scene)			{
+static	::llc::err_t	modelsSetupOld			(::ghg::SShipScene & scene)			{
 	scene.Geometry.resize(::llc::get_value_count<llc::SHIP_GEOMETRY>() * 1024);
 
 	::shipGeometryBuildEngine		(scene.Geometry[::llc::SHIP_GEOMETRY_Engine			]);
@@ -213,19 +216,19 @@ static	llc::err_t	modelsSetupOld			(::ghg::SShipScene & scene)			{
 	{
 
 		::llc::apod<::llc::rgbaf>	baseColors;
-		for(u2_t i = 0; i < 4096; ++i)
+		for(uint32_t i = 0; i < 4096; ++i)
 			baseColors.push_back({(float)::llc::noiseNormal1D(rand()), (float)::llc::noiseNormal1D(rand()), (float)::llc::noiseNormal1D(rand()), 1});
 
 		scene.Image.resize(256);
-		for(u2_t iImage = 0; iImage < scene.Image.size(); ++iImage) {
+		for(uint32_t iImage = 0; iImage < scene.Image.size(); ++iImage) {
 			::llc::img<::llc::bgra>		& image					= scene.Image[iImage];
 			if(image.Texels.size())
 				continue;
 			image.resize(::llc::n2u2_t{32, 5});
-			for(u2_t y = 0; y < image.metrics().y; ++y) {// Generate noise color for planet texture
+			for(uint32_t y = 0; y < image.metrics().y; ++y) {// Generate noise color for planet texture
 				bool						xAffect					= (y % 2);
 				::llc::rgbaf				lineColor				= baseColors[(iImage + (rand() % 4)) % (baseColors.size() - 4)];
-				for(u2_t x = 0; x < image.metrics().x; ++x) {
+				for(uint32_t x = 0; x < image.metrics().x; ++x) {
 					image.Texels[y * image.metrics().x + x]				= (lineColor * (xAffect ? ::llc::max(.25, ::llc::sin(x * (1.0 / image.metrics().x * ::llc::math_pi))) : 1)).Clamp();
 				}
 			}
@@ -234,29 +237,29 @@ static	llc::err_t	modelsSetupOld			(::ghg::SShipScene & scene)			{
 	return 0;
 }
 
-static	llc::err_t	shipNodeCreateRoot	(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) {
+static	::llc::err_t	shipNodeCreateRoot	(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) {
 	llc::SMeshManager			& meshes			= graphics.Meshes;
-	const u2_t				rootNode			= (u2_t)nodes.Create();
-	nodes[rootNode].Mesh	= (u2_t)meshes.Create();
+	const uint32_t				rootNode			= (uint32_t)nodes.Create();
+	nodes[rootNode].Mesh	= (uint32_t)meshes.Create();
 	meshes[nodes[rootNode].Mesh]->ConstantBuffers.clear();
 	meshes[nodes[rootNode].Mesh]->Desc.Type			= ::llc::GEOMETRY_TYPE_Triangle;
 	meshes[nodes[rootNode].Mesh]->Desc.Mode			= ::llc::MESH_MODE_List;
 	return rootNode;
 }
 
-static	llc::err_t	shipNodeBuildEngine			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildWafer			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildWaferShotgun	(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildGun			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildShotgun		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildCannon			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildCannonball		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildRocket			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildMissile		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildBullet			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
-static	llc::err_t	shipNodeBuildShred			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const u2_t rootNode = (u2_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildEngine			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildWafer			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildWaferShotgun	(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildGun			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildShotgun		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildCannon			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildCannonball		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildRocket			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildMissile		(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildBullet			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
+static	::llc::err_t	shipNodeBuildShred			(::llc::SRenderNodeManager & nodes, ::llc::SEngineGraphics & graphics) { const uint32_t rootNode = (uint32_t)shipNodeCreateRoot(nodes, graphics); return rootNode; }
 
-static	llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
+static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 	llc::pobj<llc::SEngineScene>	scene			= engine.Scene;
 
 	llc::SRenderNodeManager		& nodes				= scene->RenderNodes;
@@ -283,7 +286,7 @@ static	llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 	return 0;
 }
 
-llc::err_t			ghg::solarSystemReset	(::ghg::SGalaxyHell & solarSystem)	{	// Set up enemy ships
+::llc::err_t			ghg::solarSystemReset	(::ghg::SGalaxyHell & solarSystem)	{	// Set up enemy ships
 	::std::lock_guard			lock					(solarSystem.LockUpdate);
 	solarSystem.ShipControllers.clear();
 	solarSystem.ShipState.Clear();
@@ -295,8 +298,8 @@ llc::err_t			ghg::solarSystemReset	(::ghg::SGalaxyHell & solarSystem)	{	// Set u
 }
 
 
-llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up enemy ships
-	stxp	u2_t			partHealth				= 100;
+::llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up enemy ships
+	stxp	uint32_t			partHealth				= 100;
 
 	solarSystem.PlayState.TimeStage		= 0;
 	solarSystem.PlayState.TimeRealStage	= 0;
@@ -308,7 +311,7 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 		memset(solarSystem.ShipState.SpaceshipManager.ShipScores.begin(), 0, solarSystem.ShipState.SpaceshipManager.ShipScores.byte_count());
 		while(solarSystem.Pilots.size() < solarSystem.PlayState.Constants.Players) {
 			sc_t						text [64]				= {};
-			::llc::sprintf_s(text, "Player %i", solarSystem.Pilots.size() + 1);
+			sprintf_s(text, "Player %i", solarSystem.Pilots.size() + 1);
 			solarSystem.Pilots.push_back({::llc::label(text), PLAYER_COLORS[solarSystem.Pilots.size() % ::llc::size(PLAYER_COLORS)]});
 		}
 		solarSystem.ShipControllers.resize(solarSystem.PlayState.Constants.Players);
@@ -317,14 +320,14 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 #pragma pack(push, 1)
 	struct SShipOrbiterSetup {
 		::llc::SHIP_PART_TYPE	Type			;
-		u2_t				MaxHealth		;
+		uint32_t				MaxHealth		;
 		::llc::WEAPON_TYPE		Weapon			;
 		double					MaxDelay		;
 		double					Stability		;
 		::llc::WEAPON_LOAD		Munition		;
 		float					Speed			;
-		s2_t					Damage			;
-		u0_t					ParticleCount	;
+		int32_t					Damage			;
+		uint8_t					ParticleCount	;
 		double					Cooldown		;
 		double					OverheatPerShot	;
 		double					ShotLifetime	;
@@ -351,10 +354,10 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 		, {::llc::SHIP_PART_TYPE_Gun			, 128, ::llc::WEAPON_TYPE_Gun		, .12, 0.50, ::llc::WEAPON_LOAD_Missile		,  160,   112, 1,   1,0.25,  5, ::llc::DAMAGE_TYPE_Burn | ::llc::DAMAGE_TYPE_Wave }
 		};
 
-	::llc::sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
+	sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
 	if(0 <= ::llc::fileToMemory(stageFileName, stageFile.Bytes) && stageFile.Bytes.size()) {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
-		if_fail_fef(::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
+		llc_necall(-1 == ::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
 	} 
 	else {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
@@ -375,8 +378,8 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 			solarSystem.PlayState.GlobalState.CameraSwitchDelay	= 0;
 			solarSystem.ShipState.Scene.Global.CameraReset();
 
-			for(u2_t iPlayer = 0; iPlayer < solarSystem.PlayState.Constants.Players; ++iPlayer) {
-				const s2_t				indexShip			= ::shipCreate(solarSystem.ShipState, 0, 0, iPlayer);
+			for(uint32_t iPlayer = 0; iPlayer < solarSystem.PlayState.Constants.Players; ++iPlayer) {
+				const int32_t				indexShip			= ::shipCreate(solarSystem.ShipState, 0, 0, iPlayer);
 				::llc::SBodyCenter			& shipPivot			= solarSystem.ShipState.GetShipPivot(indexShip);
 				shipPivot.Orientation.MakeFromEuler({0, 0, (float)(-::llc::math_pi_2)});
 				shipPivot.Position		= {-30};
@@ -385,35 +388,35 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 		}
 		// Set up enemy ships
 		while(((int)solarSystem.ShipState.SpaceshipManager.ShipCores.size() - (int)solarSystem.PlayState.Constants.Players - 1) < (int)(solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage)) {	// Create enemy ships depending on stage.
-			s2_t						indexShip				= ::shipCreate(solarSystem.ShipState, 1, -1, solarSystem.PlayState.GlobalState.Stage + solarSystem.ShipState.SpaceshipManager.ShipCores.size());
+			int32_t						indexShip				= ::shipCreate(solarSystem.ShipState, 1, -1, solarSystem.PlayState.GlobalState.Stage + solarSystem.ShipState.SpaceshipManager.ShipCores.size());
 			::llc::SBodyCenter			& shipPivot				= solarSystem.ShipState.GetShipPivot(indexShip);
 			shipPivot.Orientation.MakeFromEuler({0, 0, (float)(::llc::math_pi_2)});
 			shipPivot.Position		= {5.0f + 5 * solarSystem.ShipState.SpaceshipManager.ShipCores.size()};
 
 			::llc::au1_t					& enemyShipOrbiters		= solarSystem.ShipState.SpaceshipManager.ShipParts[indexShip];
-			for(u2_t iPart = 0; iPart < enemyShipOrbiters.size(); ++iPart) {
+			for(uint32_t iPart = 0; iPart < enemyShipOrbiters.size(); ++iPart) {
 				solarSystem.ShipState.Engine.Integrator.Forces[solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[enemyShipOrbiters[iPart]]].Body].Rotation.y *= float(1 + indexShip * .35);
 			}
 		}
 
 
-		stxp f2_t				DEFAULT_NITRO					= 1;
+		cxpr int32_t				DEFAULT_NITRO					= 1;
 		// set up weapons
-		for(u2_t iShip = 0; iShip < solarSystem.ShipState.SpaceshipManager.ShipCores.size(); ++iShip) {
+		for(uint32_t iShip = 0; iShip < solarSystem.ShipState.SpaceshipManager.ShipCores.size(); ++iShip) {
 			::llc::SSpaceshipCore		& ship							= solarSystem.ShipState.SpaceshipManager.ShipCores[iShip];
 			::llc::au1_t					& shipParts						= solarSystem.ShipState.SpaceshipManager.ShipParts[iShip];
 			ship.Health				= 0;
 			ship.Nitro				= {DEFAULT_NITRO, DEFAULT_NITRO};
 
-			for(u2_t iPart = 0; iPart < shipParts.size(); ++iPart) {
+			for(uint32_t iPart = 0; iPart < shipParts.size(); ++iPart) {
 				::llc::SSpaceshipOrbiter			& shipPart						= solarSystem.ShipState.SpaceshipManager.Orbiters[shipParts[iPart]];
 				//ship.Team			= iShip ? 1 : 0;
-				s2_t					weapon							= 0;
+				int32_t					weapon							= 0;
 				if(0 == ship.Team) {
-					u2_t				minWeapon						= solarSystem.PlayState.GlobalState.Stage / 4;
-					u2_t				maxWeapon						= ::llc::min(solarSystem.PlayState.GlobalState.Stage, ::llc::size(weaponDefinitions) - 1);
+					uint32_t				minWeapon						= solarSystem.PlayState.GlobalState.Stage / 4;
+					uint32_t				maxWeapon						= ::llc::min(solarSystem.PlayState.GlobalState.Stage, ::llc::size(weaponDefinitions) - 1);
 
-					weapon				= (s2_t)::llc::clamped(minWeapon + iPart, minWeapon, maxWeapon);
+					weapon				= (int32_t)::llc::clamped(minWeapon + iPart, minWeapon, maxWeapon);
 					solarSystem.ShipState.SpaceshipManager.ShipOrbiterActionQueue[shipParts[0]]->push_back(::llc::SHIP_ACTION_Spawn);
 
 				}
@@ -428,7 +431,7 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 
 				SShipOrbiterSetup				partCreationData	= weaponDefinitions[weapon];
 				::llc::SWeapon					newWeapon			= {};
-				shipPart.Health.Value		= (s2_t)(shipPart.Health.Limit = partCreationData.MaxHealth);
+				shipPart.Health.Value		= (int32_t)(shipPart.Health.Limit = partCreationData.MaxHealth);
 				shipPart.Type				= partCreationData.Type;
 				newWeapon.Trigger.Delay.Limit		= (float)partCreationData.MaxDelay;
 				if(0 != ship.Team)
@@ -454,9 +457,9 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
  				else if(shipPart.Type == ::llc::SHIP_PART_TYPE_Cannon		) { solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[shipParts[iPart]] + 1].Geometry = ::llc::SHIP_GEOMETRY_Cannon;		}
  				else if(shipPart.Type == ::llc::SHIP_PART_TYPE_ShotgunWafer	) { solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[shipParts[iPart]] + 1].Geometry = ::llc::SHIP_GEOMETRY_WaferShotgun;	}
 				ship.Health				+= shipPart.Health.Value;
-				const u2_t				width		= ::llc::get_value_count<::llc::WEAPON_LOAD>();
-				const u2_t				height		= ::llc::get_value_count<::llc::WEAPON_TYPE>();
-				const u2_t				depth		= ::llc::get_value_count<::llc::SHIP_PART_TYPE>();
+				const uint32_t				width		= ::llc::get_value_count<::llc::WEAPON_LOAD>();
+				const uint32_t				height		= ::llc::get_value_count<::llc::WEAPON_TYPE>();
+				const uint32_t				depth		= ::llc::get_value_count<::llc::SHIP_PART_TYPE>();
 				solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[shipParts[iPart]] + 1].Image	= iShip * width * height * depth + shipPart.Type * width * height + newWeapon.Type * width + newWeapon.Shot.Type;
 				solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[shipParts[iPart]] + 1].Image	%= solarSystem.ShipState.Scene.Image.size();
 				solarSystem.ShipState.Engine.Integrator.Centers[solarSystem.ShipState.EntitySystem.Entities[solarSystem.ShipState.ShipPartEntity[shipParts[iPart]] + 1].Body].Orientation = {0, 0, 0, 1};
@@ -473,20 +476,20 @@ llc::err_t			ghg::stageSetup			(::ghg::SGalaxyHell & solarSystem)	{	// Set up en
 	return 0;
 }
 
-llc::err_t			ghg::solarSystemSetup	(::ghg::SGalaxyHell & solarSystem, const ::llc::n2u1_t & windowSize)	{
-	if_fail_fe(::modelsSetup(solarSystem.ShipState.Engine));
-	if_fail_fe(::modelsSetupOld(solarSystem.ShipState.Scene));
+::llc::err_t			ghg::solarSystemSetup	(::ghg::SGalaxyHell & solarSystem, const ::llc::n2u1_t & windowSize)	{
+	llc_necs(::modelsSetup(solarSystem.ShipState.Engine));
+	llc_necs(::modelsSetupOld(solarSystem.ShipState.Scene));
 
 	solarSystem.DecoState.FontManager.Fonts.clear();
-	if_fail_fe(::llc::rasterFontDefaults(solarSystem.DecoState.FontManager));
+	llc_necs(::llc::rasterFontDefaults(solarSystem.DecoState.FontManager));
 
-	if_fail_fe(::ghg::stageSetup(solarSystem));
+	llc_necs(::ghg::stageSetup(solarSystem));
 
 	::llc::m4f2_t				& matrixProjection		= solarSystem.ShipState.Scene.Global.MatrixProjection;
 	matrixProjection.FieldOfView(::llc::math_pi * .25, windowSize.x / (double)windowSize.y, 0.01, 500.0);
 
 	::llc::m4f2_t				matrixViewport			= {};
-	matrixViewport.ViewportLH(windowSize.u1());
+	matrixViewport.ViewportLH(windowSize .u1());
 	matrixProjection		*= matrixViewport;
 	return 0;
 }

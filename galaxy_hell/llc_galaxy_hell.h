@@ -22,8 +22,8 @@ namespace ghg
 {
 	LLC_USING_TYPEINT();
 	
-	stxp u1_t	MAX_PLAYERS				= 4;
-	stxp u2_t	MAX_ORBITER_COUNT		= 6;
+	stxp uint16_t	MAX_PLAYERS				= 4;
+	stxp uint32_t	MAX_ORBITER_COUNT		= 6;
 
 #pragma pack(push, 1)
 	stxp ::llc::astatic<::llc::bgra, 16>	PLAYER_COLORS	= 
@@ -36,7 +36,7 @@ namespace ghg
 		, 0xFFFF0000U	// RED
 		};
 
-	GDEFINE_ENUM_TYPE(PLAY_TYPE, u0_t);
+	GDEFINE_ENUM_TYPE(PLAY_TYPE, uint8_t);
 	GDEFINE_ENUM_VALUE(PLAY_TYPE, FreeRoam		, 0);
 	GDEFINE_ENUM_VALUE(PLAY_TYPE, Campaign		, 1);
 	GDEFINE_ENUM_VALUE(PLAY_TYPE, Deathmatch	, 2);
@@ -92,11 +92,11 @@ namespace ghg
 	};
 	 
 	struct SShipController {
-		u0_t				Forward					: 1;
-		u0_t				Back					: 1;
-		u0_t				Left					: 1;
-		u0_t				Right					: 1;
-		u0_t				Turbo					: 1;
+		uint8_t				Forward					: 1;
+		uint8_t				Back					: 1;
+		uint8_t				Left					: 1;
+		uint8_t				Right					: 1;
+		uint8_t				Turbo					: 1;
 	};
 #pragma pack(pop)
 
@@ -112,79 +112,79 @@ namespace ghg
 		::ghg::SGalaxyHellDrawCache			DrawCache;
 		::std::mutex						LockUpdate;
 
-		llc::err_t						PilotCreate				(const ::ghg::SShipPilot & shipPilot)			{
-			if_fail_fe(Pilots.push_back(shipPilot));
+		::llc::err_t						PilotCreate				(const ::ghg::SShipPilot & shipPilot)			{
+			llc_necs(Pilots.push_back(shipPilot));
 			return ShipControllers.push_back({});
 		}
 
-		llc::err_t						PilotsReset				()			{
+		::llc::err_t						PilotsReset				()			{
 			while(Pilots.size() < PlayState.Constants.Players) {
 				sc_t									text [64]				= {};
-				::llc::sprintf_s(text, "Player %i", Pilots.size() + 1);
-				if_fail_fe(Pilots.push_back({::llc::label(text), PLAYER_COLORS[Pilots.size() % ::llc::size(PLAYER_COLORS)]}));
+				sprintf_s(text, "Player %i", Pilots.size() + 1);
+				llc_necs(Pilots.push_back({::llc::label(text), PLAYER_COLORS[Pilots.size() % ::llc::size(PLAYER_COLORS)]}));
 			}
 			return ShipControllers.resize(PlayState.Constants.Players);
 		}
 
-		llc::err_t						Save					(::llc::au0_t & output)		const	{
-			if_fail_fe(::llc::savePOD(output, PlayState));
-			for(u2_t iPlayer = 0; iPlayer < PlayState.Constants.Players; ++iPlayer) {
-				if_fail_fe(::llc::saveView(output, Pilots[iPlayer].Name));
-				if_fail_fe(::llc::savePOD(output, Pilots[iPlayer].Color));
+		::llc::err_t						Save					(::llc::au0_t & output)		const	{
+			llc_necs(::llc::savePOD(output, PlayState));
+			for(uint32_t iPlayer = 0; iPlayer < PlayState.Constants.Players; ++iPlayer) {
+				llc_necs(::llc::saveView(output, Pilots[iPlayer].Name));
+				llc_necs(::llc::savePOD(output, Pilots[iPlayer].Color));
 			}
-			if_fail_fe(::llc::saveView(output, ShipControllers));
-			if_fail_fe(ShipState.Save(output));
+			llc_necs(::llc::saveView(output, ShipControllers));
+			llc_necs(ShipState.Save(output));
 			return 0;
 		}
 
-		llc::err_t						Load					(::llc::vcu0_t & input) {
+		::llc::err_t						Load					(::llc::vcu0_t & input) {
 			::std::lock_guard						lock(LockUpdate);
 			::llc::view<const ::ghg::SPlayState>	readPlayState			= {};
-			if_fail_fe(::llc::loadPOD(input, PlayState));
-			if_fail_fe(Pilots.resize(PlayState.Constants.Players));
-			for(u2_t iPlayer = 0; iPlayer < Pilots.size(); ++iPlayer) {
-				if_fail_fef(::llc::loadLabel(input, Pilots[iPlayer].Name), "iPlayer %i", iPlayer);
-				if_fail_fef(::llc::loadPOD(input, Pilots[iPlayer].Color), "iPlayer %i", iPlayer);
+			llc_necs(::llc::loadPOD(input, PlayState));
+			llc_necs(Pilots.resize(PlayState.Constants.Players));
+			for(uint32_t iPlayer = 0; iPlayer < Pilots.size(); ++iPlayer) {
+				llc_necall(::llc::loadLabel(input, Pilots[iPlayer].Name), "iPlayer %i", iPlayer);
+				llc_necall(::llc::loadPOD(input, Pilots[iPlayer].Color), "iPlayer %i", iPlayer);
 			}
 			ShipControllers.clear();
-			if_fail_fe(::llc::loadView(input, ShipControllers));
-			if_fail_fe(ShipState.Load(input));
+			llc_necs(::llc::loadView(input, ShipControllers));
+			llc_necs(ShipState.Load(input));
 			return 0;
 		}
 	};
 
-	llc::err_t		stageSetup				(::ghg::SGalaxyHell & solarSystem);
-	llc::err_t		solarSystemSetup		(::ghg::SGalaxyHell & solarSystem, const ::llc::n2u1_t & windowSize);
-	llc::err_t		solarSystemReset		(::ghg::SGalaxyHell & solarSystem); 
-	llc::err_t		solarSystemDraw			(const ::ghg::SGalaxyHell & solarSystem, ::ghg::SGalaxyHellDrawCache & drawCache, ::std::mutex & lockUpdate);
-	llc::err_t		solarSystemUpdate		(::ghg::SGalaxyHell & solarSystem, double secondsLastFrame, const ::llc::SInput & input, ::llc::vpobj<::llc::SEventSystem> frameEvents);
-	llc::err_t		solarSystemLoad			(::ghg::SGalaxyHell & world,::llc::vcsc_t filename);
-	llc::err_t		solarSystemSave			(const ::ghg::SGalaxyHell & world,::llc::vcsc_t filename);
+	::llc::err_t		stageSetup				(::ghg::SGalaxyHell & solarSystem);
+	::llc::err_t		solarSystemSetup		(::ghg::SGalaxyHell & solarSystem, const ::llc::n2u1_t & windowSize);
+	::llc::err_t		solarSystemReset		(::ghg::SGalaxyHell & solarSystem); 
+	::llc::err_t		solarSystemDraw			(const ::ghg::SGalaxyHell & solarSystem, ::ghg::SGalaxyHellDrawCache & drawCache, ::std::mutex & lockUpdate);
+	::llc::err_t		solarSystemUpdate		(::ghg::SGalaxyHell & solarSystem, double secondsLastFrame, const ::llc::SInput & input, ::llc::vpobj<::llc::SEventSystem> frameEvents);
+	::llc::err_t		solarSystemLoad			(::ghg::SGalaxyHell & world,::llc::vcst_t filename);
+	::llc::err_t		solarSystemSave			(const ::ghg::SGalaxyHell & world,::llc::vcst_t filename);
 	
-	llc::err_t		getLightArraysFromDebris
+	::llc::err_t		getLightArraysFromDebris
 		( const ::ghg::SDecoState	& decoState
-		, ::llc::a3f2_t				& lightPoints
+		, ::llc::an3f2_t				& lightPoints
 		, ::llc::a8bgra				& lightColors
 		, const ::llc::vc8bgra		& debrisColors
 		);
 
-	llc::err_t		getLightArraysFromShips
+	::llc::err_t		getLightArraysFromShips
 		( const ::ghg::SShipManager	& shipState
-		, ::llc::a3f2_t				& lightPoints
+		, ::llc::an3f2_t				& lightPoints
 		, ::llc::a8bgra				& lightColors
 		);
 
-	llc::err_t		getLightArrays
+	::llc::err_t		getLightArrays
 		( const ::ghg::SShipManager	& shipState
 		, const ::ghg::SDecoState	& decoState
-		, ::llc::a3f2_t				& lightPoints
+		, ::llc::an3f2_t				& lightPoints
 		, ::llc::a8bgra				& lightColors
 		, const ::llc::vc8bgra		& debrisColors
 		);
 
-	llc::err_t		drawOrbiter
+	::llc::err_t		drawOrbiter
 		( const ::ghg::SShipManager		& shipState
-		, const u2_t				iPartEntity
+		, const uint32_t				iPartEntity
 		, const ::llc::rgbaf			& shipColor	
 		, const float					animationTime
 		, const ::llc::m4f2_t			& matrixVP
@@ -195,4 +195,4 @@ namespace ghg
 }
 
 #endif // LLC_GALAXY_HELL_H_293874239874
-
+		  

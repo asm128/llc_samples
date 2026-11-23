@@ -9,20 +9,18 @@
 
 namespace ghg 
 {
-	LLC_USING_TYPEINT();
-
 	struct SStars	{
-		::llc::a2f2_t		Position			= {};
+		::llc::an2f2_t		Position			= {};
 		::llc::af2_t		Speed				= {};
 		::llc::af2_t		Brightness			= {};
 
-		int					Reset				(::llc::n2u1_t targetSize, u1_t starCount = 128)	{
+		int					Reset				(::llc::n2u1_t targetSize, uint16_t starCount = 128)	{
 			if(0 == targetSize.y || 0 == targetSize.x) 
 				return 0;
 			Speed		.resize(starCount);
 			Brightness	.resize(starCount);
 			Position	.resize(starCount);
-			for(u2_t iStar = 0; iStar < Brightness.size(); ++iStar) {
+			for(uint32_t iStar = 0; iStar < Brightness.size(); ++iStar) {
 				Speed		[iStar]		= float(16 + (rand() % 64));
 				Brightness	[iStar]		= float(1.0 / RAND_MAX * rand());
 				Position	[iStar].y	= float(rand() % targetSize.y);
@@ -33,7 +31,7 @@ namespace ghg
 
 		int					Update				(::llc::n2u1_t targetSize, float secondsLastFrame)	{
 			stxp	double			randUnit			= 1.0 / RAND_MAX;
-			for(u2_t iStar = 0; iStar < Brightness.size(); ++iStar) {
+			for(uint32_t iStar = 0; iStar < Brightness.size(); ++iStar) {
 				::llc::n2f2_t			& starPos			= Position[iStar];
 				float					& starSpeed			= Speed[iStar];
 				starPos.y			+= starSpeed * secondsLastFrame;
@@ -55,7 +53,7 @@ namespace ghg
 		::llc::af2_t		Brightness			= {};
 		::llc::SParticles3	Particles			= {};
 		
-		int					Remove				(s2_t iParticle)	{
+		int					Remove				(int32_t iParticle)	{
 			Brightness.remove_unordered(iParticle);
 			return Particles.Remove(iParticle);
 		}
@@ -65,9 +63,9 @@ namespace ghg
 			return Brightness.push_back(brightness);
 		}
 
-		int					SpawnSpherical		(u2_t countDebris, const ::llc::n3f2_t & position, float speedDebris, float brightness)	{
+		int					SpawnSpherical		(uint32_t countDebris, const ::llc::n3f2_t & position, float speedDebris, float brightness)	{
 			stxp	double			randUnit			= ::llc::math_2pi / RAND_MAX;
-			for(u2_t iDebris = 0; iDebris < countDebris; ++iDebris) {
+			for(uint32_t iDebris = 0; iDebris < countDebris; ++iDebris) {
 				::llc::n3f2_t									direction			= {0, 1, 0};
 				direction.RotateX(rand() * randUnit);
 				direction.RotateY(rand() * randUnit);
@@ -77,9 +75,9 @@ namespace ghg
 			return 0;
 		}
 
-		int					SpawnDirected		(u2_t countDebris, double noiseFactor, const ::llc::n3f2_t & direction, const ::llc::n3f2_t & position, float speedDebris, float brightness)	{
+		int					SpawnDirected		(uint32_t countDebris, double noiseFactor, const ::llc::n3f2_t & direction, const ::llc::n3f2_t & position, float speedDebris, float brightness)	{
 			stxp	double			randUnit			= ::llc::math_2pi / RAND_MAX;
-			for(u2_t iDebris = 0; iDebris < countDebris; ++iDebris) {
+			for(uint32_t iDebris = 0; iDebris < countDebris; ++iDebris) {
 				::llc::n3f2_t									finalDirection		= {0, 1, 0};
 				finalDirection.RotateX(rand() * randUnit);
 				finalDirection.RotateY(rand() * randUnit);
@@ -91,7 +89,7 @@ namespace ghg
 
 		int					Update				(float secondsLastFrame)	{
 			Particles.IntegrateSpeed(secondsLastFrame);
-			for(u2_t iShot = 0; iShot < Particles.Position.size(); ++iShot) {
+			for(uint32_t iShot = 0; iShot < Particles.Position.size(); ++iShot) {
 				float					& speed				= Particles.Speed		[iShot];
 				float					& brightness 		= Brightness			[iShot];
 				brightness			-= secondsLastFrame;
@@ -107,14 +105,14 @@ namespace ghg
 
 #pragma pack(push, 1)
 	struct STriColor {
-		u2_t			Min;
-		u2_t			Mid;
-		u2_t			Max;
+		uint32_t			Min;
+		uint32_t			Mid;
+		uint32_t			Max;
 	};
 	struct SScoreParticle {
-		s2_t				Score;
+		int32_t				Score;
 		float				Brightness;
-		u0_t				IndexColor;
+		uint8_t				IndexColor;
 	};
 #pragma pack(pop)
 
@@ -123,7 +121,7 @@ namespace ghg
 		::llc::SParticles3							Particles	= {};
 		::llc::array_static<::ghg::STriColor, 256>	Palette		= {{0xFF00FF00, 0xFFFFEE11, 0xFFFF0000}, };
 
-		int								Remove				(s2_t iParticle)	{
+		int								Remove				(int32_t iParticle)	{
 			Scores.remove_unordered(iParticle);
 			return Particles.Remove(iParticle);
 		}
@@ -135,7 +133,7 @@ namespace ghg
 
 		int								Update				(float secondsLastFrame)	{
 			Particles.IntegrateSpeed(secondsLastFrame);
-			for(u2_t iShot = 0; iShot < Particles.Position.size(); ++iShot) {
+			for(uint32_t iShot = 0; iShot < Particles.Position.size(); ++iShot) {
 				::ghg::SScoreParticle		& particle			= Scores[iShot];
 				float						& brightness 		= particle.Brightness;
 				brightness				-= secondsLastFrame;
@@ -154,18 +152,18 @@ namespace ghg
 	};
 
 	struct SExplosion {
-		s2_t							IndexMesh;
-		s2_t							IndexImage;
+		int32_t							IndexMesh;
+		int32_t							IndexImage;
 		::llc::arangeu1_t				Slices;
 		::llc::SParticles3				Particles;
 
-		int								Remove				(u2_t iSlice)			{
+		int								Remove				(uint32_t iSlice)			{
 			Particles.Remove(iSlice);
 			return Slices.remove_unordered(iSlice);
 		}
 		int								Update				(float secondsLastFrame)	{
 			Particles.IntegrateSpeed(secondsLastFrame);
-			for(u2_t iSlice = 0; iSlice < Particles.Speed.size(); ++iSlice) {
+			for(uint32_t iSlice = 0; iSlice < Particles.Speed.size(); ++iSlice) {
 				float								& speed				= Particles.Speed[iSlice];
 				//speed							-= secondsLastFrame * (rand() % 16);
 				speed							-= secondsLastFrame * ((0 > speed) ? (rand() % 16) * 5 : (rand() % 16));
@@ -188,8 +186,8 @@ namespace ghg
 		::llc::SRasterFontManager		FontManager						= {};
 	};
 
-	llc::err_t					decoExplosionAdd	(::llc::aobj<::ghg::SExplosion> & explosions, s2_t indexMesh, s2_t indexImage, u2_t triangleCount, const ::llc::n3f2_t &collisionPoint, double debrisSpeed);
-	llc::err_t					decoUpdate			(::ghg::SDecoState & decoState, double secondsLastFrame, double relativeSpeed, const ::llc::n2u1_t & screenMetrics);
+	::llc::err_t					decoExplosionAdd	(::llc::aobj<::ghg::SExplosion> & explosions, int32_t indexMesh, int32_t indexImage, uint32_t triangleCount, const ::llc::n3f2_t &collisionPoint, double debrisSpeed);
+	::llc::err_t					decoUpdate			(::ghg::SDecoState & decoState, double secondsLastFrame, double relativeSpeed, const ::llc::n2u1_t & screenMetrics);
 }
 
 #endif // LLC_GALAXY_HELL_DECO_H_293874239874

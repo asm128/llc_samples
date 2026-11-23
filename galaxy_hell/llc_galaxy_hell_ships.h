@@ -34,7 +34,7 @@ namespace ghg
 		::llc::astatic<::llc::SCameraPoints, ::ghg::CAMERA_MODE_COUNT>	
 								Camera				= {};
 
-		llc::err_t			CameraReset			() {
+		::llc::err_t			CameraReset			() {
 			Camera[CAMERA_MODE_SKY].Target		= {};
 			Camera[CAMERA_MODE_SKY].Position	= {-0.000001f, 250, 0};
 			//Camera[CAMERA_MODE_SKY].Up			= {0, 1, 0};
@@ -58,25 +58,25 @@ namespace ghg
 		::llc::aobj<::llc::img8bgra>		Image			= {};
 		::llc::apod<::llc::m4f2_t>			Transforms		= {}; // Ope per entity
 
-		llc::err_t						Save			(::llc::au0_t & output) const { 
-			if_fail_fe(::llc::savePOD		(output, Global));
-			if_fail_fe(::llc::saveView	(output, Transforms));
+		::llc::err_t						Save			(::llc::au0_t & output) const { 
+			llc_necs(::llc::savePOD		(output, Global));
+			llc_necs(::llc::saveView	(output, Transforms));
 			info_printf("Saved %s, %i", "Transforms"	, Transforms.size());
 			return 0; 
 		}
 
-		llc::err_t						Load			(::llc::vcu0_t & input) { 
-			if_fail_fe(::llc::loadPOD	(input, Global		));
-			if_fail_fe(::llc::loadView(input, Transforms	));
+		::llc::err_t						Load			(::llc::vcu0_t & input) { 
+			llc_necs(::llc::loadPOD	(input, Global		));
+			llc_necs(::llc::loadView(input, Transforms	));
 			return 0; 
 		}
 	};
 
-	llc::err_t			getLightArrays
+	::llc::err_t			getLightArrays
 		( const ::llc::n3f2_t	& modelPosition
-		, const ::llc::v3f2_t	& lightPointsWorld
+		, const ::llc::vn3f2_t	& lightPointsWorld
 		, const ::llc::a8bgra	& lightColorsWorld
-		, ::llc::a3f2_t			& lightPointsModel
+		, ::llc::an3f2_t			& lightPointsModel
 		, ::llc::a8bgra			& lightColorsModel
 		);
 
@@ -92,7 +92,7 @@ namespace ghg
 		::ghg::SEntitySystem		EntitySystem		= {};
 		::ghg::SShipScene			Scene				= {};
 
-		s2_t						Clear				()	{
+		int32_t						Clear				()	{
 			SpaceshipManager.Clear();
 			WeaponManager.Clear();
 			::llc::clear(Scene.Transforms, ShipCoreEntity, ShipPartEntity);
@@ -104,42 +104,42 @@ namespace ghg
 			return 0;
 		}
 
-		inline	::llc::SBodyCenter&			GetShipPivot		(u2_t indexShip)				{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipCoreEntity[indexShip]].Body]; }
-		inline	const ::llc::SBodyCenter&	GetShipPivot		(u2_t indexShip)		const	{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipCoreEntity[indexShip]].Body]; }
+		inline	::llc::SBodyCenter&			GetShipPivot		(uint32_t indexShip)				{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipCoreEntity[indexShip]].Body]; }
+		inline	const ::llc::SBodyCenter&	GetShipPivot		(uint32_t indexShip)		const	{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipCoreEntity[indexShip]].Body]; }
 
-		inline	::llc::n3f2_t&				GetShipPosition		(u2_t indexShip)				{ return GetShipPivot(indexShip).Position; }
-		inline	const ::llc::n3f2_t&			GetShipPosition		(u2_t indexShip)		const	{ return GetShipPivot(indexShip).Position; }
+		inline	::llc::n3f2_t&				GetShipPosition		(uint32_t indexShip)				{ return GetShipPivot(indexShip).Position; }
+		inline	const ::llc::n3f2_t&			GetShipPosition		(uint32_t indexShip)		const	{ return GetShipPivot(indexShip).Position; }
 
-		llc::err_t						GetShipPosition		(u2_t iShip, ::llc::n3f2_t & output) const { output = GetShipPosition(iShip); return 0; }
+		::llc::err_t						GetShipPosition		(uint32_t iShip, ::llc::n3f2_t & output) const { output = GetShipPosition(iShip); return 0; }
 		
-		::llc::SBodyCenter&					GetOrbiterTransform	(u2_t iPart)		{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipPartEntity[iPart] + 1].Body]; }
-		::llc::SBodyForces&					GetShipOrbiterForces(u2_t iPart)		{ return Engine.Integrator.Forces [EntitySystem.Entities[ShipPartEntity[iPart] + 1].Body]; }
+		::llc::SBodyCenter&					GetOrbiterTransform	(uint32_t iPart)		{ return Engine.Integrator.Centers[EntitySystem.Entities[ShipPartEntity[iPart] + 1].Body]; }
+		::llc::SBodyForces&					GetShipOrbiterForces(uint32_t iPart)		{ return Engine.Integrator.Forces [EntitySystem.Entities[ShipPartEntity[iPart] + 1].Body]; }
 
 
-		llc::err_t				Save				(::llc::au0_t & output)	const	{ 
-			if_fail_fe(SpaceshipManager.Save(output));
-			if_fail_fe(WeaponManager.Save(output));
+		::llc::err_t				Save				(::llc::au0_t & output)	const	{ 
+			llc_necs(SpaceshipManager.Save(output));
+			llc_necs(WeaponManager.Save(output));
 
-			if_fail_fe(::llc::saveView(output, ShipCoreEntity));
-			if_fail_fe(::llc::saveView(output, ShipPartEntity));
+			llc_necs(::llc::saveView(output, ShipCoreEntity));
+			llc_necs(::llc::saveView(output, ShipPartEntity));
 		
-			if_fail_fe(Engine.Save(output));
+			llc_necs(Engine.Save(output));
 
-			if_fail_fe(EntitySystem	.Save(output));
-			if_fail_fe(Scene			.Save(output));
+			llc_necs(EntitySystem	.Save(output));
+			llc_necs(Scene			.Save(output));
 			return 0; 
 		}
-		llc::err_t				Load				(::llc::vcu0_t & input) { 
-			if_fail_fe(SpaceshipManager.Load(input));
-			if_fail_fe(WeaponManager.Load(input));
+		::llc::err_t				Load				(::llc::vcu0_t & input) { 
+			llc_necs(SpaceshipManager.Load(input));
+			llc_necs(WeaponManager.Load(input));
 
-			if_fail_fe(::llc::loadView(input, ShipCoreEntity));
-			if_fail_fe(::llc::loadView(input, ShipPartEntity));
+			llc_necs(::llc::loadView(input, ShipCoreEntity));
+			llc_necs(::llc::loadView(input, ShipPartEntity));
 
-			if_fail_fe(Engine.Load(input));
+			llc_necs(Engine.Load(input));
 
-			if_fail_fe(EntitySystem	.Load(input));
-			if_fail_fe(Scene			.Load(input));
+			llc_necs(EntitySystem	.Load(input));
+			llc_necs(Scene			.Load(input));
 			return 0; 
 		}
 	};

@@ -31,7 +31,7 @@ namespace ghg
 		::llc::n2u1_t						RenderTargetMetrics		= {1280, 720};
 		::llc::pobj<::ghg::TRenderTarget>	RenderTarget			= {};
 
-		llc::err_t						Clear					() {
+		::llc::err_t						Clear					() {
 			::llc::clear
 				( PixelCoords
 				, PixelVertexWeights		
