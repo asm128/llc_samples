@@ -223,25 +223,22 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 			if_fail_fe(text.slice(text, 0, ::llc::min(text.size(), ::llc::guiViewportTextColumns(app.GUI, id))));
 			app.GUI.Controls.Text[id].Text = text;
 		}
-		::llc::u2_t selectedMin = 0, selectedMax = 0;
+		::llc::u2_t lineBegin = 0;
 		if(editorText && visible && line < app.TextRows.size()) {
 			cnst ::llc::SGUIViewportTextRow & row = app.TextRows[line];
-			cnst ::llc::u2_t lineBegin = ::fileViewerLineOffset(app.Editor, row.SourceLine) + row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset);
-			cnst ::llc::u2_t lineEnd = lineBegin + app.GUI.Controls.Text[id].Text.size();
-			for(::llc::u2_t iSelection = 0; iSelection < app.Editor.TextSelections.size(); ++iSelection) {
-				cnst ::llc::rangeu2_t selection = app.Editor.TextSelections[iSelection];
-				if(selection.Count && selection.Offset < lineEnd && selection.Offset + selection.Count > lineBegin) {
-					cnst ::llc::u2_t begin = (::llc::u2_t)(::llc::max(selection.Offset, lineBegin) - lineBegin);
-					cnst ::llc::u2_t end = (::llc::u2_t)(::llc::min(selection.Offset + selection.Count, lineEnd) - lineBegin);
-					selectedMin = selectedMax ? ::llc::min(selectedMin, begin) : begin;
-					selectedMax = ::llc::max(selectedMax, end);
-				}
-			}
+			lineBegin = ::fileViewerLineOffset(app.Editor, row.SourceLine) + row.SourceColumn + (app.WordWrap ? 0 : app.FileColumnOffset);
 		}
 		::llc::apod<::llc::STextState> & textStates = app.GUI.Controls.TextState[id];
 		if_fail_fe(textStates.resize(app.GUI.Controls.Text[id].Text.size(), ::llc::STextState{}));
 		for(::llc::u2_t iCharacter = 0; iCharacter < textStates.size(); ++iCharacter) {
-			cnst bool selected = iCharacter >= selectedMin && iCharacter < selectedMax;
+			bool selected = false;
+			for(::llc::u2_t iSelection = 0; iSelection < app.Editor.TextSelections.size(); ++iSelection) {
+				cnst ::llc::rangeu2_t selection = app.Editor.TextSelections[iSelection];
+				if(editorText && selection.Count && lineBegin + iCharacter >= selection.Offset && lineBegin + iCharacter < selection.Offset + selection.Count) {
+					selected = true;
+					break;
+				}
+			}
 			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
 			textStates[iCharacter].Flag = ::llc::setSwapColors(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
 		}
@@ -295,6 +292,8 @@ sttc ::llc::err_t desktopFolderOpen(SSampleGUIViewport & app, ::llc::vcst_t path
 	if_fail_fe(app.FileBytes.clear());
 	if_fail_fe(app.FileDisplay.clear());
 	if_fail_fe(app.OpenFile.clear());
+	app.Editor.TextSelections.clear();
+	app.Editor.SelectionAnchor = app.Editor.SelectionActive = (::llc::u2_t)-1;
 	app.FileOffset = 0;
 	app.FileColumnOffset = 0;
 	app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, true);
@@ -333,24 +332,26 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 	}
 	if(input.ButtonDown(0) && overTextLine) {
 		editor.Cursor = cursor;
-		if(0 == input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Control])
-			editor.TextSelections.clear();
-		editor.SelectionAnchor = characterOffset;
-		cnst ::llc::err_t iSelection = editor.TextSelections.push_back({characterOffset, 0});
-		if_fail_fe(iSelection);
-		editor.SelectionActive = (::llc::u2_t)iSelection;
+		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
+			editor.SelectionAnchor = characterOffset;
+			cnst ::llc::err_t iSelection = editor.TextSelections.push_back({characterOffset, 0});
+			if_fail_fe(iSelection);
+			editor.SelectionActive = (::llc::u2_t)iSelection;
+		}
 	}
-	if((::llc::u2_t)-1 != editor.SelectionAnchor && editor.SelectionActive < editor.TextSelections.size() && overTextLine) {
+	if(input.MouseCurrent.ButtonState[0] && (::llc::u2_t)-1 != editor.SelectionAnchor && editor.SelectionActive < editor.TextSelections.size() && overTextLine) {
 		editor.Cursor = cursor;
 		::llc::rangeu2_t & selection = editor.TextSelections[editor.SelectionActive];
 		selection.Offset = ::llc::min(editor.SelectionAnchor, characterOffset);
 		selection.Count = ::llc::max(editor.SelectionAnchor, characterOffset) - selection.Offset;
 	}
 	if(input.ButtonUp(0) && (::llc::u2_t)-1 != editor.SelectionAnchor) {
-		if(editor.SelectionActive < editor.TextSelections.size() && 0 == editor.TextSelections[editor.SelectionActive].Count)
+		if(editor.SelectionActive < editor.TextSelections.size() && 0 == editor.TextSelections[editor.SelectionActive].Count && false == editor.CapsSelectionMode)
 			if_fail_fe(editor.TextSelections.remove(editor.SelectionActive));
-		editor.SelectionAnchor = (::llc::u2_t)-1;
-		editor.SelectionActive = (::llc::u2_t)-1;
+		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
+			editor.SelectionAnchor = (::llc::u2_t)-1;
+			editor.SelectionActive = (::llc::u2_t)-1;
+		}
 	}
 	rtrn 0;
 }
@@ -382,6 +383,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	else if(fileLength)
 		if_fail_fe(::llc::fileToMemory(app.OpenFile, app.FileBytes, DESKTOP_FILE_MAX_BYTES));
 	app.Editor.TextSelections.clear();
+	app.Editor.SelectionAnchor = app.Editor.SelectionActive = (::llc::u2_t)-1;
 	app.Editor.Cursor = {};
 	if(app.FileBytes.find('\0') < 0) {
 		app.Editor.FilePath = app.OpenFile;
@@ -499,10 +501,16 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 ::llc::err_t sampleGUIViewportUpdate(SSampleGUIViewport & app, bool systemRequestedExit, double secondsLastFrame) {
 	if(systemRequestedExit || app.Window.Closed)
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape) && app.GUI.Controls.IsHidden(app.Keyboard.IdRoot))
+	if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape) && app.GUI.Controls.IsHidden(app.Keyboard.IdRoot) && 0 == app.Editor.TextSelections.size())
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
+	if(app.Editor.CapsSelectionMode) {
+		if_fail_fe(::llc::controlTextSet(app.GUI, app.Help, "CAPS SELECT: CLICK START AND END FOR EACH RANGE | CAPS RETURNS TO TYPING | ESC CLEARS"));
+	}
+	else {
+		if_fail_fe(::llc::controlTextSet(app.GUI, app.Help, "OPEN OR EDIT FILE | W WRAP | A SELECT ALL | S SAVE | SHIFT+WHEEL HORIZONTAL | DRAG TITLES"));
+	}
 	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
 	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
@@ -588,7 +596,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 			app.GUI.Controls.SetHidden(app.Keyboard.IdRoot, false == app.GUI.Controls.IsHidden(app.Keyboard.IdRoot));
 		if_fail_fe(::desktopEditorSelectionUpdate(app));
 		if(app.GUI.Controls.IsSelected(app.Viewports[1].IdControl))
-			if_fail_fe(::fileViewerEditorInput(app.GUI, app.Keyboard, app.Editor, app.Window.EventQueue));
+			if_fail_fe(::fileViewerEditorInput(app.GUI, app.Keyboard, app.Editor, app.Window.EventQueue, *app.Window.Input));
 		if(app.TextBytesBegin != app.Editor.FileText.begin() || app.TextBytesSize != app.Editor.FileText.size() || app.TextLineCount != app.Editor.FileLines.size())
 			if_fail_fe(::desktopTextRowsRebuild(app));
 		if(!app.WordWrap && cursorBefore != app.Editor.Cursor) {

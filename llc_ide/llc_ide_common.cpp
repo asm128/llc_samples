@@ -1,5 +1,6 @@
 #include "llc_ide_common.h"
 #include "llc_event_input.h"
+#include "llc_parse.h"
 #include "llc_view_serialize.h"
 
 
@@ -74,6 +75,9 @@ llc::err_t fileViewerTextInsert(SGUI & gui, SFileEditor & editor, sc_t character
 }
 
 llc::err_t fileViewerTextBackspace(SGUI & gui, SFileEditor & editor) {
+	for(u2_t iSelection = 0; iSelection < editor.TextSelections.size(); ++iSelection)
+		if(editor.TextSelections[iSelection].Count)
+			rtrn ::fileViewerTextDelete(gui, editor);
 	if(editor.Cursor.y >= editor.FileLines.size())
 		rtrn 0;
 	u2_c cursorOffset = ::fileViewerCursorOffset(editor);
@@ -155,13 +159,121 @@ llc::err_t fileViewerTextDelete(SGUI & gui, SFileEditor & editor) {
 	rtrn ::fileViewerTextViewsRebuild(editor);
 }
 
-llc::err_t fileViewerEditorHandle(SGUI & gui, SVirtualKeyboard & keyboard, SFileEditor & editor, SYSTEM_KEY scanCode) {
+sttc u0_t fileViewerWordClass(sc_t character) {
+	if(::llc::isSpaceCharacter(character))
+		rtrn 0;
+	if((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '_')
+		rtrn 1;
+	rtrn 2;
+}
+
+sttc llc::err_t fileViewerSelectionCopy(cnst SFileEditor & editor, string & copied) {
+	bool selected = false;
+	for(u2_t iSelection = 0; iSelection < editor.TextSelections.size(); ++iSelection) {
+		cnst rangeu2_t selection = editor.TextSelections[iSelection];
+		cnst u2_t begin = min(selection.Offset, editor.FileText.size());
+		cnst u2_t end = (u2_t)min((u3_t)editor.FileText.size(), (u3_t)selection.Offset + selection.Count);
+		if(begin >= end)
+			continue;
+		if(selected)
+			if_fail_fe(copied.push_back('\n'));
+		if_fail_fe(copied.append(editor.FileText.begin() + begin, end - begin));
+		selected = true;
+	}
+	if(false == selected && editor.Cursor.y < editor.FileLines.size()) {
+		cnst u2_t begin = ::fileViewerLineOffset(editor, editor.Cursor.y);
+		cnst u2_t end = editor.Cursor.y + 1 < editor.FileLines.size() ? ::fileViewerLineOffset(editor, editor.Cursor.y + 1) : editor.FileText.size();
+		if_fail_fe(copied.append(editor.FileText.begin() + begin, end - begin));
+	}
+	rtrn selected ? 1 : 0;
+}
+
+#if defined(LLC_WINDOWS)
+sttc llc::err_t fileViewerClipboardWrite(vcst_t content) {
+	if(false == ::OpenClipboard(::GetActiveWindow()))
+		rtrn -1;
+	HGLOBAL storage = ::GlobalAlloc(GMEM_MOVEABLE, content.size() + 1);
+	if(!storage) { ::CloseClipboard(); rtrn -1; }
+	void * bytes = ::GlobalLock(storage);
+	if(!bytes) { ::GlobalFree(storage); ::CloseClipboard(); rtrn -1; }
+	::memcpy(bytes, content.begin(), content.size());
+	((sc_t *)bytes)[content.size()] = 0;
+	::GlobalUnlock(storage);
+	if(false == ::EmptyClipboard() || !::SetClipboardData(CF_TEXT, storage)) { ::GlobalFree(storage); ::CloseClipboard(); rtrn -1; }
+	::CloseClipboard();
+	rtrn 0;
+}
+
+sttc llc::err_t fileViewerClipboardRead(string & content) {
+	if(false == ::OpenClipboard(::GetActiveWindow()))
+		rtrn -1;
+	HGLOBAL storage = ::GetClipboardData(CF_TEXT);
+	if(!storage) { ::CloseClipboard(); rtrn -1; }
+	sc_c * bytes = (sc_c *)::GlobalLock(storage);
+	if(!bytes) { ::CloseClipboard(); rtrn -1; }
+	cnst llc::err_t result = content.append_string(vcst_t{bytes, (u2_t)-1});
+	::GlobalUnlock(storage);
+	::CloseClipboard();
+	rtrn 0 > result ? result : 0;
+}
+#endif
+
+sttc llc::err_t fileViewerTextClipboard(SGUI & gui, SFileEditor & editor, u0_t key) {
+#if defined(LLC_WINDOWS)
+	if(key == 'C' || key == 'X') {
+		string copied = {};
+		cnst llc::err_t selected = ::fileViewerSelectionCopy(editor, copied);
+		if_fail_fe(selected);
+		if_fail_fe(::fileViewerClipboardWrite(copied));
+		if(key == 'X') {
+			if(false == selected && editor.Cursor.y < editor.FileLines.size()) {
+				cnst u2_t begin = ::fileViewerLineOffset(editor, editor.Cursor.y);
+				cnst u2_t end = editor.Cursor.y + 1 < editor.FileLines.size() ? ::fileViewerLineOffset(editor, editor.Cursor.y + 1) : editor.FileText.size();
+				if_fail_fe(editor.TextSelections.push_back(begin == end && begin ? rangeu2_t{begin - 1, 1} : rangeu2_t{begin, end - begin}));
+			}
+			if(editor.FileText.size())
+				if_fail_fe(::fileViewerTextDelete(gui, editor));
+		}
+		rtrn 0;
+	}
+	if(key == 'V') {
+		string pasted = {};
+		if_fail_fe(::fileViewerClipboardRead(pasted));
+		bool selected = false;
+		for(u2_t iSelection = 0; iSelection < editor.TextSelections.size(); ++iSelection)
+			selected |= 0 != editor.TextSelections[iSelection].Count;
+		if(selected) {
+			if_fail_fe(::fileViewerTextDelete(gui, editor));
+		}
+		else
+			editor.TextSelections.clear();
+		cnst u2_t offset = ::fileViewerCursorOffset(editor);
+		if_fail_fe(::fileViewerTextViewsClear(gui, editor));
+		if_fail_fe(editor.FileText.insert(offset, pasted.begin(), pasted.size()));
+		editor.TextSelections.clear();
+		if_fail_fe(::fileViewerTextViewsRebuild(editor));
+		::fileViewerCursorOffsetSet(editor, offset + pasted.size());
+	}
+#else
+	(void)gui; (void)editor; (void)key;
+#endif
+	rtrn 0;
+}
+
+llc::err_t fileViewerEditorHandle(SGUI & gui, SVirtualKeyboard & keyboard, SFileEditor & editor, SYSTEM_KEY scanCode, bool shift, bool control) {
 	if(editor.Cursor.y >= editor.FileLines.size())
 		rtrn 0;
+	cnst bool navigation = scanCode == SYSTEM_KEY_Left || scanCode == SYSTEM_KEY_Right || scanCode == SYSTEM_KEY_Up || scanCode == SYSTEM_KEY_Down || scanCode == SYSTEM_KEY_Home || scanCode == SYSTEM_KEY_End || scanCode == SYSTEM_KEY_Prior || scanCode == SYSTEM_KEY_Next;
+	cnst u2_t cursorBefore = navigation ? ::fileViewerCursorOffset(editor) : 0;
 	switch(scanCode) {
 	default: break;
 	case SYSTEM_KEY_Escape:
-		gui.Controls.SetHidden(keyboard.IdRoot, true);
+		if(!gui.Controls.IsHidden(keyboard.IdRoot))
+			gui.Controls.SetHidden(keyboard.IdRoot, true);
+		else {
+			editor.TextSelections.clear();
+			editor.SelectionAnchor = editor.SelectionActive = (u2_t)-1;
+		}
 		break;
 	case SYSTEM_KEY_Delete		: if_fail_fe(::fileViewerTextDelete(gui, editor)); break;
 	case SYSTEM_KEY_Enter		: if_fail_fe(::fileViewerTextInsert(gui, editor, '\n')); break;
@@ -174,7 +286,18 @@ llc::err_t fileViewerEditorHandle(SGUI & gui, SVirtualKeyboard & keyboard, SFile
 		if_fail_fe(::fileViewerTextViewsRebuild(editor));
 		break;
 	case SYSTEM_KEY_Left:
-		if(editor.Cursor.x)
+		if(control && editor.Cursor.x) {
+			vcst_c line = editor.FileLines[editor.Cursor.y];
+			u0_t wordClass = ::fileViewerWordClass(line[editor.Cursor.x - 1]);
+			while(editor.Cursor.x && ::fileViewerWordClass(line[editor.Cursor.x - 1]) == wordClass)
+				--editor.Cursor.x;
+			if(0 == wordClass && editor.Cursor.x) {
+				wordClass = ::fileViewerWordClass(line[editor.Cursor.x - 1]);
+				while(editor.Cursor.x && ::fileViewerWordClass(line[editor.Cursor.x - 1]) == wordClass)
+					--editor.Cursor.x;
+			}
+		}
+		else if(editor.Cursor.x)
 			--editor.Cursor.x;
 		else if(editor.Cursor.y) {
 			--editor.Cursor.y;
@@ -182,7 +305,16 @@ llc::err_t fileViewerEditorHandle(SGUI & gui, SVirtualKeyboard & keyboard, SFile
 		}
 		break;
 	case SYSTEM_KEY_Right:
-		if(editor.Cursor.x < editor.FileLines[editor.Cursor.y].size())
+		if(control && editor.Cursor.x < editor.FileLines[editor.Cursor.y].size()) {
+			vcst_c line = editor.FileLines[editor.Cursor.y];
+			cnst u0_t wordClass = ::fileViewerWordClass(line[editor.Cursor.x]);
+			while(editor.Cursor.x < line.size() && ::fileViewerWordClass(line[editor.Cursor.x]) == wordClass)
+				++editor.Cursor.x;
+			if(wordClass && editor.Cursor.x < line.size())
+				while(editor.Cursor.x < line.size() && 0 == ::fileViewerWordClass(line[editor.Cursor.x]))
+					++editor.Cursor.x;
+		}
+		else if(editor.Cursor.x < editor.FileLines[editor.Cursor.y].size())
 			++editor.Cursor.x;
 		else if(editor.Cursor.y + 1 < editor.FileLines.size()) {
 			++editor.Cursor.y;
@@ -216,37 +348,78 @@ llc::err_t fileViewerEditorHandle(SGUI & gui, SVirtualKeyboard & keyboard, SFile
 		editor.Cursor.x = min(editor.Cursor.x, editor.FileLines[editor.Cursor.y].size());
 		break;
 	}
+	if(navigation) {
+		if(shift) {
+			if((u2_t)-1 == editor.SelectionAnchor) {
+				editor.SelectionAnchor = cursorBefore;
+				if_fail_fe(editor.SelectionActive = editor.TextSelections.push_back({cursorBefore, 0}));
+			}
+			if(editor.SelectionActive < editor.TextSelections.size()) {
+				cnst u2_t cursorAfter = ::fileViewerCursorOffset(editor);
+				rangeu2_t & selection = editor.TextSelections[editor.SelectionActive];
+				selection.Offset = min(editor.SelectionAnchor, cursorAfter);
+				selection.Count = max(editor.SelectionAnchor, cursorAfter) - selection.Offset;
+			}
+		}
+		else
+			editor.SelectionAnchor = editor.SelectionActive = (u2_t)-1;
+	}
 	rtrn 0;
 }
 
-llc::err_t fileViewerEditorInput(SGUI & gui, SVirtualKeyboard & keyboard, SFileEditor & editor, TQueueSystemEvent frameEvents) {
+llc::err_t fileViewerEditorInput(SGUI & gui, SVirtualKeyboard & keyboard, SFileEditor & editor, TQueueSystemEvent frameEvents, cnst SInput & input) {
 	TQueueSystemEvent systemEvents = frameEvents;
+	cnst u2_t physicalEventCount = systemEvents.size();
 	if_fail_fe(guiProcessControls(gui, [&keyboard, &systemEvents](cid_t iControl) {
 		rtrn virtualKeyboardHandleEvent(keyboard, iControl, systemEvents);
 	}));
+	bool shiftDown = input.KeyboardPrevious.KeyState[SYSTEM_KEY_Shift] != 0;
+	bool controlDown = input.KeyboardPrevious.KeyState[SYSTEM_KEY_Control] != 0;
+	bool capsDown = input.KeyboardPrevious.KeyState[SYSTEM_KEY_Capital] != 0;
 	for(u2_t iEvent = 0; iEvent < systemEvents.size(); ++iEvent) {
 		if_zero_fe(systemEvents[iEvent].get_ref());
+		cnst bool virtualEvent = iEvent >= physicalEventCount;
 		switch(systemEvents[iEvent]->Type) {
 		case SYSTEM_EVENT_Text:
-			if_fail_fe(eventExtractAndHandle<EVENT_TEXT>(*systemEvents[iEvent], [&gui, &editor](cnst SEView<EVENT_TEXT> & eventText) {
+			if_fail_fe(eventExtractAndHandle<EVENT_TEXT>(*systemEvents[iEvent], [&gui, &editor, &controlDown, virtualEvent](cnst SEView<EVENT_TEXT> & eventText) {
 				if(eventText.Type != EVENT_TEXT_Char)
 					rtrn 0;
-				vcu0_t input = eventText.Data;
+				if(false == virtualEvent && (editor.CapsSelectionMode || controlDown))
+					rtrn 0;
+				vcu0_t payload = eventText.Data;
 				u2_t character = {};
-				if_fail_fe(loadPOD(input, character));
-				if(character >= 0x20 && character <= 0xFF)
+				if_fail_fe(loadPOD(payload, character));
+				if(virtualEvent ? character > 0 && character <= 0xFF : character >= 0x20 && character <= 0xFF)
 					rtrn ::fileViewerTextInsert(gui, editor, (sc_t)character);
 				rtrn 0;
 			}));
 			break;
 		case SYSTEM_EVENT_Keyboard:
-			if_fail_fe(eventExtractAndHandle<EVENT_KEYBOARD>(*systemEvents[iEvent], [&gui, &keyboard, &editor](cnst SEView<EVENT_KEYBOARD> & eventKeyboard) {
-				if(eventKeyboard.Type != EVENT_KEYBOARD_Down)
+			if_fail_fe(eventExtractAndHandle<EVENT_KEYBOARD>(*systemEvents[iEvent], [&gui, &keyboard, &editor, &shiftDown, &controlDown, &capsDown](cnst SEView<EVENT_KEYBOARD> & eventKeyboard) {
+				if(eventKeyboard.Type != EVENT_KEYBOARD_Down && eventKeyboard.Type != EVENT_KEYBOARD_Up)
 					rtrn 0;
-				vcu0_t input = eventKeyboard.Data;
+				vcu0_t payload = eventKeyboard.Data;
 				u0_t key = {};
-				if_fail_fe(loadPOD(input, key));
-				rtrn ::fileViewerEditorHandle(gui, keyboard, editor, (SYSTEM_KEY)key);
+				if_fail_fe(loadPOD(payload, key));
+				if(key == SYSTEM_KEY_Capital) {
+					if(eventKeyboard.Type == EVENT_KEYBOARD_Down && false == capsDown) {
+						editor.CapsSelectionMode = !editor.CapsSelectionMode;
+						editor.SelectionAnchor = editor.SelectionActive = (u2_t)-1;
+					}
+					capsDown = eventKeyboard.Type == EVENT_KEYBOARD_Down;
+					rtrn 0;
+				}
+				if(key == SYSTEM_KEY_Shift || key == SYSTEM_KEY_Control) {
+					(key == SYSTEM_KEY_Shift ? shiftDown : controlDown) = eventKeyboard.Type == EVENT_KEYBOARD_Down;
+					if(eventKeyboard.Type == EVENT_KEYBOARD_Up || key == SYSTEM_KEY_Control)
+						editor.SelectionAnchor = editor.SelectionActive = (u2_t)-1;
+					rtrn 0;
+				}
+				if(eventKeyboard.Type == EVENT_KEYBOARD_Up)
+					rtrn 0;
+				if(controlDown && (key == 'C' || key == 'X' || key == 'V'))
+					rtrn ::fileViewerTextClipboard(gui, editor, key);
+				rtrn ::fileViewerEditorHandle(gui, keyboard, editor, (SYSTEM_KEY)key, shiftDown, controlDown);
 			}));
 			break;
 		}
