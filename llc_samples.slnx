@@ -70,8 +70,4 @@
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
     <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
-  <Project Path="tiled_terrain_editor/tiled_terrain_editor.vcxproj" Id="eb17b57e-3388-4885-898c-daab6b68e415">
-    <BuildType Solution="Debug-MT|*" Project="Debug" />
-    <BuildType Solution="Release-MT|*" Project="Release" />
-  </Project>
 </Solution>
