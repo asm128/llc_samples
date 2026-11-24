@@ -22,10 +22,14 @@ static	::llc::err_t	processScreenEvent		(::ghg::SGalaxyHellApp & app, const ::ll
 	case ::llc::EVENT_SCREEN_Create:
 	case ::llc::EVENT_SCREEN_Resize: {
 		::llc::n2<uint16_t>			newMetrics				= *(const ::llc::n2<uint16_t>*)screenEvent.Data.begin();
-		::llc::guiUpdateMetrics(*app.DialogDesktop.GUI, newMetrics, true);
+		if(app.DialogDesktop.GUI)
+			if_fail_fe(::llc::guiUpdate(*app.DialogDesktop.GUI, newMetrics));
+		for(uint32_t iState = 0; iState < app.DialogPerState.size(); ++iState)
+			if(app.DialogPerState[iState].GUI)
+				if_fail_fe(::llc::guiUpdate(*app.DialogPerState[iState].GUI, newMetrics));
 		for(uint32_t iPlayer = 0; iPlayer < app.UIPlay.PlayerUI.size(); ++iPlayer) {
-			if(app.UIPlay.PlayerUI[iPlayer].DialogHome.GUI) ::llc::guiUpdateMetrics(*app.UIPlay.PlayerUI[iPlayer].DialogHome.GUI, newMetrics, true);
-			if(app.UIPlay.PlayerUI[iPlayer].DialogPlay.GUI) ::llc::guiUpdateMetrics(*app.UIPlay.PlayerUI[iPlayer].DialogPlay.GUI, newMetrics, true);
+			if(app.UIPlay.PlayerUI[iPlayer].DialogHome.GUI) if_fail_fe(::llc::guiUpdate(*app.UIPlay.PlayerUI[iPlayer].DialogHome.GUI, newMetrics));
+			if(app.UIPlay.PlayerUI[iPlayer].DialogPlay.GUI) if_fail_fe(::llc::guiUpdate(*app.UIPlay.PlayerUI[iPlayer].DialogPlay.GUI, newMetrics));
 		}
 
 		app.RenderTargetPool.resize(16);
@@ -269,19 +273,22 @@ static	::llc::err_t	processSystemEvent		(::ghg::SGalaxyHellApp & app, const ::ll
 
 	{
 		::std::lock_guard							lockUpdate			(app.Game.LockUpdate);
-		::llc::guiDraw(*app.DialogPerState[app.ActiveState].GUI, targetPixels);
+		if_fail_fe(::llc::guiUpdate(*app.DialogPerState[app.ActiveState].GUI, targetPixels.metrics().u1()));
+		if_fail_fe(::llc::guiDraw(*app.DialogPerState[app.ActiveState].GUI, targetPixels));
 	}
 	if(app.ActiveState != ::ghg::APP_STATE_Play) {
 		::std::lock_guard							lockUpdate			(app.Game.LockUpdate);
-		::llc::guiDraw(*app.DialogDesktop.GUI, targetPixels);
+		if_fail_fe(::llc::guiUpdate(*app.DialogDesktop.GUI, targetPixels.metrics().u1()));
+		if_fail_fe(::llc::guiDraw(*app.DialogDesktop.GUI, targetPixels));
 	}
 	for(uint32_t iPlayer = 0; iPlayer < app.UIPlay.PlayerUI.size(); ++iPlayer) {
 		::std::lock_guard							lockUpdate			(app.Game.LockUpdate);
-		::llc::guiDraw((app.ActiveState == ::ghg::APP_STATE_Play)
+		::llc::SGUI								& guiPlayer				= (app.ActiveState == ::ghg::APP_STATE_Play)
 			? *app.UIPlay.PlayerUI[iPlayer].DialogPlay.GUI
 			: *app.UIPlay.PlayerUI[iPlayer].DialogHome.GUI
-			, targetPixels
-		);
+			;
+		if_fail_fe(::llc::guiUpdate(guiPlayer, targetPixels.metrics().u1()));
+		if_fail_fe(::llc::guiDraw(guiPlayer, targetPixels));
 	}
 	{
 		::std::lock_guard			rtLock(app.RenderTargetLockQueue);
