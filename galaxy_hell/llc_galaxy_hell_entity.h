@@ -24,18 +24,18 @@ namespace ghg
 		::llc::err_t				Create					()																		{ Create({}); }
 
 		::llc::err_t				Save					(::llc::au0_t & output) const { 
-			llc_necs(::llc::saveView(output, Entities));
+			if_fail_fe(::llc::saveView(output, Entities));
 			for(uint32_t iEntity = 0; iEntity < Entities.size(); ++iEntity) 
-				llc_necall(::llc::saveView(output, ::llc::vcu2_t{EntityChildren[iEntity]}), "iEntity: %i", iEntity);
+				if_fail_fef(::llc::saveView(output, ::llc::vcu2_t{EntityChildren[iEntity]}), "iEntity: %i", iEntity);
 			info_printf("Saved %s, %i", "Entities"					, EntityChildren.size());
 			return 0; 
 		}
 
 		::llc::err_t				Load					(::llc::vcu0_t & input) { 
-			llc_necs(::llc::loadView(input, Entities));
-			llc_necall(EntityChildren.resize(Entities.size()), "size: %i", Entities.size());
+			if_fail_fe(::llc::loadView(input, Entities));
+			if_fail_fef(EntityChildren.resize(Entities.size()), "size: %i", Entities.size());
 			for(uint32_t iEntity = 0; iEntity < Entities.size(); ++iEntity)
-				llc_necall(::llc::loadView(input, EntityChildren[iEntity]), "iEntity: %i", iEntity);
+				if_fail_fef(::llc::loadView(input, EntityChildren[iEntity]), "iEntity: %i", iEntity);
 
 			return 0; 
 		}		

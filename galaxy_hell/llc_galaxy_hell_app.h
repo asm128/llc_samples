@@ -140,16 +140,16 @@ namespace ghg
 
 		::llc::SInputBox		InputBox				= {};
 	
-		::llc::astc<128>		TextScore				= {};
-		::llc::astc<128>		TextHits				= {};
-		::llc::astc<128>		TextShots				= {};
-		::llc::astc<128>		TextBullets				= {};
-		::llc::astc<128>		TextDamageDone			= {};
-		::llc::astc<128>		TextDamageReceived		= {};
-		::llc::astc<128>		TextHitsSurvived		= {};
-		::llc::astc<128>		TextOrbitersLost		= {};
-		::llc::astc<128>		TextKilledShips			= {};
-		::llc::astc<128>		TextKilledOrbiters		= {};
+		::llc::astsc_t<128>		TextScore				= {};
+		::llc::astsc_t<128>		TextHits				= {};
+		::llc::astsc_t<128>		TextShots				= {};
+		::llc::astsc_t<128>		TextBullets				= {};
+		::llc::astsc_t<128>		TextDamageDone			= {};
+		::llc::astsc_t<128>		TextDamageReceived		= {};
+		::llc::astsc_t<128>		TextHitsSurvived		= {};
+		::llc::astsc_t<128>		TextOrbitersLost		= {};
+		::llc::astsc_t<128>		TextKilledShips			= {};
+		::llc::astsc_t<128>		TextKilledOrbiters		= {};
 	};
 
 	struct SUIPlay {
@@ -170,18 +170,18 @@ namespace ghg
 		::llc::au2_t						Weapons;
 
 		::llc::err_t					Save					(::llc::au0_t & output) const {
-			llc_necs(::llc::savePOD (output, Core	));
-			llc_necs(::llc::savePOD (output, Score	));
-			llc_necs(::llc::saveView(output, Parts	));
-			llc_necs(::llc::saveView(output, Weapons));
+			if_fail_fe(::llc::savePOD (output, Core	));
+			if_fail_fe(::llc::savePOD (output, Score	));
+			if_fail_fe(::llc::saveView(output, Parts	));
+			if_fail_fe(::llc::saveView(output, Weapons));
 			return 0;
 		}
 
 		::llc::err_t					Load					(::llc::vcu0_t & input) {
-			llc_necs(::llc::loadPOD	(input, Core	));
-			llc_necs(::llc::loadPOD	(input, Score	));
-			llc_necs(::llc::loadView(input, Parts	));
-			llc_necs(::llc::loadView(input, Weapons	));
+			if_fail_fe(::llc::loadPOD	(input, Core	));
+			if_fail_fe(::llc::loadPOD	(input, Score	));
+			if_fail_fe(::llc::loadView(input, Parts	));
+			if_fail_fe(::llc::loadView(input, Weapons	));
 			return 0;
 		}
 	};
@@ -216,20 +216,20 @@ namespace ghg
 
 		::llc::err_t					Save			(const ::llc::vcst_t & filename) const {
 			::llc::au0_t							serialized;
-			llc_necs(Save(serialized));
+			if_fail_fe(Save(serialized));
 			::llc::au0_t							deflated;
-			llc_necs(::llc::arrayDeflate(serialized, deflated));
+			if_fail_fe(::llc::arrayDeflate(serialized, deflated));
 			info_printf("Player size in bytes: %u.", serialized.size());
 			info_printf("Player file size: %u.", deflated.size());
-			llc_necall(::llc::fileFromMemory({filename}, deflated), "fileName: %.*s", LLC_VIEW_ARGS(filename));
+			if_fail_fef(::llc::fileFromMemory({filename}, deflated), "fileName: %.*s", LLC_VIEW_ARGS(filename));
 			return 0;
 		}
 
 		::llc::err_t					Load			(const ::llc::vcst_t & filename) {
 			::llc::au0_t							serialized;
-			llc_necall(::llc::fileToMemory({filename}, serialized), "fileName: %.*s", LLC_VIEW_ARGS(filename));
+			if_fail_fef(::llc::fileToMemory({filename}, serialized), "fileName: %.*s", LLC_VIEW_ARGS(filename));
 			::llc::au0_t							inflated;
-			llc_necs(::llc::arrayInflate(serialized, inflated));
+			if_fail_fe(::llc::arrayInflate(serialized, inflated));
 			info_printf("Player file size: %u.", inflated.size());
 			info_printf("Player size in bytes: %u.", serialized.size());
 			::llc::vcu0_t							input		= inflated;
@@ -237,26 +237,26 @@ namespace ghg
 		}
 
 		::llc::err_t					Save			(::llc::au0_t & output) const {
-			llc_necs(::llc::saveView(output, Name));
-			llc_necs(::llc::savePOD(output, State));
-			llc_necs(::llc::saveView(output, Weapons));
-			llc_necs(::llc::saveView(output, Orbiters));
-			llc_necs(output.append(::llc::vcu0_t{(const uint8_t*)&Ships.size(), 4}));
+			if_fail_fe(::llc::saveView(output, Name));
+			if_fail_fe(::llc::savePOD(output, State));
+			if_fail_fe(::llc::saveView(output, Weapons));
+			if_fail_fe(::llc::saveView(output, Orbiters));
+			if_fail_fe(output.append(::llc::vcu0_t{(const uint8_t*)&Ships.size(), 4}));
 			for(uint32_t iShip = 0; iShip < Ships.size(); ++iShip) {
-				llc_necall(Ships[iShip].Save(output), "iShip: %u", iShip);
+				if_fail_fef(Ships[iShip].Save(output), "iShip: %u", iShip);
 			}
 			return 0;
 		}
 
 		::llc::err_t					Load			(::llc::vcu0_t & input) {
-			llc_necs(::llc::loadLabel	(input, Name	));
-			llc_necs(::llc::loadPOD		(input, State	));
-			llc_necs(::llc::loadView	(input, Weapons	));
-			llc_necs(::llc::loadView	(input, Orbiters));
-			llc_necs(Ships.resize(*(uint32_t*)input.begin()));
+			if_fail_fe(::llc::loadLabel	(input, Name	));
+			if_fail_fe(::llc::loadPOD		(input, State	));
+			if_fail_fe(::llc::loadView	(input, Weapons	));
+			if_fail_fe(::llc::loadView	(input, Orbiters));
+			if_fail_fe(Ships.resize(*(uint32_t*)input.begin()));
 			input							= {input.begin() + sizeof(uint32_t), input.size() - 4};
 			for(uint32_t iShip = 0; iShip < Ships.size(); ++iShip) {
-				llc_necall(Ships[iShip].Load(input), "iShip: %u", iShip);
+				if_fail_fef(Ships[iShip].Load(input), "iShip: %u", iShip);
 			}
 			return 0;
 		}
@@ -321,22 +321,22 @@ namespace ghg
 		::llc::apod<sc_t>					InputboxText;
 
 		::llc::aobj<::llc::apod<sc_t>>	FileNames					= {};
-		::llc::vcs						SavegameFolder				= ".";
-		::llc::vcs						ExtensionSaveAuto			= ".auto.ghz";
-		::llc::vcs						ExtensionSaveStage			= ".stage.ghz";
-		::llc::vcs						ExtensionSaveQuick			= ".quick.ghz";
-		::llc::vcs						ExtensionSaveUser			= ".user.ghz";
-		::llc::vcs						ExtensionSave				= ".ghz";
-		::llc::vcs						ExtensionImages				= ".png";
+		::llc::vcst_t						SavegameFolder				= ".";
+		::llc::vcst_t						ExtensionSaveAuto			= ".auto.ghz";
+		::llc::vcst_t						ExtensionSaveStage			= ".stage.ghz";
+		::llc::vcst_t						ExtensionSaveQuick			= ".quick.ghz";
+		::llc::vcst_t						ExtensionSaveUser			= ".user.ghz";
+		::llc::vcst_t						ExtensionSave				= ".ghz";
+		::llc::vcst_t						ExtensionImages				= ".png";
 
-		::llc::vcs						ExtensionProfile			= ".ghp";
-		::llc::vcs						ExtensionCredentials		= ".ghc";
+		::llc::vcst_t						ExtensionProfile			= ".ghp";
+		::llc::vcst_t						ExtensionCredentials		= ".ghc";
 
 		::ghg::APP_STATE				ActiveState					= APP_STATE_Init;
 
 		::llc::err_t					AddNewPlayer				(::llc::vcst_t playerName)			{
 			::llc::trim(playerName);
-			return Players.push_back({::llc::label(::llc::vcs{playerName})});
+			return Players.push_back({::llc::label(::llc::vcst_t{playerName})});
 		}
 
 		::llc::err_t					Save						(SAVE_MODE autosaveMode)				{
@@ -347,7 +347,7 @@ namespace ghg
 				const ::ghg::SPlayer				& player					= Players[iPlayer];
 				::llc::base64Encode(player.Name, b64PlayerName);
 				sprintf_s(fileName, "%s/%s.%llu%s", SavegameFolder.begin(), b64PlayerName.begin(), 0ULL, ExtensionProfile.begin());
-				llc_necall(player.Save(fileName), "iPlayer: %i", iPlayer);
+				if_fail_fef(player.Save(fileName), "iPlayer: %i", iPlayer);
 			}
 			::llc::vcst_t							extension;
 			switch(autosaveMode) {

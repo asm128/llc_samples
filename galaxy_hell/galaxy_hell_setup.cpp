@@ -16,22 +16,22 @@ LLC_USING_TYPEINT();
 
 ::llc::err_t			ghg::solarSystemSave	(const ::ghg::SGalaxyHell & game, ::llc::vcst_t fileName) {
 	::llc::au0_t					serialized;
-	llc_necs(game.Save(serialized));
+	if_fail_fe(game.Save(serialized));
 	::llc::au0_t					deflated;
-	llc_necs(::llc::arrayDeflate(serialized, deflated));
-	llc_necs(::llc::fileFromMemory({fileName}, deflated));
+	if_fail_fe(::llc::arrayDeflate(serialized, deflated));
+	if_fail_fe(::llc::fileFromMemory({fileName}, deflated));
 	return 0;
 }
 
 ::llc::err_t			ghg::solarSystemLoad	(::ghg::SGalaxyHell & world,::llc::vcst_t filename) {
 	::llc::au0_t					deflated;
-	llc_necs(::llc::fileToMemory({filename}, deflated));
+	if_fail_fe(::llc::fileToMemory({filename}, deflated));
 	::llc::au0_t					serialized;
-	llc_necs(::llc::arrayInflate(deflated, serialized));
+	if_fail_fe(::llc::arrayInflate(deflated, serialized));
 
 	::llc::vcu0_t					viewSerialized			= serialized;
 	if (failed(world.Load(viewSerialized))) {
-		llc_necs(::ghg::solarSystemReset(world));
+		if_fail_fe(::ghg::solarSystemReset(world));
 		return -1;
 	}
 
@@ -55,7 +55,7 @@ static	::llc::err_t	shipCreate				(::ghg::SShipManager & shipState, int32_t team
 		entity.Transform		= scene.Transforms.push_back(shipState.Engine.Integrator.MatrixIdentity4);
 		entity.Image			= -1;	//iImage % 5;
 		entity.Body				= shipState.Engine.Integrator.Create();
-		llc_necs(shipState.ShipCoreEntity.push_back(iEntityMain = shipState.EntitySystem.Create(entity, {})));
+		if_fail_fe(shipState.ShipCoreEntity.push_back(iEntityMain = shipState.EntitySystem.Create(entity, {})));
 		ship.Team				= teamId;
 		//const int32_t				indexBody				= shipState.ShipPhysics.Create(); 
 		//(void)indexBody;
@@ -357,7 +357,7 @@ static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 	sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
 	if(0 <= ::llc::fileToMemory(stageFileName, stageFile.Bytes) && stageFile.Bytes.size()) {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
-		llc_necall(-1 == ::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
+		if_fail_fef(-1 == ::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
 	} 
 	else {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
@@ -477,13 +477,13 @@ static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 }
 
 ::llc::err_t			ghg::solarSystemSetup	(::ghg::SGalaxyHell & solarSystem, const ::llc::n2u1_t & windowSize)	{
-	llc_necs(::modelsSetup(solarSystem.ShipState.Engine));
-	llc_necs(::modelsSetupOld(solarSystem.ShipState.Scene));
+	if_fail_fe(::modelsSetup(solarSystem.ShipState.Engine));
+	if_fail_fe(::modelsSetupOld(solarSystem.ShipState.Scene));
 
 	solarSystem.DecoState.FontManager.Fonts.clear();
-	llc_necs(::llc::rasterFontDefaults(solarSystem.DecoState.FontManager));
+	if_fail_fe(::llc::rasterFontDefaults(solarSystem.DecoState.FontManager));
 
-	llc_necs(::ghg::stageSetup(solarSystem));
+	if_fail_fe(::ghg::stageSetup(solarSystem));
 
 	::llc::m4f2_t				& matrixProjection		= solarSystem.ShipState.Scene.Global.MatrixProjection;
 	matrixProjection.FieldOfView(::llc::math_pi * .25, windowSize.x / (double)windowSize.y, 0.01, 500.0);
