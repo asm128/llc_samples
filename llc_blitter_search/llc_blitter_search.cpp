@@ -2235,40 +2235,7 @@ stct SApplication {
 		if_fail_fe(::llc::fileFromMemory(app.Sample.OpenFile, app.Sample.FileBytes.cc()));
 	if(resized || ::llc::GUI_VIEWPORT_ACTION_WRAP == action || ::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action || app.Sample.VisibleColumns != ::llc::guiViewportTextColumns(app.Sample.GUI, app.Sample.FileControls[0]))
 		if_fail_fe(::desktopTextRowsRebuild(app.Sample));
-	::llc::SWindow & window = app.Framework.RootWindow;
-	cnst ::llc::SInput & input = *window.Input;
-	cnst ::llc::u0_t ctrl = ::llc::SYSTEM_KEY_Control, shift = ::llc::SYSTEM_KEY_Shift, s = 'S';
-	if(input.KeyboardPrevious.KeyState[ctrl] && input.KeyboardPrevious.KeyState[shift] && input.KeyboardPrevious.KeyState[s]
-	&& (input.KeyUp(ctrl) || input.KeyUp(shift) || input.KeyUp(s))) {
-		::llc::vcst_t executable = {};
-		if_fail_fe(::llc::pathStem(app.Framework.RuntimeValues.EntryPointArgs.ProgramName, executable));
-		::llc::string filename = {};
-		if_fail_fe(::llc::timeStringFormat("{yy}{MM}{dd}_{hh}{mm}{ss}", ::llc::timeCurrentInMs(), filename));
-#if defined(LLC_DEBUG_ENABLED)
-		stxp ::llc::vcst_c configuration = "Debug";
-#else
-		stxp ::llc::vcst_c configuration = "Release";
-#endif
-		if_fail_fe(::llc::append_strings(filename, "_", executable, "_", configuration, ".png"));
-		if_fail_fe(window.ScreenshotFile.clear());
-		if_fail_fe(::llc::pathNameCompose(app.ScreenshotDirectory, filename, window.ScreenshotFile));
-		cnst ::llc::string baseName = filename;
-		::std::error_code fileError = {};
-		for(::llc::u2_t repeat = 1; ::std::filesystem::exists(window.ScreenshotFile.begin(), fileError); ++repeat) {
-			filename = baseName;
-			if_fail_fe(filename.resize(filename.size() - 4));
-			if_fail_fe(::llc::append_strings(filename, "_", ::llc::str(repeat), ".png"));
-			if_fail_fe(window.ScreenshotFile.clear());
-			if_fail_fe(::llc::pathNameCompose(app.ScreenshotDirectory, filename, window.ScreenshotFile));
-		}
-		if(fileError) {
-			warning_printf("Screenshot collision check failed: %s.", fileError.message().c_str());
-			rtrn resultSample;
-		}
-		if_fail_fe(::llc::eventEnqueueScreenSaveFramebuffer(window.EventQueue));
-		::llc::vcst_t screenshot_path = window.ScreenshotFile;
-		info_printf("Screenshot expected at: \"%.*s\"", LLC_VIEW_ARGS(screenshot_path));
-	}
+	if_fail_fe(::llc::windowScreenshotHotkey(app.Framework.RootWindow, app.Framework.RuntimeValues.EntryPointArgs.ProgramName, app.ScreenshotDirectory));
 	::llc::sleep(1);
 	rtrn resultSample;
 }

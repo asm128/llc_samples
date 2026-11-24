@@ -7,10 +7,14 @@
 #include "llc_cstring.h"
 #include "llc_framework.h"
 #include "llc_gui_control_list.h"
+#include "llc_json_expression.h"
+#include "llc_path.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
+#include <filesystem>
 
 stxp ::llc::u2_t DESKTOP_VISIBLE_ROWS = 20;
+stxp ::llc::vcst_c SCREENSHOT_PATH_DEFAULT = "d:/enterprise/logs/screenshots";
 stxp ::llc::u2_t DESKTOP_FILE_MAX_BYTES = 1024 * 1024;
 
 stxp ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
@@ -639,6 +643,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 stct SApplication {
 	::llc::SFramework	Framework;
 	SSampleGUIViewport	Sample;
+	::llc::string		ScreenshotDirectory = {};
 	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	::llc::u2_t		FrameIndex = 0;
 
@@ -649,6 +654,15 @@ stct SApplication {
 };
 
 ::llc::err_t setup(SApplication & app) {
+	::llc::vcst_t screenshotPath = SCREENSHOT_PATH_DEFAULT;
+	::std::error_code configError = {};
+	if(::std::filesystem::exists("llc_config.json", configError) && 0 <= ::llc::jsonFileRead(app.Framework.JSONConfig, "llc_config.json")) {
+		::llc::vcst_t configuredPath = {};
+		if(0 <= ::llc::jsonExpressionResolve("screenshot_path", app.Framework.JSONConfig.Reader, 0, configuredPath) && configuredPath.size())
+			screenshotPath = configuredPath;
+	}
+	if(::llc::failed(::llc::pathNormalize(screenshotPath, app.ScreenshotDirectory)) || ::llc::failed(::llc::pathCreate(app.ScreenshotDirectory)))
+		app.ScreenshotDirectory = SCREENSHOT_PATH_DEFAULT;
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 720};
 	if_null_ve(-1, window.BackBuffer.create());
@@ -695,6 +709,7 @@ stct SApplication {
 	else if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
 		if_fail_fe(::desktopFileRowsRefresh(app.Sample));
 	}
+	if_fail_fe(::llc::windowScreenshotHotkey(app.Framework.RootWindow, app.Framework.RuntimeValues.EntryPointArgs.ProgramName, app.ScreenshotDirectory));
 	::llc::sleep(1);
 	rtrn resultSample;
 }
