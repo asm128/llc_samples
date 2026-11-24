@@ -7,7 +7,7 @@
 namespace ghg
 {
 
-	typedef ::llc::rtbgra8d32			TRenderTarget;
+	typedef ::llc::rt<::llc::bgra, ::llc::u2_t>	TRenderTarget;
 
 	static constexpr ::llc::bgra		DEBRIS_COLORS[]			=
 		{ {0x80, 0xAF, 0xFF, }

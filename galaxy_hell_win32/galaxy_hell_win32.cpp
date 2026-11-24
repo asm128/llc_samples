@@ -5,7 +5,9 @@
 #include "llc_raster_lh.h"
 
 #include <time.h>
+#if defined(LLC_WINDOWS)
 #include <direct.h>
+#endif
 
 //#include <joystickapi.h>
 
@@ -51,13 +53,10 @@ static	::llc::err_t	processScreenEvent		(::SApplication & /*app*/, const ::llc::
 static	::llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { 
 	switch(screenEvent.Type) {
 	default: break;
-	case ::llc::EVENT_KEYBOARD_Down:
 	case ::llc::EVENT_KEYBOARD_SysDown:
 		switch(screenEvent.Data[0]) {
-		case VK_RETURN:
-			if(GetAsyncKeyState(VK_MENU) & 0xFFF0) {
-				if_fail_fe(::llc::fullScreenToggle(app.Framework.RootWindow));
-			}
+		case '\r':
+			if_fail_fe(::llc::fullScreenToggle(app.Framework.RootWindow));
 			break;
 		}
 		break;
@@ -78,14 +77,9 @@ static	::llc::err_t	processSystemEvent	(::SApplication & app, const ::llc::SEven
 	::llc::SFramework			& framework			= app.Framework;
 	::llc::SWindow				& mainWindow		= framework.RootWindow;
 	::ghg::galaxyHellUpdate(app.GalaxyHellApp, framework.FrameInfo.Seconds.LastFrame, framework.RootWindow.Input, mainWindow.EventQueue);
-	app.AudioState.CleanupAudio(); 
-
-	// --- when the rendering context is no longer needed ...   
- 	// make the rendering context not current  
-	if(app.GLRenderContext) {
-		wglMakeCurrent		(NULL, NULL) ; 
-		wglDeleteContext	(app.GLRenderContext);	// delete the rendering context  
-	}
+#if defined(LLC_WINDOWS)
+	app.AudioState.CleanupAudio();
+#endif
 #ifdef USE_STEAM_CLIENT
 	SteamAPI_Shutdown();
 	Steamworks_TermCEGLibrary();
@@ -161,7 +155,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 
 	sc_t rgchFullPath[1024] = {};
 #if defined(LLC_WINDOWS)
-	sprintf_s(rgchFullPath, "%s/%s", rgchCWD, "steam_input_manifest.vdf" );
+	::llc::sprintf_s(rgchFullPath, "%s/%s", rgchCWD, "steam_input_manifest.vdf" );
 #elif defined(LLC_OSX)
 	_snprintf( rgchFullPath, sizeof( rgchFullPath ), "%s/steamworksexample.app/Contents/Resources/%s", rgchCWD, "steam_input_manifest.vdf" );	// hack for now, because we do not have utility functions available for finding the resource path alternatively we could disable the SteamController init on OS X
 #else
@@ -186,8 +180,10 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 	::ghg::SGalaxyHellDrawCache	& drawCache			= app.GalaxyHellApp.Game.DrawCache;
 	::llc::resize(4096 * 1024, drawCache.PixelCoords, drawCache.PixelVertexWeights, drawCache.LightColorsModel, drawCache.LightColorsWorld, drawCache.LightPointsModel, drawCache.LightPointsWorld);
 
+#if defined(LLC_WINDOWS)
 	app.AudioState.InitAudio();
 	app.AudioState.PrepareAudio("./../llc_data/sounds/thrust.wav");
+#endif
 
 	//app.Client.AddressConnect	= {};
 	//::llc::tcpipAddress(9898, 0, ::llc::TRANSPORT_PROTOCOL_UDP, app.Client.AddressConnect);	// If loading the remote IP from the json fails, we fall back to the local address.
@@ -206,16 +202,6 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 	//for(uint32_t i = 0; i < 4; ++i) 
 	//	app.GamePad.Resume();
 
-
-	// create a rendering context  
-	app.DrawingContext		= GetDC(framework.RootWindow.PlatformDetail.WindowHandle);
-	app.GLRenderContext		= wglCreateContext(app.DrawingContext); 
- 
-	// make it the calling thread's current rendering context 
-	wglMakeCurrent (app.DrawingContext, app.GLRenderContext);
- 
-	// call OpenGL APIs as desired ... 
- 
 
 	return 0;
 }
@@ -245,6 +231,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 			app.GalaxyHellApp.RenderTargetQueue.clear();
 		}
 	}
+#if defined(LLC_WINDOWS)
 	app.AudioState.vListenerPos			= app.GalaxyHellApp.Game.ShipState.Scene.Global.Camera[app.GalaxyHellApp.Game.ShipState.Scene.Global.CameraMode].Position; 
 	app.AudioState.listener.OrientTop	= {0, 1, 0}; 
 	app.AudioState.listener.OrientFront	= {1, 0, 0};  
@@ -272,6 +259,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 	}
 
 	app.AudioState.UpdateAudio(framework.FrameInfo.Seconds.LastFrame);// / (app.GalaxyHellApp.World.ShipState.Ships.size() - 1));
+#endif
 #if defined(USE_STEAM_CLIENT)
 	SteamAPI_RunCallbacks();
 #endif

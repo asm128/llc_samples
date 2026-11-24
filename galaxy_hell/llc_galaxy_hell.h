@@ -120,7 +120,7 @@ namespace ghg
 		::llc::err_t						PilotsReset				()			{
 			while(Pilots.size() < PlayState.Constants.Players) {
 				sc_t									text [64]				= {};
-				sprintf_s(text, "Player %i", Pilots.size() + 1);
+				::llc::sprintf_s(text, "Player %i", Pilots.size() + 1);
 				if_fail_fe(Pilots.push_back({::llc::label(text), PLAYER_COLORS[Pilots.size() % ::llc::size(PLAYER_COLORS)]}));
 			}
 			return ShipControllers.resize(PlayState.Constants.Players);
@@ -195,4 +195,3 @@ namespace ghg
 }
 
 #endif // LLC_GALAXY_HELL_H_293874239874
-		  

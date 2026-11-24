@@ -133,7 +133,7 @@ static	::llc::err_t	drawScoreParticles
 		::llc::apod<::llc::n2u1_t>	dstCoords;
 
 		sc_t						textToShow[64]		= {};
-		sprintf_s(textToShow, "%i", particle.Score);
+		::llc::sprintf_s(textToShow, "%i", particle.Score);
 		const ::llc::vcst_t			finalText			= textToShow;
 		::llc::rect2s1_t				rectText			= {{}, {int16_t(font.CharSize.x * finalText.size()), font.CharSize.y}};
 		rectText.Offset = (pixelCoord - ::llc::n2s1_t{int16_t(rectText.Size.x >> 1), int16_t(rectText.Size.y >> 1)});

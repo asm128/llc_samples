@@ -1,11 +1,10 @@
 #include "llc_galaxy_hell.h"
 
 #include "llc_collision.h"
+#include "llc_system_key.h"
 
 #include "llc_line3.h"
 
-#include <Windows.h>
-#include <mmsystem.h>
 #include <llc_noise.h>
 
 static	::llc::err_t	applyDamage
@@ -382,8 +381,8 @@ static	::llc::err_t	processInput			(::ghg::SGalaxyHell & solarSystem, double sec
 	//const bool				key_rotate_back			= input.KeyboardCurrent.KeyState[VK_NUMPAD4	];
 	//const bool				key_rotate_reset		= input.KeyboardCurrent.KeyState[VK_NUMPAD5	];
 	const bool					key_camera_switch		= input.KeyboardCurrent.KeyState['C'		];
-	const bool					key_camera_move_front	= input.KeyboardCurrent.KeyState[VK_HOME	];
-	const bool					key_camera_move_back	= input.KeyboardCurrent.KeyState[VK_END		];
+	const bool					key_camera_move_front	= input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Home	];
+	const bool					key_camera_move_back	= input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_End		];
 	const bool					key_camera_move_up		= input.KeyboardCurrent.KeyState['E'		];
 	const bool					key_camera_move_down	= input.KeyboardCurrent.KeyState['Q'		];
 	const bool					key_camera_reset		= input.KeyboardCurrent.KeyState['R'		];
