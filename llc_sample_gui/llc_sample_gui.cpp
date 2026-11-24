@@ -1,3 +1,4 @@
+#include "llc_string_compose.h"
 #include "llc_sample_gui.h"
 #include "llc_app_impl.h"
 #include "llc_cstring.h"
@@ -6,11 +7,11 @@
 #include "llc_string.h"
 #include "llc_system_key.h"
 
-stacxpr ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
-stacxpr ::llc::u0_t PALETTE_SHADE_COUNT = 16;
-stacxpr ::llc::u0_t THEME_COUNT = SAMPLE_GUI_THEME_COUNT;
-stacxpr ::llc::u0_t STATE_COUNT = 8;
-stacxpr ::llc::u0_t ALIGNMENT_COUNT = 9;
+stxp ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
+stxp ::llc::u0_t PALETTE_SHADE_COUNT = 16;
+stxp ::llc::u0_t THEME_COUNT = SAMPLE_GUI_THEME_COUNT;
+stxp ::llc::u0_t STATE_COUNT = 8;
+stxp ::llc::u0_t ALIGNMENT_COUNT = 9;
 
 GDEFINE_ENUM_TYPE(SAMPLE_GUI_THEME, ::llc::u0_t);
 GDEFINE_ENUM_VALUED(SAMPLE_GUI_THEME, AZURE, 0, "Palette: Azure");
@@ -49,7 +50,7 @@ sttc ::llc::vcst_t sampleGUIThemeName(::llc::u0_t theme) {
 }
 
 sttc ::llc::SColorBGRA sampleGUIThemeColor(::llc::u0_t theme) nxpt {
-	stacxpr ::llc::SColorBGRA colors[SAMPLE_GUI_THEME_COUNT] =
+	stxp ::llc::SColorBGRA colors[SAMPLE_GUI_THEME_COUNT] =
 		{ {248, 208,  72}
 		, { 32, 176, 248}
 		, {232, 232, 232}
@@ -72,12 +73,12 @@ sttc ::llc::SColorBGRA sampleGUIDesaturate(::llc::SColorBGRA color) nxpt {
 }
 
 sttc ::llc::u0_t sampleGUIStateShade(::llc::u0_t state) nxpt {
-	stacxpr ::llc::u0_t shades[::llc::GUI_CONTROL_PALETTE_COUNT] = {8, 10, 5, 11, 4, 7, 2, 7, 1, 13};
+	stxp ::llc::u0_t shades[::llc::GUI_CONTROL_PALETTE_COUNT] = {8, 10, 5, 11, 4, 7, 2, 7, 1, 13};
 	rtrn shades[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
 }
 
 sttc ::llc::u0_t sampleGUIStateBorderOffset(::llc::u0_t state) nxpt {
-	stacxpr ::llc::u0_t offsets[::llc::GUI_CONTROL_PALETTE_COUNT] = {5, 1, 7, 3, 0, 1, 7, 3, 5, 5};
+	stxp ::llc::u0_t offsets[::llc::GUI_CONTROL_PALETTE_COUNT] = {5, 1, 7, 3, 0, 1, 7, 3, 5, 5};
 	rtrn offsets[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
 }
 
@@ -191,7 +192,7 @@ sttc void sampleGUIStateCardsApply(SSampleGUI & app) nxpt {
 sttc ::llc::err_t sampleGUIStateFlagAppend(::llc::string & text, ::llc::vcst_t flag) {
 	if(text.size())
 		if_fail_fe(text.push_back('+'));
-	rtrn text.append_string(flag);
+	rtrn ::llc::append_string(text, flag);
 }
 
 sttc ::llc::err_t sampleGUIStateDescribe(cnst ::llc::SControlState & state, bool disabled, ::llc::string & text) {
@@ -203,11 +204,11 @@ sttc ::llc::err_t sampleGUIStateDescribe(cnst ::llc::SControlState & state, bool
 	if(disabled          ) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_DISABLED)));
 	if(state.IsAction  ()) if_fail_fe(::sampleGUIStateFlagAppend(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_ACTION  )));
 	if(0 == text.size())
-		if_fail_fe(text.append_string(::llc::get_value_namev(SAMPLE_GUI_STATE_NORMAL)));
+		if_fail_fe(::llc::append_string(text, ::llc::get_value_namev(SAMPLE_GUI_STATE_NORMAL)));
 	rtrn text.size();
 }
 
-sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t idControl, ::llc::astchar<512> & storage, ::llc::vcst_t text) {
+sttc ::llc::err_t sampleGUIControlTextSetOwned(SSampleGUI & app, ::llc::cid_t idControl, ::llc::astsc_t<512> & storage, ::llc::vcst_t text) {
 	if(app.GUI.Controls.Text[idControl].Text == text)
 		rtrn 0;
 	if_true_fe(text.size() >= storage.size());
@@ -245,7 +246,7 @@ sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
 	cnst ::llc::GUI_CONTROL_PALETTE palette = ::sampleGUIControlPalette(disabled, state);
 	cnst ::llc::vcst_t paletteName = ::llc::get_value_namev(palette);
 	cnst ::llc::s1_t paletteSlot = app.GUI.Controls.Draw[app.ControlLive].Palettes[palette];
-	::llc::astchar<512> text = {};
+	::llc::astsc_t<512> text = {};
 	cnst ::llc::err_t length = ::llc::sprintf_s(text.Storage, "LIVE | STATE:%.*s | PALETTE:%.*s [%i] | CLICK TO TOGGLE SELECTED", (int)stateText.size(), stateText.begin(), (int)paletteName.size(), paletteName.begin(), paletteSlot);
 	if_fail_fe(length);
 	rtrn ::sampleGUIControlTextSetOwned(app, app.ControlLive, app.TextLive, {text.Storage, (::llc::u2_t)length});
@@ -254,7 +255,7 @@ sttc ::llc::err_t sampleGUILiveTextUpdate(SSampleGUI & app) {
 sttc ::llc::err_t sampleGUIInspectorTextUpdate(SSampleGUI & app, ::llc::cid_t idHovered) {
 	cnst ::llc::vcst_t themeName = ::sampleGUIThemeName(app.Theme);
 	cnst ::llc::vcst_t modeName = app.GUI.ColorModeDefault == ::llc::GUI_COLOR_MODE_3D ? ::llc::vcst_t{"3D"} : ::llc::vcst_t{"FLAT"};
-	::llc::astchar<512> text = {};
+	::llc::astsc_t<512> text = {};
 	::llc::err_t length = 0;
 	if(::llc::controlInvalid(app.GUI, idHovered))
 		length = ::llc::sprintf_s(text.Storage, "GUI | THEME:%.*s | MODE:%.*s | HOVER:NONE", (int)themeName.size(), themeName.begin(), (int)modeName.size(), modeName.begin());
@@ -357,7 +358,7 @@ stct SApplication {
 ::llc::err_t setup(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 540};
-	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_null_ve(-1, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
 	rtrn ::sampleGUISetup(app.Sample);

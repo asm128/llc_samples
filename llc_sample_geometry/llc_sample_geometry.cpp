@@ -13,7 +13,7 @@
 #	include "llc_engine_d3d_app.h"
 #endif
 
-stacxpr ::llc::bgra SAMPLE_CLEAR_COLOR = {24, 20, 16, 255};
+stxp ::llc::bgra SAMPLE_CLEAR_COLOR = {24, 20, 16, 255};
 
 
 sttc ::llc::err_t sampleGeometryViewportSize(SSampleGeometry & app, ::llc::u0_t iViewport) {
@@ -88,9 +88,9 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	gui.Controls.Constraints[app.Desktop].AttachSizeToControl = {app.Desktop, app.Desktop};
 	// Keep palette additions local; the GUI defaults are shared by other consumers.
 	::llc::pobj<::llc::SGUIColors> colors;
-	if_null_ve(::llc::OS_NO_MEMORY, colors.create(*gui.Colors));
-	if_null_ve(::llc::OS_NO_MEMORY, colors->Palette.create(*gui.Colors->Palette));
-	if_null_ve(::llc::OS_NO_MEMORY, colors->ControlThemes.create(*gui.Colors->ControlThemes));
+	if_null_ve(-1, colors.create(*gui.Colors));
+	if_null_ve(-1, colors->Palette.create(*gui.Colors->Palette));
+	if_null_ve(-1, colors->ControlThemes.create(*gui.Colors->ControlThemes));
 	cnst ::llc::err_t transparent = colors->Palette->push_back({0, 0, 0, 0});
 	if_fail_fe(transparent);
 	::llc::SControlTheme clientTheme = (*colors->ControlThemes)[gui.ThemeDefault];
@@ -101,8 +101,8 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	app.ClientTheme = (::llc::s1_t)(theme + 1);
 	gui.Colors = colors;
 
-	stacxpr ::llc::vcst_t titles[SAMPLE_GEOMETRY_COUNT] = {"BOX", "SPHERE", "DISC", "CYLINDER", "GRID", "RING FLAT", "TUBE", "HELIX"};
-	stacxpr ::llc::s1_t themes[] = {::llc::ASCII_COLOR_CYAN * 16 + 9, ::llc::ASCII_COLOR_YELLOW * 16 + 9, ::llc::ASCII_COLOR_LIGHTGREY * 16 + 9};
+	stxp ::llc::vcst_t titles[SAMPLE_GEOMETRY_COUNT] = {"BOX", "SPHERE", "DISC", "CYLINDER", "GRID", "RING FLAT", "TUBE", "HELIX"};
+	stxp ::llc::s1_t themes[] = {::llc::ASCII_COLOR_CYAN * 16 + 9, ::llc::ASCII_COLOR_YELLOW * 16 + 9, ::llc::ASCII_COLOR_LIGHTGREY * 16 + 9};
 	for(::llc::u0_t i = 0; i < SAMPLE_GEOMETRY_COUNT; ++i) {
 		::llc::SViewport & viewport = app.Viewports[i];
 		if_fail_fe(::llc::viewportInitialize(gui, viewport));
@@ -231,7 +231,7 @@ sttc ::llc::err_t sampleGeometryGUIUpdate(SSampleGeometry & app, double secondsL
 			if(handle == ::llc::VIEWPORT_CONTROL_TITLE)
 				area.Offset += delta;
 			else {
-				stacxpr ::llc::u0_t edges[] = {1, 2, 4, 8, 3, 6, 9, 12};
+				stxp ::llc::u0_t edges[] = {1, 2, 4, 8, 3, 6, 9, 12};
 				cnst ::llc::u0_t edge = edges[handle];
 				if(edge & 1) { area.Size.x = ::llc::max<::llc::s1_t>(160, app.DragArea.Size.x - delta.x); area.Offset.x += app.DragArea.Size.x - area.Size.x; }
 				if(edge & 2) { area.Size.y = ::llc::max<::llc::s1_t>(100, app.DragArea.Size.y - delta.y); area.Offset.y += app.DragArea.Size.y - area.Size.y; }
@@ -367,7 +367,7 @@ sttc ::llc::err_t sampleGeometryRendererSet(SApplication & app, bool useD3D) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1600, 960};
 	if_fail_fe(::sampleGeometrySetup(app.Sample));
-	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_null_ve(-1, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::sampleGeometryDraw(app.Sample, *window.BackBuffer));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
