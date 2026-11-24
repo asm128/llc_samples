@@ -359,7 +359,7 @@ static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 	::llc::sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
 	if(0 <= ::llc::fileToMemory(stageFileName, stageFile.Bytes) && stageFile.Bytes.size()) {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
-		if_fail_fef(-1 == ::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
+		if_fail_fef(::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);
 	} 
 	else {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
