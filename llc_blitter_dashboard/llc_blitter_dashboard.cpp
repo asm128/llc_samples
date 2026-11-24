@@ -238,6 +238,8 @@ sttc ::llc::err_t desktopFolderRowsRefresh(SBlitterDashboard & app) {
 	rtrn 0;
 }
 
+sttc ::llc::s3_t desktopRowByte(cnst SBlitterDashboard & app, ::llc::u2_t row);
+
 sttc ::llc::err_t desktopFileRowsRefresh(SBlitterDashboard & app) {
 	for(::llc::u2_t i = 0; i < app.FileControls.size(); ++i) {
 		cnst ::llc::cid_t id = app.FileControls[i];
@@ -252,7 +254,19 @@ sttc ::llc::err_t desktopFileRowsRefresh(SBlitterDashboard & app) {
 				text = {};
 			if_fail_fe(text.slice(text, 0, ::llc::min(text.size(), ::llc::guiViewportTextColumns(app.GUI, id))));
 			app.GUI.Controls.Text[id].Text = text;
-			app.GUI.Controls.SetSelected(id, app.SelectAll);
+			app.GUI.Controls.SetSelected(id, false);
+			::llc::apod<::llc::STextState> & states = app.GUI.Controls.TextState[id];
+			if_fail_fe(states.resize(text.size(), ::llc::STextState{}));
+			cnst ::llc::s3_t rowByte = ::desktopRowByte(app, line) + (app.WordWrap ? 0 : app.FileColumnOffset);
+			cnst ::llc::s3_t selectedBegin = ::llc::min(app.SelectionAnchor, app.SelectionCursor);
+			cnst ::llc::s3_t selectedEnd = ::llc::max(app.SelectionAnchor, app.SelectionCursor);
+			for(::llc::u2_t iCharacter = 0; iCharacter < text.size(); ++iCharacter) {
+				cnst ::llc::s3_t position = rowByte + iCharacter;
+				cnst bool selected = app.SelectAll || (0 <= selectedBegin && selectedBegin <= position && position < selectedEnd);
+				states[iCharacter] = {};
+				states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, selected);
+				states[iCharacter].Flag = ::llc::setSwapColors(states[iCharacter].Flag, states[iCharacter].Mask, selected);
+			}
 		}
 	}
 	rtrn 0;
@@ -266,6 +280,73 @@ sttc ::llc::err_t desktopTextRowsRebuild(SBlitterDashboard & app) {
 	if_fail_fe(::llc::guiViewportTextRowsBuild(app.FileLines, app.VisibleColumns, app.WordWrap, app.TextRows));
 	app.FileOffset = ::llc::min(app.FileOffset, app.TextRows.size() > DESKTOP_VISIBLE_ROWS ? app.TextRows.size() - DESKTOP_VISIBLE_ROWS : 0);
 	rtrn ::desktopFileRowsRefresh(app);
+}
+
+sttc ::llc::err_t desktopScrollCreate(SBlitterDashboard & app, SBlitterScroll & scroll, ::llc::u0_t iViewport, bool vertical) {
+	cnst ::llc::cid_t parent = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
+	if_fail_fe(scroll.IdTrack = ::llc::controlCreateChild(app.GUI, parent));
+	if_fail_fe(scroll.IdThumb = ::llc::controlCreateChild(app.GUI, scroll.IdTrack));
+	scroll.Vertical = vertical;
+	app.GUI.Controls.Placement[scroll.IdTrack].Border = {1, 1, 1, 1};
+	app.GUI.Controls.Placement[scroll.IdThumb].Border = {1, 1, 1, 1};
+	::sampleGUIControlThemeApply(app.GUI, scroll.IdTrack, iViewport);
+	::sampleGUIControlThemeApply(app.GUI, scroll.IdThumb, iViewport);
+	rtrn 0;
+}
+
+sttc ::llc::err_t desktopScrollLayout(SBlitterDashboard & app, SBlitterScroll & scroll, ::llc::u0_t iViewport, ::llc::u2_t visible, ::llc::u2_t total, ::llc::u2_t & value, bool corner) {
+	cnst ::llc::cid_t parent = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
+	cnst ::llc::n2s1_t clientSize = app.GUI.Controls.Placement[parent].Area.Size;
+	cnst ::llc::u2_t maximum = total > visible ? total - visible : 0;
+	value = ::llc::min(value, maximum);
+	::llc::SControlPlacement & track = app.GUI.Controls.Placement[scroll.IdTrack];
+	::llc::SControlPlacement & thumb = app.GUI.Controls.Placement[scroll.IdThumb];
+	cnst ::llc::s1_t trackLength = ::llc::max((::llc::s1_t)0, (::llc::s1_t)((scroll.Vertical ? clientSize.y : clientSize.x) - (corner ? 14 : 0)));
+	track.Area.Offset = scroll.Vertical ? ::llc::n2s1_t{(::llc::s1_t)::llc::max(0, (int)clientSize.x - 14), 0} : ::llc::n2s1_t{0, (::llc::s1_t)::llc::max(0, (int)clientSize.y - 14)};
+	track.Area.Size = scroll.Vertical ? ::llc::n2s1_t{14, trackLength} : ::llc::n2s1_t{trackLength, 14};
+	cnst ::llc::s1_t thumbLength = maximum && total ? (::llc::s1_t)::llc::min((::llc::u2_t)trackLength, ::llc::max((::llc::u2_t)16, (::llc::u2_t)((::llc::u3_t)trackLength * visible / total))) : trackLength;
+	cnst ::llc::s1_t travel = trackLength - thumbLength;
+	cnst ::llc::s1_t position = maximum && travel ? (::llc::s1_t)((::llc::u3_t)travel * value / maximum) : 0;
+	thumb.Area.Offset = scroll.Vertical ? ::llc::n2s1_t{0, position} : ::llc::n2s1_t{position, 0};
+	thumb.Area.Size = scroll.Vertical ? ::llc::n2s1_t{14, thumbLength} : ::llc::n2s1_t{thumbLength, 14};
+	rtrn ::llc::controlMetricsInvalidate(app.GUI, scroll.IdTrack);
+}
+
+sttc ::llc::err_t desktopScrollsLayout(SBlitterDashboard & app) {
+	for(::llc::u0_t iViewport = 0; iViewport < 2; ++iViewport) {
+		cnst ::llc::cid_t parent = app.Viewports[iViewport].IdControls[::llc::VIEWPORT_CONTROL_TARGET];
+		cnst ::llc::s1_t width = (::llc::s1_t)::llc::max(0, (int)app.GUI.Controls.Placement[parent].Area.Size.x - 16);
+		::llc::acid & controls = iViewport ? app.FileControls : app.FolderControls;
+		for(::llc::u2_t i = 0; i < controls.size(); ++i)
+			if(app.GUI.Controls.Placement[controls[i]].Area.Size.x != width) {
+				app.GUI.Controls.Constraints[controls[i]].AttachSizeToControl.x = ::llc::CID_INVALID;
+				app.GUI.Controls.Placement[controls[i]].Area.Size.x = width;
+				if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, controls[i]));
+			}
+	}
+	if_fail_fe(::desktopScrollLayout(app, app.FolderScrollY, 0, DESKTOP_VISIBLE_ROWS - 1, app.FolderEntries.Name.size(), app.FolderOffset, false));
+	if_fail_fe(::desktopScrollLayout(app, app.FileScrollY, 1, DESKTOP_VISIBLE_ROWS, app.TextRows.size(), app.FileOffset, true));
+	rtrn ::desktopScrollLayout(app, app.FileScrollX, 1, app.VisibleColumns, app.WordWrap ? app.VisibleColumns : app.FileLineWidthMax, app.FileColumnOffset, true);
+}
+
+sttc bool desktopScrollInput(SBlitterDashboard & app, cnst SBlitterScroll & scroll, ::llc::u2_t maximum, ::llc::u2_t page, ::llc::u2_t & value) {
+	cnst ::llc::SInput & input = *app.Window.Input;
+	cnst ::llc::u2_t before = value;
+	cnst ::llc::SControlArea & track = app.GUI.Controls.Area[scroll.IdTrack];
+	cnst ::llc::SControlArea & thumb = app.GUI.Controls.Area[scroll.IdThumb];
+	cnst ::llc::s2_t cursor = scroll.Vertical ? input.MouseCurrent.Position.y : input.MouseCurrent.Position.x;
+	cnst ::llc::s2_t thumbStart = scroll.Vertical ? thumb.Total.Global.Offset.y : thumb.Total.Global.Offset.x;
+	cnst ::llc::s2_t thumbLength = scroll.Vertical ? thumb.Total.Global.Size.y : thumb.Total.Global.Size.x;
+	if(input.MouseCurrent.ButtonState[0] && app.GUI.Controls.IsPressed(scroll.IdThumb)) {
+		cnst ::llc::s2_t trackStart = scroll.Vertical ? track.Client.Global.Offset.y : track.Client.Global.Offset.x;
+		cnst ::llc::s2_t trackLength = scroll.Vertical ? track.Client.Global.Size.y : track.Client.Global.Size.x;
+		cnst ::llc::s2_t travel = ::llc::max((::llc::s2_t)0, trackLength - thumbLength);
+		if(travel)
+			value = (::llc::u2_t)((::llc::u3_t)::llc::max((::llc::s2_t)0, ::llc::min(travel, cursor - trackStart - thumbLength / 2)) * maximum / travel);
+	}
+	else if(input.ButtonDown(0) && app.GUI.Controls.IsPressed(scroll.IdTrack))
+		value = cursor < thumbStart ? (value > page ? value - page : 0) : ::llc::min(maximum, value + page);
+	rtrn value != before;
 }
 
 sttc ::llc::err_t jsonEntryAdd(SBlitterDashboard & app, ::llc::u2_t node, ::llc::s2_t parent, ::llc::vcst_t name) {
@@ -383,6 +464,7 @@ sttc ::llc::err_t desktopFolderOpen(SBlitterDashboard & app, ::llc::vcst_t path)
 	app.FileOffset = 0;
 	app.FileColumnOffset = 0;
 	app.SelectAll = false;
+	app.SelectionAnchor = app.SelectionCursor = -1;
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], true);
 	app.GUI.Controls.Text[app.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].Text = "FILE CONTENT";
@@ -396,6 +478,37 @@ sttc ::llc::s3_t desktopRowByte(cnst SBlitterDashboard & app, ::llc::u2_t row) {
 	if(begin < app.FileBytes.begin() || begin >= app.FileBytes.begin() + app.FileBytes.size())
 		rtrn app.FileWindowStart;
 	rtrn app.FileWindowStart + (begin - app.FileBytes.begin());
+}
+
+sttc ::llc::err_t desktopFileSelectionUpdate(SBlitterDashboard & app) {
+	cnst ::llc::SInput & input = *app.Window.Input;
+	if(!input.ButtonDown(0) && !input.MouseCurrent.ButtonState[0])
+		rtrn 0;
+	cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[7]->CharSize.x);
+	for(::llc::u2_t iControl = 0; iControl < app.FileControls.size(); ++iControl) {
+		cnst ::llc::cid_t id = app.FileControls[iControl];
+		if(app.GUI.Controls.IsHidden(id) || false == ::llc::in_range(app.GUI.CursorPos.s1(), app.GUI.Controls.Area[id].Total.Global))
+			continue;
+		cnst ::llc::u2_t iRow = app.FileOffset + iControl;
+		if(iRow >= app.TextRows.size())
+			continue;
+		cnst ::llc::SGUIViewportTextRow & row = app.TextRows[iRow];
+		cnst ::llc::s2_t mouseOffsetX = (::llc::s2_t)input.MouseCurrent.Position.x - app.GUI.Controls.Area[id].Text.Offset.x;
+		cnst ::llc::u2_t visibleColumn = 0 >= mouseOffsetX ? 0 : (::llc::u2_t)(mouseOffsetX / characterWidth);
+		cnst ::llc::u2_t firstColumn = app.WordWrap ? 0 : ::llc::min(app.FileColumnOffset, row.Text.size());
+		cnst ::llc::s3_t cursor = ::desktopRowByte(app, iRow) + firstColumn + ::llc::min(visibleColumn, row.Text.size() - firstColumn);
+		if(input.ButtonDown(0)) {
+			app.SelectAll = false;
+			app.SelectionAnchor = cursor;
+			app.SelectionCursor = -1;
+		}
+		if(0 <= app.SelectionAnchor && cursor != app.SelectionCursor) {
+			app.SelectionCursor = cursor;
+			rtrn ::desktopFileRowsRefresh(app);
+		}
+		break;
+	}
+	rtrn 0;
 }
 
 sttc ::llc::err_t desktopFileWindowLoad(SBlitterDashboard & app, ::llc::s3_t cursor) {
@@ -415,15 +528,16 @@ sttc ::llc::err_t desktopFileWindowLoad(SBlitterDashboard & app, ::llc::s3_t cur
 	if_fail_fe(app.FileDisplay.clear());
 	if(app.FileLength)
 		if_fail_fe(::llc::fileToMemory(app.OpenFile, app.FileBytes, DESKTOP_FILE_MAX_BYTES, app.FileWindowStart));
+	cnst bool binary = app.FileBytes.find('\0') >= 0;
 	::llc::vcst_t remaining = app.FileBytes;
 	if(0 == app.FileLength)
 		if_fail_fe(app.FileLines.push_back(::llc::vcst_t{"Empty file"}));
-	if(app.FileWindowStart && remaining.size()) {
+	if(!binary && app.FileWindowStart && remaining.size()) {
 		::llc::vcst_t partial = {}, next = {};
 		if(0 <= ::llc::split('\n', remaining, partial, next))
 			remaining = next;
 	}
-	if(app.FileWindowStart + app.FileBytes.size() < app.FileLength && remaining.size()) {
+	if(!binary && app.FileWindowStart + app.FileBytes.size() < app.FileLength && remaining.size()) {
 		cnst ::llc::err_t lastNewline = remaining.rfind('\n');
 		if(lastNewline >= 0) {
 			::llc::vcst_t prefix = {};
@@ -431,24 +545,29 @@ sttc ::llc::err_t desktopFileWindowLoad(SBlitterDashboard & app, ::llc::s3_t cur
 			remaining = prefix;
 		}
 	}
-	if(remaining.find('\0') >= 0) {
-		if_fail_fe(::llc::hexEncode(::llc::vcu0_t{(cnst ::llc::u0_t*)remaining.begin(), ::llc::min(remaining.size(), (::llc::u2_t)4096)}, app.FileDisplay));
-		remaining = app.FileDisplay;
-		if_fail_fe(app.FileLines.push_back(::llc::vcst_t{"Binary file: hex preview"}));
+	if(binary) {
+		if_fail_fe(app.FileLines.push_back(::llc::vcst_t{"Binary file: CP437"}));
+		for(::llc::u2_t iByte = 0; iByte < remaining.size(); iByte += 64) {
+			::llc::vcst_t line = {};
+			if_fail_fe(remaining.slice(line, iByte, ::llc::min((::llc::u2_t)64, remaining.size() - iByte)));
+			if_fail_fe(app.FileLines.push_back(line));
+		}
 	}
-	while(remaining.size()) {
-		::llc::vcst_t line = {}, next = {};
-		cnst ::llc::err_t found = ::llc::split('\n', remaining, line, next);
-		if(line.size() && line[line.size() - 1] == '\r')
-			if_fail_fe(line.slice(line, 0, line.size() - 1));
-		if_fail_fe(app.FileLines.push_back(line));
-		if(found < 0)
-			break;
-		remaining = next;
-	}
+	else
+		while(remaining.size()) {
+			::llc::vcst_t line = {}, next = {};
+			cnst ::llc::err_t found = ::llc::split('\n', remaining, line, next);
+			if(line.size() && line[line.size() - 1] == '\r')
+				if_fail_fe(line.slice(line, 0, line.size() - 1));
+			if_fail_fe(app.FileLines.push_back(line));
+			if(found < 0)
+				break;
+			remaining = next;
+		}
 	app.FileOffset = 0;
 	app.FileColumnOffset = 0;
 	app.SelectAll = false;
+	app.SelectionAnchor = app.SelectionCursor = -1;
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], false);
 	::llc::vcst_t fileName = {};
@@ -462,7 +581,10 @@ sttc ::llc::err_t desktopFileWindowLoad(SBlitterDashboard & app, ::llc::s3_t cur
 			break;
 		}
 	if_fail_fe(::desktopFileRowsRefresh(app));
-	rtrn app.FileLength <= DESKTOP_FILE_MAX_BYTES ? ::jsonFileShow(app) : 0;
+	cnst ::llc::err_t iJSON = app.OpenFile.rfind(::llc::vcst_t{".json", 5});
+	if(!binary && app.FileLength <= DESKTOP_FILE_MAX_BYTES && 0 <= iJSON && (::llc::u2_t)iJSON + 5 == app.OpenFile.size())
+		rtrn ::jsonFileShow(app);
+	rtrn 0;
 }
 
 sttc ::llc::err_t desktopFileOpen(SBlitterDashboard & app, ::llc::vcst_t path) {
@@ -509,11 +631,15 @@ sttc ::llc::err_t desktopFileWindowCheck(SBlitterDashboard & app) {
 	if_fail_fe(::blitterDashboardCreate(app, 3, "BLITTER JSON", {{890, 346}, {360, 246}}));
 	if_fail_fe(::desktopListCreate(app, 0, app.FolderControls));
 	if_fail_fe(::desktopListCreate(app, 1, app.FileControls));
+	if_fail_fe(::desktopScrollCreate(app, app.FolderScrollY, 0, true));
+	if_fail_fe(::desktopScrollCreate(app, app.FileScrollY, 1, true));
+	if_fail_fe(::desktopScrollCreate(app, app.FileScrollX, 1, false));
 	::llc::string initialFolder = {};
 	if_fail_fe(::llc::pathAbsolute(".", initialFolder));
 	if_fail_fe(::desktopFolderOpen(app, initialFolder));
 	if(0 <= ::llc::fileSize("./blitter.json"))
 		if_fail_fe(::desktopFileOpen(app, "./blitter.json"));
+	if_fail_fe(::desktopScrollsLayout(app));
 	if_fail_fe(::blitterDashboardActivate(app, 2));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
@@ -605,6 +731,18 @@ sttc ::llc::err_t desktopFileWindowCheck(SBlitterDashboard & app) {
 			if_fail_fe(::desktopFileWindowCheck(app));
 		}
 	}
+	cnst ::llc::u2_t folderMaximum = app.FolderEntries.Name.size() > DESKTOP_VISIBLE_ROWS - 1 ? app.FolderEntries.Name.size() - (DESKTOP_VISIBLE_ROWS - 1) : 0;
+	if(::desktopScrollInput(app, app.FolderScrollY, folderMaximum, DESKTOP_VISIBLE_ROWS - 1, app.FolderOffset))
+		if_fail_fe(::desktopFolderRowsRefresh(app));
+	cnst ::llc::u2_t fileMaximum = app.TextRows.size() > DESKTOP_VISIBLE_ROWS ? app.TextRows.size() - DESKTOP_VISIBLE_ROWS : 0;
+	if(::desktopScrollInput(app, app.FileScrollY, fileMaximum, DESKTOP_VISIBLE_ROWS, app.FileOffset)) {
+		if_fail_fe(::desktopFileRowsRefresh(app));
+		if_fail_fe(::desktopFileWindowCheck(app));
+	}
+	cnst ::llc::u2_t columnMaximum = !app.WordWrap && app.FileLineWidthMax > app.VisibleColumns ? app.FileLineWidthMax - app.VisibleColumns : 0;
+	if(::desktopScrollInput(app, app.FileScrollX, columnMaximum, app.VisibleColumns, app.FileColumnOffset))
+		if_fail_fe(::desktopFileRowsRefresh(app));
+	if_fail_fe(::desktopFileSelectionUpdate(app));
 	for(::llc::u2_t i = 0; i < app.FolderControls.size(); ++i)
 		if(app.GUI.Controls.IsAction(app.FolderControls[i])) {
 			::llc::string path = {};
@@ -642,6 +780,7 @@ sttc ::llc::err_t desktopFileWindowCheck(SBlitterDashboard & app) {
 			break;
 		}
 	app.JSONPressed = pressed;
+	if_fail_fe(::desktopScrollsLayout(app));
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
