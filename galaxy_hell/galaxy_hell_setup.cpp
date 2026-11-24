@@ -8,8 +8,10 @@
 #include "llc_engine_orbit.h"
 #include "llc_chrono.h"
 
+#if defined(LLC_WINDOWS)
 #include <windows.h>
 #include <mmsystem.h>
+#endif
 
 using ::llc::get_value_namep, ::llc::get_enum_namep, ::llc::failed;
 LLC_USING_TYPEINT();
@@ -311,7 +313,7 @@ static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 		memset(solarSystem.ShipState.SpaceshipManager.ShipScores.begin(), 0, solarSystem.ShipState.SpaceshipManager.ShipScores.byte_count());
 		while(solarSystem.Pilots.size() < solarSystem.PlayState.Constants.Players) {
 			sc_t						text [64]				= {};
-			sprintf_s(text, "Player %i", solarSystem.Pilots.size() + 1);
+			::llc::sprintf_s(text, "Player %i", solarSystem.Pilots.size() + 1);
 			solarSystem.Pilots.push_back({::llc::label(text), PLAYER_COLORS[solarSystem.Pilots.size() % ::llc::size(PLAYER_COLORS)]});
 		}
 		solarSystem.ShipControllers.resize(solarSystem.PlayState.Constants.Players);
@@ -354,7 +356,7 @@ static	::llc::err_t	modelsSetup			(::llc::SEngine & engine)			{
 		, {::llc::SHIP_PART_TYPE_Gun			, 128, ::llc::WEAPON_TYPE_Gun		, .12, 0.50, ::llc::WEAPON_LOAD_Missile		,  160,   112, 1,   1,0.25,  5, ::llc::DAMAGE_TYPE_Burn | ::llc::DAMAGE_TYPE_Wave }
 		};
 
-	sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
+	::llc::sprintf_s(stageFileName, "./levels/%u.json", solarSystem.PlayState.GlobalState.Stage + solarSystem.PlayState.PlaySetup.OffsetStage);
 	if(0 <= ::llc::fileToMemory(stageFileName, stageFile.Bytes) && stageFile.Bytes.size()) {
 		::std::lock_guard			lock	(solarSystem.LockUpdate);
 		if_fail_fef(-1 == ::llc::jsonParse(stageFile.Reader, stageFile.Bytes), "%s", stageFileName);

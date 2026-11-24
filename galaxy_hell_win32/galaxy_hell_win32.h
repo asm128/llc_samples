@@ -15,12 +15,11 @@ struct SApplication {
 	::std::mutex			LockGUI;
 	::std::mutex			LockRender;
 
-	::llc::AUDIO_STATE		AudioState;
-
 	::ghg::SGalaxyHellApp	GalaxyHellApp;
 
-	HDC						DrawingContext		= {};
-	HGLRC					GLRenderContext	= {}; 
+#if defined(LLC_WINDOWS)
+	::llc::AUDIO_STATE		AudioState;
+#endif
  
 	//::llc::SClient		Client;
 

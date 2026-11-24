@@ -374,7 +374,7 @@ static	::llc::err_t	guiHandleHome		(::ghg::SGalaxyHellApp & app, ::llc::SGUI & /
 		game.PlayState.Constants.Players = (uint32_t)app.TunerPlayerCount->ValueCurrent;
 		for(uint32_t iPlayer = app.Players.size(); iPlayer < app.Game.PlayState.Constants.Players; ++iPlayer) {
 			sc_t				text [64]			= {};
-			sprintf_s(text, "Player %i", app.Players.size() + 1);
+			::llc::sprintf_s(text, "Player %i", app.Players.size() + 1);
 			app.AddNewPlayer(text);
 		}
 		for(uint32_t iPlayer = 0; iPlayer < app.Players.size(); ++iPlayer) {
@@ -462,13 +462,13 @@ static	::llc::err_t	sprintfTime			(const sc_t *prefix, sc_t (&dest)[_nStorageSiz
 	uint32_t					timeMinutes			= (int)seconds / 60 % 60;
 	uint32_t					timeSeconds			= (int)seconds % 60;
 	uint32_t					timeCents			= int (seconds * 10) % 10;
-	sprintf_s(dest, "%s%i:%.2i:%.2i.%.2i", prefix, timeHours, timeMinutes, timeSeconds, timeCents);
+	::llc::sprintf_s(dest, "%s%i:%.2i:%.2i.%.2i", prefix, timeHours, timeMinutes, timeSeconds, timeCents);
 	return 0;
 }
 
 tplt<size_t _bufSize>
 static	::llc::err_t	sprintfScore		(sc_t (&buffer)[_bufSize], const ::llc::SSpaceshipScore & shipScore, const double nitro) { 
-	return sprintf_s(buffer, "%c %llu  %c %llu  %c %llu  %c %llu  %c %.2f", 4, shipScore.Score, 94, shipScore.Shots, 1, (uint64_t)shipScore.KilledShips, 2, (uint64_t)shipScore.KilledOrbiters, 24, nitro);
+	return ::llc::sprintf_s(buffer, "%c %llu  %c %llu  %c %llu  %c %llu  %c %.2f", 4, shipScore.Score, 94, shipScore.Shots, 1, (uint64_t)shipScore.KilledShips, 2, (uint64_t)shipScore.KilledOrbiters, 24, nitro);
 }
 
 static	::llc::err_t	uiPlayerUpdateHome	(::ghg::SUIPlayer & uiPlayer, uint16_t iPlayer, const ::llc::vcst_t playerName, const ::llc::bgra & shipColor, const ::llc::SSpaceshipScore & shipScore, const double nitro) { 
@@ -607,7 +607,7 @@ static	::llc::err_t	guiUpdatePlay		(::ghg::SGalaxyHellApp & app) {
 	::llc::SDialog				& dialog			= app.DialogPerState[::ghg::APP_STATE_Play];
 	::llc::SGUI					& gui				= *dialog.GUI;
 
-	sprintf_s(app.UIPlay.TextLevel.Storage, "Level: %i", game.PlayState.GlobalState.Stage);
+	::llc::sprintf_s(app.UIPlay.TextLevel.Storage, "Level: %i", game.PlayState.GlobalState.Stage);
 	sprintfTime("Total Time: "	, app.UIPlay.TextTimeReal	.Storage, game.PlayState.GlobalState.UserTime.Played);
 	sprintfTime("Stage Time: "	, app.UIPlay.TextTimeStage	.Storage, game.PlayState.TimeRealStage);
 	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_Level		, ::llc::vcst_t{app.UIPlay.TextLevel		.Storage});
@@ -649,7 +649,7 @@ static	::llc::err_t	guiUpdateHome				(::ghg::SGalaxyHellApp & app, ::llc::vpobj<
 		if(app.Players.size() <= iPlayer) {
 			::std::lock_guard			lock						(app.Game.LockUpdate);
 			sc_t text [64] = {};
-			sprintf_s(text, "Player %i", app.Players.size() + 1);
+			::llc::sprintf_s(text, "Player %i", app.Players.size() + 1);
 			app.AddNewPlayer(text);
 		}
 
