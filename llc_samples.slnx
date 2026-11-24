@@ -31,6 +31,16 @@
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
     <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
   </Project>
+  <Project Path="llc_blitter_dashboard/llc_blitter_dashboard.vcxproj" Id="7b2fc1ee-3064-4519-99eb-b74061dad52a">
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
+  </Project>
+  <Project Path="llc_blitter_search/llc_blitter_search.vcxproj" Id="0fe2a7ab-eb38-4553-90e6-c773b2545fb6">
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+    <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
+  </Project>
   <Project Path="llc_desktop/llc_desktop.vcxproj" Id="2d881970-3fad-4698-b99e-3548e7195ea3">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
