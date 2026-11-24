@@ -7,15 +7,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="galaxy_hell/galaxy_hell.vcxproj" Id="6bcc32c5-95c9-4d90-8cb9-e29b2da2bfc2">
-    <BuildDependency Project="../llc/llc/llc.vcxproj" />
-    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
-  </Project>
-  <Project Path="galaxy_hell_win32/galaxy_hell_win32.vcxproj" Id="0716fffd-c2c0-4b75-bc84-ccf18c2a1c5e">
-    <BuildDependency Project="galaxy_hell/galaxy_hell.vcxproj" />
-    <BuildDependency Project="../llc/llc/llc.vcxproj" />
-    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
-  </Project>
   <Project Path="llc_sample_geometry/llc_sample_geometry.vcxproj" Id="9d1f2bb2-cdda-4eec-afd6-43c5e8772602">
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
