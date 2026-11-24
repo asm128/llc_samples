@@ -17,7 +17,7 @@ stct SSampleGUIViewport {
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
 	::llc::cid_t			Exit			= ::llc::CID_INVALID;
-	::llc::astchar<96>		PerformanceText		= {};
+	::llc::astsc_t<96>		PerformanceText		= {};
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
 	::llc::astatic<::llc::n2s1_t, SAMPLE_GUI_VIEWPORT_COUNT>
