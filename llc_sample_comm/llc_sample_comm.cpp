@@ -20,28 +20,28 @@ sttc ::llc::err_t carrierRoundTrip
 	::llc::aobj<::llc::au0_t>	carrier		= {};
 	::llc::u0_t		frameStorage[CARRIER_FRAME_SIZE]	= {};
 	::llc::vu0_t		frameBuffer	= {frameStorage, ::llc::min(frameSize, CARRIER_FRAME_SIZE)};
-	llc_necs(::llc::commPacketizerBegin(packetizer, packet));
+	if_fail_fe(::llc::commPacketizerBegin(packetizer, packet));
 	while(false == packetizer.Complete) {
 		::llc::u2_t		sizeFrame	= {};
-		llc_necs(::llc::commPacketNext(packetizer, frameBuffer, sizeFrame));
+		if_fail_fe(::llc::commPacketNext(packetizer, frameBuffer, sizeFrame));
 		if_zero_fef(sizeFrame, "%s", "The packetizer produced an empty carrier frame.");
 		::llc::au0_t		frame		= {};
-		llc_necs(frame.append(frameStorage, sizeFrame));
-		llc_necs(carrier.push_back(frame));
+		if_fail_fe(frame.append(frameStorage, sizeFrame));
+		if_fail_fe(carrier.push_back(frame));
 	}
 
 	::llc::u0_t		messageStorage[MESSAGE_SIZE_LIMIT]	= {};
 	::llc::SCommReassembly	assembly	= {};
-	llc_necs(::llc::commReassemblyReset(assembly, {messageStorage, ::llc::size(messageStorage)}));
+	if_fail_fe(::llc::commReassemblyReset(assembly, {messageStorage, ::llc::size(messageStorage)}));
 	payloadReceived.clear();
 	bool received	= false;
 	for(::llc::u2_t iFrame = 0; iFrame < carrier.size(); ++iFrame) {
 		::llc::vcu0_t		bytesFrame	= carrier[iFrame];
 		::llc::SPacket		packetFrame	= {};
-		llc_necs(::llc::commPacketLoad(bytesFrame, packetFrame));
+		if_fail_fe(::llc::commPacketLoad(bytesFrame, packetFrame));
 		::llc::vcu0_t		message		= {};
 		bool			complete	= false;
-		llc_necs(::llc::commPacketReceive(assembly, packetFrame, message, complete));
+		if_fail_fe(::llc::commPacketReceive(assembly, packetFrame, message, complete));
 		if(complete) {
 			commandReceived	= packetFrame.Comm;
 			payloadReceived	= message;
@@ -55,7 +55,7 @@ sttc ::llc::err_t carrierRoundTrip
 
 sttc ::llc::err_t verifyEvent(::llc::vcu0_t serialized, cnst ::llc::SEventCommand & expected) {
 	::llc::SEventCommand	received	= {};
-	llc_necs(received.Load(serialized));
+	if_fail_fe(received.Load(serialized));
 	if_true_fef(serialized.size(), "Unexpected trailing event bytes: %" LLC_FMT_U2 ".", serialized.size());
 	if_true_fef(received.Type != expected.Type, "Unexpected event type: %i. Expected: %i.", (int)received.Type, (int)expected.Type);
 	::llc::vcu0_t		dataReceived	= received.Data;
@@ -69,9 +69,9 @@ sttc ::llc::err_t comm_sample_entry_point(::llc::SRuntimeValues & runtimeValues)
 	::llc::SCommCoordinator	coordinator	= {};
 	::llc::SCommEndpoint	sender		= {};
 	::llc::SCommEndpoint	receiver	= {};
-	llc_necs(::llc::commCoordinatorInit(coordinator, 1, CARRIER_FRAME_SIZE));
-	llc_necs(::llc::commCoordinatorJoin(coordinator, CARRIER_FRAME_SIZE, sender));
-	llc_necs(::llc::commCoordinatorJoin(coordinator, CARRIER_FRAME_SIZE, receiver));
+	if_fail_fe(::llc::commCoordinatorInit(coordinator, 1, CARRIER_FRAME_SIZE));
+	if_fail_fe(::llc::commCoordinatorJoin(coordinator, CARRIER_FRAME_SIZE, sender));
+	if_fail_fe(::llc::commCoordinatorJoin(coordinator, CARRIER_FRAME_SIZE, receiver));
 
 	stxp ::llc::u0_t dataFirst []	= {'o', 'n', 'e'};
 	stxp ::llc::u0_t dataSecond[]	= {'t', 'w', 'o'};
@@ -82,11 +82,11 @@ sttc ::llc::err_t comm_sample_entry_point(::llc::SRuntimeValues & runtimeValues)
 	::llc::au0_t serializedSmall[::llc::size(eventsSmall)]	= {};
 	::llc::vcu0_t payloadsSmall [::llc::size(eventsSmall)]	= {};
 	for(::llc::u2_t iEvent = 0; iEvent < ::llc::size(eventsSmall); ++iEvent) {
-		llc_necs(eventsSmall[iEvent].Save(serializedSmall[iEvent]));
+		if_fail_fe(eventsSmall[iEvent].Save(serializedSmall[iEvent]));
 		payloadsSmall[iEvent]	= serializedSmall[iEvent];
 	}
 	::llc::au0_t payloadPacked	= {};
-	llc_necs(::llc::commPayloadPack({payloadsSmall, ::llc::size(payloadsSmall)}, payloadPacked));
+	if_fail_fe(::llc::commPayloadPack({payloadsSmall, ::llc::size(payloadsSmall)}, payloadPacked));
 
 	::llc::SPacket packetPacked	= {};
 	packetPacked.Comm.Command	= ::llc::COMM_COMMAND_Payload;
@@ -95,21 +95,21 @@ sttc ::llc::err_t comm_sample_entry_point(::llc::SRuntimeValues & runtimeValues)
 	packetPacked.Network		= coordinator.Network;
 	packetPacked.Source		= sender.Address.Endpoint;
 	packetPacked.Target		= receiver.Address.Endpoint;
-	llc_necs(::llc::commMessageNext(sender, packetPacked.Message));
+	if_fail_fe(::llc::commMessageNext(sender, packetPacked.Message));
 	packetPacked.Payload		= payloadPacked;
 
 	::llc::SCommComm commandReceived	= {};
 	::llc::au0_t payloadReceived		= {};
 	::llc::u2_t frameCountPacked		= {};
-	llc_necs(::carrierRoundTrip(packetPacked, sender.FrameSize, commandReceived, payloadReceived, frameCountPacked));
+	if_fail_fe(::carrierRoundTrip(packetPacked, sender.FrameSize, commandReceived, payloadReceived, frameCountPacked));
 	if_true_fef(0 == commandReceived.Packed, "%s", "The packed carrier flag was lost.");
 	::llc::SCommPayloadReader payloadReader	= {};
-	llc_necs(::llc::commPayloadLoad(payloadReceived, payloadReader));
+	if_fail_fe(::llc::commPayloadLoad(payloadReceived, payloadReader));
 	if_true_fef(payloadReader.Count != ::llc::size(eventsSmall), "Unexpected packed event count: %" LLC_FMT_U2 ".", payloadReader.Count);
 	for(::llc::u2_t iEvent = 0; iEvent < payloadReader.Count; ++iEvent) {
 		::llc::vcu0_t serializedEvent	= {};
-		llc_necs(::llc::commPayloadNext(payloadReader, serializedEvent));
-		llc_necs(::verifyEvent(serializedEvent, eventsSmall[iEvent]));
+		if_fail_fe(::llc::commPayloadNext(payloadReader, serializedEvent));
+		if_fail_fe(::verifyEvent(serializedEvent, eventsSmall[iEvent]));
 	}
 
 	stxp ::llc::sc_t textLarge[] =
@@ -117,20 +117,20 @@ sttc ::llc::err_t comm_sample_entry_point(::llc::SRuntimeValues & runtimeValues)
 	::llc::SEventCommand eventLarge
 		= {::llc::COMMAND_Write, {(cnst ::llc::u0_t*)textLarge, ::llc::size(textLarge) - 1}};
 	::llc::au0_t serializedLarge	= {};
-	llc_necs(eventLarge.Save(serializedLarge));
+	if_fail_fe(eventLarge.Save(serializedLarge));
 	::llc::SPacket packetLarge	= {};
 	packetLarge.Comm.Command	= ::llc::COMM_COMMAND_Payload;
 	packetLarge.Comm.Type		= ::llc::COMM_COMMAND_TYPE_Request;
 	packetLarge.Network		= coordinator.Network;
 	packetLarge.Source		= sender.Address.Endpoint;
 	packetLarge.Target		= receiver.Address.Endpoint;
-	llc_necs(::llc::commMessageNext(sender, packetLarge.Message));
+	if_fail_fe(::llc::commMessageNext(sender, packetLarge.Message));
 	packetLarge.Payload		= serializedLarge;
 
 	::llc::u2_t frameCountLarge	= {};
-	llc_necs(::carrierRoundTrip(packetLarge, sender.FrameSize, commandReceived, payloadReceived, frameCountLarge));
+	if_fail_fe(::carrierRoundTrip(packetLarge, sender.FrameSize, commandReceived, payloadReceived, frameCountLarge));
 	if_true_fef(frameCountLarge < 2, "Expected multipart output. Carrier frames: %" LLC_FMT_U2 ".", frameCountLarge);
-	llc_necs(::verifyEvent(payloadReceived, eventLarge));
+	if_fail_fe(::verifyEvent(payloadReceived, eventLarge));
 
 	info_printf
 		( "Communication sample passed. Packed events: %" LLC_FMT_U2 ". Packed frames: %" LLC_FMT_U2 ". Multipart frames: %" LLC_FMT_U2 ". Frame size: %u."

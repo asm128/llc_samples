@@ -134,11 +134,11 @@ static	::llc::err_t	drawScoreParticles
 
 		sc_t						textToShow[64]		= {};
 		sprintf_s(textToShow, "%i", particle.Score);
-		const ::llc::vcs			finalText			= textToShow;
+		const ::llc::vcst_t			finalText			= textToShow;
 		::llc::rect2s1_t				rectText			= {{}, {int16_t(font.CharSize.x * finalText.size()), font.CharSize.y}};
 		rectText.Offset = (pixelCoord - ::llc::n2s1_t{int16_t(rectText.Size.x >> 1), int16_t(rectText.Size.y >> 1)});
 
-		llc_necs(::llc::textLineRaster(targetPixels.metrics(), font.CharSize, rectText, font.Texture, finalText, dstCoords));
+		if_fail_fe(::llc::textLineRaster(targetPixels.metrics(), font.CharSize, rectText, font.Texture, finalText, dstCoords));
 		for(uint32_t iCoord = 0; iCoord < dstCoords.size(); ++iCoord) {
 			::llc::pixelBlend(targetPixels, dstCoords[iCoord] .s1(), starFinalColor);
 		}
@@ -492,12 +492,12 @@ static	::llc::err_t	drawShip
 	starPos.y = ::llc::clamped(starPos.y, 20.0f, targetPixels.metrics().y - 20.0f);
 	const ::llc::n2<int32_t>			pixelCoord			= {(int32_t)starPos.x, (int32_t)starPos.y};
 
-	const ::llc::vcs					finalText			= solarSystem.Pilots[iShip].Name;
+	const ::llc::vcst_t					finalText			= solarSystem.Pilots[iShip].Name;
 	::llc::rect2s1_t						rectText			= {{}, {int16_t(font.CharSize.x * finalText.size()), font.CharSize.y}};
 	rectText.Offset = (pixelCoord - ::llc::n2s2_t{(rectText.Size.x >> 1), (rectText.Size.y >> 1)}) .s1();
 
 	::llc::an2u1_t						dstCoords;
-	llc_necs(::llc::textLineRaster(targetPixels.metrics(), font.CharSize, rectText, font.Texture, finalText, dstCoords));
+	if_fail_fe(::llc::textLineRaster(targetPixels.metrics(), font.CharSize, rectText, font.Texture, finalText, dstCoords));
 	for(uint32_t iCoord = 0; iCoord < dstCoords.size(); ++iCoord) {
 		const ::llc::n2u1_t					dstCoord			= dstCoords[iCoord];
 		if(::llc::in_range(dstCoord, {{}, targetPixels.metrics() .u1()})) {

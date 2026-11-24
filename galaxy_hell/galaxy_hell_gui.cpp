@@ -56,7 +56,7 @@ static	::llc::err_t			uiPlayerSetupHome		(::ghg::SUIPlayer & uiPlayer, ::llc::po
 	case 3: playerPosition = {}; break; //{-120}; break;
 	}
 	::llc::SDialog				& playerDialog		= uiPlayer.DialogHome;
-	llc_necs(::dialogCreateCommon(playerDialog, input, cursorPos));
+	if_fail_fe(::dialogCreateCommon(playerDialog, input, cursorPos));
 	::llc::SGUI					& playerGUI			= *playerDialog.GUI;
 	::llc::pobj<::llc::a8bgra>	palette;
 	palette.create(*playerGUI.Colors->Palette);
@@ -81,13 +81,13 @@ static	::llc::err_t			uiPlayerSetupHome		(::ghg::SUIPlayer & uiPlayer, ::llc::po
 	case 2: playerAlign = ::llc::ALIGN_BOTTOM_RIGHT	; break;
 	case 3: playerAlign = ::llc::ALIGN_TOP_LEFT		; break;
 	}
-	llc_necs(::llc::inputBoxCreate(uiPlayer.InputBox, *playerDialog.GUI, playerDialog.Root));
+	if_fail_fe(::llc::inputBoxCreate(uiPlayer.InputBox, *playerDialog.GUI, playerDialog.Root));
 	playerGUI.Controls.SetHidden(uiPlayer.InputBox.IdRoot, true);
 	playerGUI.Controls.Placement[uiPlayer.InputBox.IdRoot].Align			= playerAlign;
 	playerGUI.Controls.Placement[uiPlayer.InputBox.IdRoot].Area.Offset.x	= 240;
 
-	llc_necs(::llc::controlFontSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, 10));
-	llc_necs(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, playerName));
+	if_fail_fe(::llc::controlFontSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, 10));
+	if_fail_fe(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, playerName));
 	return 0;
 }
 
@@ -110,7 +110,7 @@ static	::llc::err_t	uiPlayerSetupPlay	(::ghg::SUIPlayer & uiPlayer, ::llc::pobj<
 	case 3: playerPosition = {}; break;
 	}
 	::llc::SDialog				& playerDialog		= uiPlayer.DialogPlay;
-	llc_necs(::dialogCreateCommon(playerDialog, input, cursorPos));
+	if_fail_fe(::dialogCreateCommon(playerDialog, input, cursorPos));
 	::llc::SGUI					& playerGUI			= *playerDialog.GUI;
 	::llc::pobj<::llc::a8bgra>	palette;
 	palette.create(*playerGUI.Colors->Palette);
@@ -131,9 +131,9 @@ static	::llc::err_t	uiPlayerSetupPlay	(::ghg::SUIPlayer & uiPlayer, ::llc::pobj<
 		//playerGUI.Controls.Constraints[iOffset + iButton].AttachSizeToText.x	= true;
 	}
 
-	llc_necs(::llc::controlFontSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, 10));
-	llc_necs(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, pilotName));
-	llc_necs(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Score, ""));
+	if_fail_fe(::llc::controlFontSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, 10));
+	if_fail_fe(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, pilotName));
+	if_fail_fe(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Score, ""));
 
 	for(uint32_t iOrbiter = 0, countViewports = nShipParts; iOrbiter < countViewports; ++iOrbiter) {
 		int32_t						indexVP				= uiPlayer.ModuleViewports.push_back({});
@@ -221,7 +221,7 @@ static	::llc::err_t	guiSetupLoad		(::llc::SDialog & /*dialog*/) {
 }
 
 static	::llc::err_t	guiSetupHome		(::ghg::SGalaxyHellApp & app, ::llc::SDialog & dialog) { 
-	llc_necs(::llc::guiCreateControlList<::ghg::UI_HOME>(*dialog.GUI, dialog.Root, HOME_BUTTON_SIZE, {0, int16_t(-HOME_BUTTON_SIZE.y * ::llc::get_value_count<::ghg::UI_HOME>() / 2)}, ::llc::ALIGN_CENTER, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Home])); 
+	if_fail_fe(::llc::guiCreateControlList<::ghg::UI_HOME>(*dialog.GUI, dialog.Root, HOME_BUTTON_SIZE, {0, int16_t(-HOME_BUTTON_SIZE.y * ::llc::get_value_count<::ghg::UI_HOME>() / 2)}, ::llc::ALIGN_CENTER, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Home])); 
 	for(uint32_t iButton = 0; iButton < ::llc::get_value_count<::ghg::UI_HOME>(); ++iButton)
 		dialog.GUI->Controls.Placement[iButton + 1].Area.Offset.y += 0;
 
@@ -230,11 +230,11 @@ static	::llc::err_t	guiSetupHome		(::ghg::SGalaxyHellApp & app, ::llc::SDialog &
 
 	dialog.GUI->Controls.Text[::ghg::UI_HOME_Start + 1].Text = "Start new game";
 
-	llc_necs(::llc::tunerCreate(dialog, app.TunerPlayerCount));
+	if_fail_fe(::llc::tunerCreate(dialog, app.TunerPlayerCount));
 	app.TunerPlayerCount->ValueLimits.Min	= 1;
 	app.TunerPlayerCount->ValueLimits.Max	= ::ghg::MAX_PLAYERS;
 	app.TunerPlayerCount->FuncValueFormat	= [](::llc::vcst_t & string, uint8_t value, const ::llc::minmax<uint8_t> & /*limits*/) { 
-		string = (value == 1) ? ::llc::vcs("%lli Player") : ::llc::vcs("%lli Players"); 
+		string = (value == 1) ? ::llc::vcst_t("%lli Player") : ::llc::vcst_t("%lli Players"); 
 		return 0; 
 	};
 	app.TunerPlayerCount->SetValue(1);
@@ -248,17 +248,17 @@ static	::llc::err_t	guiSetupHome		(::ghg::SGalaxyHellApp & app, ::llc::SDialog &
 	app.UIPlay.PlayerUI.resize(::ghg::MAX_PLAYERS);	
 	for(uint32_t iPlayer = 0; iPlayer < ::ghg::MAX_PLAYERS; ++iPlayer) {
 		::ghg::SUIPlayer			& uiPlayer					= app.UIPlay.PlayerUI[iPlayer];
-		llc_necall(::uiPlayerSetupHome(uiPlayer, dialog.Input, dialog.GUI->CursorPos, iPlayer, ""/*app.Players[iPlayer].Name*/), "iPlayer: %i", iPlayer);
+		if_fail_fef(::uiPlayerSetupHome(uiPlayer, dialog.Input, dialog.GUI->CursorPos, iPlayer, ""/*app.Players[iPlayer].Name*/), "iPlayer: %i", iPlayer);
 	}
 	return 0;
 }
 static	::llc::err_t	guiSetupProfile		(::ghg::SGalaxyHellApp & app, ::llc::SDialog & dialog) { return ::llc::guiCreateControlList<::ghg::UI_PLAY>(*dialog.GUI, dialog.Root,  60, 0, ::llc::ALIGN_BOTTOM_RIGHT, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Profile]); }
 static	::llc::err_t	guiSetupShop		(::ghg::SGalaxyHellApp & app, ::llc::SDialog & dialog) { 
 	::llc::SGUI					& gui				= *dialog.GUI;
-	llc_necs(::llc::guiCreateControlList<::ghg::UI_SHOP>(gui, dialog.Root, 60, 0, ::llc::ALIGN_BOTTOM_RIGHT, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Shop]));
+	if_fail_fe(::llc::guiCreateControlList<::ghg::UI_SHOP>(gui, dialog.Root, 60, 0, ::llc::ALIGN_BOTTOM_RIGHT, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Shop]));
 
 	::llc::pobj<::llc::SDialogViewport>	viewport	= {};
-	llc_necs(::llc::viewportCreate(dialog, viewport));
+	if_fail_fe(::llc::viewportCreate(dialog, viewport));
 	//viewport->Settings.DisplacementLockX	= false;;
 	//viewport->Settings.DisplacementLockY	= false;;
 	gui.Controls.Placement[viewport->IdGUIControl	].Align			= ::llc::ALIGN_CENTER;
@@ -270,7 +270,7 @@ static	::llc::err_t	guiSetupShop		(::ghg::SGalaxyHellApp & app, ::llc::SDialog &
 
 static	::llc::err_t	guiSetupWelcome		(::ghg::SGalaxyHellApp & app, ::llc::SDialog & dialog) { 
 	::llc::SGUI					& gui				= *dialog.GUI;
-	llc_necs(::llc::guiCreateControlList<::ghg::UI_WELCOME>(gui, dialog.Root, ::llc::n2u1_t{128, 32}, ::llc::n2s1_t{0, 64}, ::llc::ALIGN_CENTER, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Welcome]));
+	if_fail_fe(::llc::guiCreateControlList<::ghg::UI_WELCOME>(gui, dialog.Root, ::llc::n2u1_t{128, 32}, ::llc::n2s1_t{0, 64}, ::llc::ALIGN_CENTER, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Welcome]));
 	::llc::viewportCreate(dialog, app.Inputbox);
 	::llc::pobj<::llc::SDialogViewport>	viewport	= app.Inputbox;
 	gui.Controls.Placement[viewport->IdGUIControl	].Align			= ::llc::ALIGN_CENTER;
@@ -285,7 +285,7 @@ static	::llc::err_t	guiSetupWelcome		(::ghg::SGalaxyHellApp & app, ::llc::SDialo
 static	::llc::err_t	guiSetupPlay		(::ghg::SGalaxyHellApp & app, ::llc::SDialog & dialog) { 
 	dialog.GUI->SelectedFont	= 6;
 
-	llc_necs(::llc::guiCreateControlList<::ghg::UI_PLAY>(*dialog.GUI, dialog.Root, {220, 18}, {}, ::llc::ALIGN_TOP_RIGHT, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Play]));
+	if_fail_fe(::llc::guiCreateControlList<::ghg::UI_PLAY>(*dialog.GUI, dialog.Root, {220, 18}, {}, ::llc::ALIGN_TOP_RIGHT, ::llc::ALIGN_CENTER, app.DialogControls[::ghg::APP_STATE_Play]));
 	for(uint32_t iButton = 0; iButton < ::ghg::UI_PLAY_Level; ++iButton) {
 		//dialog.GUI->Controls.Text	[iButton + 1].FontSelected	= ::llc::ALIGN_TOP_LEFT;
 	}
@@ -301,7 +301,7 @@ static	::llc::err_t	guiSetupPlay		(::ghg::SGalaxyHellApp & app, ::llc::SDialog &
 	app.UIPlay.PlayerUI.resize(::ghg::MAX_PLAYERS);	
 	for(uint32_t iPlayer = 0; iPlayer < ::ghg::MAX_PLAYERS; ++iPlayer) {
 		::ghg::SUIPlayer			& uiPlayer			= app.UIPlay.PlayerUI[iPlayer];
-		llc_necall(::uiPlayerSetupPlay(uiPlayer, app.DialogPerState[0].Input, app.DialogPerState[0].GUI->CursorPos, iPlayer, ""/*app.Game.Pilots[iPlayer].Name*/, ::ghg::MAX_ORBITER_COUNT), "iPlayer: %i", iPlayer);
+		if_fail_fef(::uiPlayerSetupPlay(uiPlayer, app.DialogPerState[0].Input, app.DialogPerState[0].GUI->CursorPos, iPlayer, ""/*app.Game.Pilots[iPlayer].Name*/, ::ghg::MAX_ORBITER_COUNT), "iPlayer: %i", iPlayer);
 	}
 	return 0;
 }
@@ -395,7 +395,7 @@ static	::llc::err_t	guiHandleHome		(::ghg::SGalaxyHellApp & app, ::llc::SGUI & /
 		::llc::aobj<::llc::vcst_t>	pathFileNames;
 		::ghg::listFilesSavegame(app, app.SavegameFolder, pathFileNames);
 
-		pathFileNames.push_back(::llc::vcs{"Back"});
+		pathFileNames.push_back(::llc::vcst_t{"Back"});
 		::dialogCreateLoad(app, app.DialogPerState[::ghg::APP_STATE_Load], pathFileNames, app.DialogPerState[::ghg::APP_STATE_Home].Input, app.DialogPerState[::ghg::APP_STATE_Home].GUI->CursorPos);
 		return ::ghg::APP_STATE_Load;
 	}
@@ -475,8 +475,8 @@ static	::llc::err_t	uiPlayerUpdateHome	(::ghg::SUIPlayer & uiPlayer, uint16_t iP
 	sprintfScore(uiPlayer.TextScore.Storage, shipScore, nitro);
 	::llc::SDialog				& playerDialog		= uiPlayer.DialogHome;
 	::llc::SGUI					& playerGUI			= *playerDialog.GUI;
-	llc_necs(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Score, uiPlayer.TextScore.Storage));
-	llc_necs(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, playerName));
+	if_fail_fe(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Score, uiPlayer.TextScore.Storage));
+	if_fail_fe(::llc::controlTextSet(playerGUI, playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name, playerName));
 	{
 		::llc::SControlDraw			& controlDraw		= playerGUI.Controls.Draw[playerDialog.Root + 1 + ::ghg::UI_PROFILE_Name];
 		controlDraw.ColorTheme		= int16_t(3 + iPlayer);
@@ -499,8 +499,8 @@ static	::llc::err_t	uiPlayerUpdatePlay	(::ghg::SUIPlayer & uiPlayer, uint32_t iP
 	const ::llc::SSpaceshipCore		& shipCore			= game.ShipState.SpaceshipManager.ShipCores[iPlayer];
 	sprintfScore(uiPlayer.TextScore.Storage, shipScore, shipCore.Nitro.Value);
 	const ::llc::rgbaf			shipColor			= (shipCore.Team ? ::llc::RED : ::llc::rgbaf(game.Pilots[iPlayer].Color));
-	llc_necs(::llc::controlTextSet(playerGUI, 1 + ::ghg::UI_PILOT_Name	, game.Pilots[iPlayer].Name));
-	llc_necs(::llc::controlTextSet(playerGUI, 1 + ::ghg::UI_PILOT_Score, uiPlayer.TextScore.Storage));
+	if_fail_fe(::llc::controlTextSet(playerGUI, 1 + ::ghg::UI_PILOT_Name	, game.Pilots[iPlayer].Name));
+	if_fail_fe(::llc::controlTextSet(playerGUI, 1 + ::ghg::UI_PILOT_Score, uiPlayer.TextScore.Storage));
 	{
 		::llc::SControlDraw			& controlDraw		= playerGUI.Controls.Draw[1 + ::ghg::UI_PILOT_Name];
 		controlDraw.ColorTheme	= int16_t(3 + iPlayer);
@@ -515,8 +515,8 @@ static	::llc::err_t	uiPlayerUpdatePlay	(::ghg::SUIPlayer & uiPlayer, uint32_t iP
 		const ::llc::SSpaceshipOrbiter	& orbiter		= game.ShipState.SpaceshipManager.Orbiters[game.ShipState.SpaceshipManager.ShipParts[iPlayer][iOrbiter]];
 		const ::llc::SWeapon			& weapon		= game.ShipState.WeaponManager.Weapons[orbiter.Weapon];
 
-		llc_necall(::llc::controlTextSet(playerGUI, viewport.Viewport + 1, ::llc::get_value_label(weapon.Shot.Type)), "%s", "");
-		llc_necall(::llc::controlTextSet(playerGUI, viewport.Viewport + 2, ::llc::get_value_label(weapon.Type)), "%s", "");
+		if_fail_fef(::llc::controlTextSet(playerGUI, viewport.Viewport + 1, ::llc::get_value_label(weapon.Shot.Type)), "%s", "");
+		if_fail_fef(::llc::controlTextSet(playerGUI, viewport.Viewport + 2, ::llc::get_value_label(weapon.Type)), "%s", "");
 
 		const float					healthRatio		= (float)::llc::clamped(orbiter.Health.Weight(), 0.0, 1.0);
 		const float					ratioOverheat	= (orbiter.Health.Value > 0) ? (float)weapon.Trigger.Overheat.WeightClamp() : 0;
@@ -551,7 +551,7 @@ static	::llc::err_t	uiPlayerUpdatePlay	(::ghg::SUIPlayer & uiPlayer, uint32_t iP
 			pixelsDrawn				+= ::ghg::drawOrbiter(game.ShipState, game.ShipState.ShipPartEntity[iOrbiter], {}, (float)game.DecoState.AnimationTime, matrixView, targetPixels, depthBuffer, drawCache);
 
 			if(healthRatio) {
-				llc_necs(::ghg::gaugeImageUpdate(viewport.GaugeLife, targetPixels, ::llc::RED, ::llc::YELLOW, ::llc::LIGHTGREEN));
+				if_fail_fe(::ghg::gaugeImageUpdate(viewport.GaugeLife, targetPixels, ::llc::RED, ::llc::YELLOW, ::llc::LIGHTGREEN));
 			}
 		}
 
@@ -610,9 +610,9 @@ static	::llc::err_t	guiUpdatePlay		(::ghg::SGalaxyHellApp & app) {
 	sprintf_s(app.UIPlay.TextLevel.Storage, "Level: %i", game.PlayState.GlobalState.Stage);
 	sprintfTime("Total Time: "	, app.UIPlay.TextTimeReal	.Storage, game.PlayState.GlobalState.UserTime.Played);
 	sprintfTime("Stage Time: "	, app.UIPlay.TextTimeStage	.Storage, game.PlayState.TimeRealStage);
-	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_Level		, ::llc::vcs{app.UIPlay.TextLevel		.Storage});
-	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_TimeStage , ::llc::vcs{app.UIPlay.TextTimeStage	.Storage});
-	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_TimeReal	, ::llc::vcs{app.UIPlay.TextTimeReal	.Storage});
+	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_Level		, ::llc::vcst_t{app.UIPlay.TextLevel		.Storage});
+	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_TimeStage , ::llc::vcst_t{app.UIPlay.TextTimeStage	.Storage});
+	::llc::controlTextSet(gui, 1 + ::ghg::UI_PLAY_TimeReal	, ::llc::vcst_t{app.UIPlay.TextTimeReal	.Storage});
 
 	if(0 == game.ShipState.SpaceshipManager.ShipCores.size())
 		return 0;
@@ -629,7 +629,7 @@ static	::llc::err_t	guiUpdatePlay		(::ghg::SGalaxyHellApp & app) {
 	if(app.ActiveState == ::ghg::APP_STATE_Play) {
 		for(uint32_t iPlayer = 0; iPlayer < game.PlayState.Constants.Players; ++iPlayer) {
 			::ghg::SUIPlayer			& uiPlayer			= app.UIPlay.PlayerUI[iPlayer];
-			llc_necall(::uiPlayerUpdatePlay(uiPlayer, iPlayer, app.Game, app.Game.ShipState.SpaceshipManager.ShipScores[iPlayer], app.Game.LockUpdate, drawCache), "iPlayer: %i", iPlayer);
+			if_fail_fef(::uiPlayerUpdatePlay(uiPlayer, iPlayer, app.Game, app.Game.ShipState.SpaceshipManager.ShipScores[iPlayer], app.Game.LockUpdate, drawCache), "iPlayer: %i", iPlayer);
 			uiPlayer.DialogPlay.GUI->Controls.SetHidden(0, false);
 		}
 		for(uint32_t iPlayer = app.Game.PlayState.Constants.Players; iPlayer < ghg::MAX_PLAYERS; ++iPlayer) { 
@@ -661,7 +661,7 @@ static	::llc::err_t	guiUpdateHome				(::ghg::SGalaxyHellApp & app, ::llc::vpobj<
 			nitro					= shipCore.Nitro.Value;
 		}
 
-		llc_necall(::uiPlayerUpdateHome(uiPlayer, int16_t(iPlayer), app.Players[iPlayer].Name, shipColor
+		if_fail_fef(::uiPlayerUpdateHome(uiPlayer, int16_t(iPlayer), app.Players[iPlayer].Name, shipColor
 			, (app.Game.ShipState.SpaceshipManager.ShipScores.size() <= iPlayer) ? ::llc::SSpaceshipScore{} : app.Game.ShipState.SpaceshipManager.ShipScores[iPlayer]
 			, nitro), "iPlayer: %i", iPlayer
 		);

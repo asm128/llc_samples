@@ -23,8 +23,8 @@ stct SSampleGUI {
 	::llc::cid_t		ControlAlignmentRoot	= ::llc::CID_INVALID;
 	::llc::astcid<9>	ControlsAlignment		= {};
 	::llc::astcid<6>	ControlsKeyboard		= {};
-	::llc::astchar<512>	TextLive				= {};
-	::llc::astchar<512>	TextInspector			= {};
+	::llc::astsc_t<512>	TextLive				= {};
+	::llc::astsc_t<512>	TextInspector			= {};
 	::llc::u0_t			Theme					= 0;
 };
 
