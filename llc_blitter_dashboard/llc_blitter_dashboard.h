@@ -10,6 +10,12 @@
 
 stxp ::llc::u0_t SAMPLE_GUI_VIEWPORT_COUNT = 4;
 
+stct SBlitterScroll {
+	::llc::cid_t			IdTrack		= ::llc::CID_INVALID;
+	::llc::cid_t			IdThumb		= ::llc::CID_INVALID;
+	bool					Vertical	= false;
+};
+
 stct SBlitterDashboard {
 	enum JSON_ENTRY_CHILD : ::llc::u0_t { JSON_ENTRY_CHILD_Row, JSON_ENTRY_CHILD_Count };
 	stct SJSONEntry {
@@ -50,8 +56,13 @@ stct SBlitterDashboard {
 	::llc::u2_t			FileColumnOffset	= 0;
 	::llc::u2_t			FileLineWidthMax	= 0;
 	::llc::u2_t			VisibleColumns		= 0;
+	SBlitterScroll			FolderScrollY	= {};
+	SBlitterScroll			FileScrollY		= {};
+	SBlitterScroll			FileScrollX		= {};
 	bool					WordWrap		= false;
 	bool					SelectAll		= false;
+	::llc::s3_t			SelectionAnchor	= -1;
+	::llc::s3_t			SelectionCursor	= -1;
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
 	::llc::astatic<::llc::astcid<::llc::GUI_VIEWPORT_ACTION_COUNT>, SAMPLE_GUI_VIEWPORT_COUNT>
