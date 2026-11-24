@@ -12,10 +12,10 @@
 
 stxp ::llc::vcst_t SOLAR_SYSTEM_DATA_FOLDER = "../llc_samples_data/llc_solar_system";
 stxp ::llc::vcst_t SOLAR_SYSTEM_JSON = "llc_solar_system.json";
-stacxpr ::llc::bgra SAMPLE_CLEAR_COLOR = {2, 3, 8, 255};
+stxp ::llc::bgra SAMPLE_CLEAR_COLOR = {2, 3, 8, 255};
 
 ::llc::err_t sampleSolarSystemSetup(SSampleSolarSystem & app) {
-	llc_necs(::llc::planetarySystemSetup(app.SolarSystem, app.Engine, SOLAR_SYSTEM_JSON, SOLAR_SYSTEM_DATA_FOLDER));
+	if_fail_fe(::llc::planetarySystemSetup(app.SolarSystem, app.Engine, SOLAR_SYSTEM_JSON, SOLAR_SYSTEM_DATA_FOLDER));
 	app.Camera.Up = {0, 1, 0};
 	app.Camera.NearFar = {.00001f, 1000.0f};
 	cnst ::llc::s2_t iEarth = app.SolarSystem.PlanetarySystem.Body.Keys.find("Earth");
@@ -52,15 +52,16 @@ sttc ::llc::err_t selectBodyType(SSampleSolarSystem & app, ::llc::CELESTIAL_BODY
 	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	for(::llc::u2_t iBody = 0, iPlanet = 0; iBody < app.SolarSystem.PlanetarySystem.Type.size(); ++iBody)
-		if(app.SolarSystem.PlanetarySystem.Type[iBody] == ::llc::CELESTIAL_BODY_Planet && iPlanet < 9 && app.Window.Input->KeyDown((::llc::u0_t)('1' + iPlanet++)))
-			llc_necs(::selectBody(app, iBody));
+		if(app.SolarSystem.PlanetarySystem.Type[iBody] == ::llc::CELESTIAL_BODY_Planet && iPlanet < 9 && app.Window.Input->KeyDown((::llc::u0_t)('1' + iPlanet++))) {
+			if_fail_fe(::selectBody(app, iBody));
+		}
 	if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Tab) && app.SelectedBody < app.SolarSystem.PlanetarySystem.Type.size()) {
 		cnst bool reverse = app.Window.Input->KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Shift];
 		cnst ::llc::CELESTIAL_BODY selectedType = app.SolarSystem.PlanetarySystem.Type[app.SelectedBody];
 		cnst ::llc::CELESTIAL_BODY nextType = reverse
 			? (selectedType == ::llc::CELESTIAL_BODY_Planet ? ::llc::CELESTIAL_BODY_Star : selectedType == ::llc::CELESTIAL_BODY_Star ? ::llc::CELESTIAL_BODY_Moon : ::llc::CELESTIAL_BODY_Planet)
 			: (selectedType == ::llc::CELESTIAL_BODY_Planet ? ::llc::CELESTIAL_BODY_Moon : selectedType == ::llc::CELESTIAL_BODY_Moon ? ::llc::CELESTIAL_BODY_Star : ::llc::CELESTIAL_BODY_Planet);
-		llc_necs(::selectBodyType(app, nextType));
+		if_fail_fe(::selectBodyType(app, nextType));
 	}
 	if(app.Window.Input->KeyDown('P'))
 		app.Paused = !app.Paused;
@@ -125,8 +126,8 @@ sttc ::llc::err_t selectBodyType(SSampleSolarSystem & app, ::llc::CELESTIAL_BODY
 	if_fail_fe(::llc::guiUpdateMetrics(app.GUI, backBuffer.Color.metrics().u1(), app.GUI.LastSize != backBuffer.Color.metrics().u1() || app.GUI.LastZoom != app.GUI.Zoom));
 	backBuffer.Color.View.fill(SAMPLE_CLEAR_COLOR);
 	backBuffer.DepthStencil.View.fill((::llc::u2_t)-1);
-	llc_necs(::sampleSolarSystemCamera(app));
-	llc_necs(::llc::drawScene(backBuffer.Color.View, backBuffer.DepthStencil.View, app.Engine.Scene->RenderCache, *app.Engine.Scene, app.Camera.Position, app.Camera.Target, app.Camera.Up, app.Camera.NearFar, {}, app.Time));
+	if_fail_fe(::sampleSolarSystemCamera(app));
+	if_fail_fe(::llc::drawScene(backBuffer.Color.View, backBuffer.DepthStencil.View, app.Engine.Scene->RenderCache, *app.Engine.Scene, app.Camera.Position, app.Camera.Target, app.Camera.Up, app.Camera.NearFar, {}, app.Time));
 	rtrn ::llc::guiDraw(app.GUI, backBuffer.Color.View);
 }
 
@@ -179,7 +180,7 @@ sttc ::llc::err_t sampleSolarSystemRendererSet(SApplication & app, bool useD3D) 
 ::llc::err_t setup(SApplication & app) {
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1600, 960};
-	if_null_ve(::llc::OS_NO_MEMORY, window.BackBuffer.create());
+	if_null_ve(-1, window.BackBuffer.create());
 	if_fail_fe(window.BackBuffer->resize(window.Size.u2()));
 	if_fail_fe(::llc::mainWindowCreate(window, app.Framework.RuntimeValues.PlatformDetail, window.Input));
 	if_fail_fe(::sampleSolarSystemSetup(app.Sample));
@@ -193,8 +194,9 @@ sttc ::llc::err_t sampleSolarSystemRendererSet(SApplication & app, bool useD3D) 
 	::std::lock_guard lock(app.Lock);
 #if defined(LLC_WINDOWS)
 	if(app.D3D) {
-		if(app.D3D->DeviceResources && app.D3D->DeviceResources->m_swapChain)
+		if(app.D3D->DeviceResources && app.D3D->DeviceResources->m_swapChain) {
 			if_fail_e(app.D3D->Shutdown());
+		}
 		app.D3D = {};
 	}
 	if(app.COMInitialized) {
@@ -217,10 +219,12 @@ sttc ::llc::err_t sampleSolarSystemDrawFrame(SApplication & app);
 	::llc::SWindow & window = app.Framework.RootWindow;
 #if defined(LLC_WINDOWS)
 	if(!window.NoDraw && window.Size.x && window.Size.y) {
-		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F1) && app.UseD3D)
+		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F1) && app.UseD3D) {
 			if_fail_fe(::sampleSolarSystemRendererSet(app, false));
-		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F2) && !app.UseD3D)
+		}
+		if(window.Input->KeyDown(::llc::SYSTEM_KEY_F2) && !app.UseD3D) {
 			if_fail_fe(::sampleSolarSystemRendererSet(app, true));
+		}
 	}
 #endif
 	cnst ::llc::err_t resultSample = ::sampleSolarSystemUpdate(app.Sample, false, app.Framework.FrameInfo.Seconds.LastFrame);
@@ -264,8 +268,9 @@ sttc ::llc::err_t sampleSolarSystemDrawFrame(SApplication & app) {
 #if defined(LLC_WINDOWS)
 	if(app.UseD3D) {
 		::llc::SD3DApplication & d3d = *app.D3D;
-		if(d3d.GUIStuff.RenderTarget.metrics() != window.Size.u2())
+		if(d3d.GUIStuff.RenderTarget.metrics() != window.Size.u2()) {
 			if_fail_fe(d3d.SetWindowSize(window.Size));
+		}
 		if_fail_fe(::sampleSolarSystemDrawD3D(app));
 		rtrn d3d.DeviceResources->Present();
 	}
@@ -275,8 +280,9 @@ sttc ::llc::err_t sampleSolarSystemDrawFrame(SApplication & app) {
 #if defined(LLC_WINDOWS)
 	if(app.D3D) {
 		::llc::SD3DApplication & d3d = *app.D3D;
-		if(d3d.GUIStuff.RenderTarget.metrics() != window.Size.u2())
+		if(d3d.GUIStuff.RenderTarget.metrics() != window.Size.u2()) {
 			if_fail_fe(d3d.SetWindowSize(window.Size));
+		}
 		memcpy(d3d.GUIStuff.RenderTarget.begin(), window.BackBuffer->Color.begin(), window.BackBuffer->Color.byte_count());
 		for(auto & pixel : d3d.GUIStuff.RenderTarget.Texels)
 			pixel.a = 255;

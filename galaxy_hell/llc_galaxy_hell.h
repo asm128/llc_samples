@@ -113,7 +113,7 @@ namespace ghg
 		::std::mutex						LockUpdate;
 
 		::llc::err_t						PilotCreate				(const ::ghg::SShipPilot & shipPilot)			{
-			llc_necs(Pilots.push_back(shipPilot));
+			if_fail_fe(Pilots.push_back(shipPilot));
 			return ShipControllers.push_back({});
 		}
 
@@ -121,34 +121,34 @@ namespace ghg
 			while(Pilots.size() < PlayState.Constants.Players) {
 				sc_t									text [64]				= {};
 				sprintf_s(text, "Player %i", Pilots.size() + 1);
-				llc_necs(Pilots.push_back({::llc::label(text), PLAYER_COLORS[Pilots.size() % ::llc::size(PLAYER_COLORS)]}));
+				if_fail_fe(Pilots.push_back({::llc::label(text), PLAYER_COLORS[Pilots.size() % ::llc::size(PLAYER_COLORS)]}));
 			}
 			return ShipControllers.resize(PlayState.Constants.Players);
 		}
 
 		::llc::err_t						Save					(::llc::au0_t & output)		const	{
-			llc_necs(::llc::savePOD(output, PlayState));
+			if_fail_fe(::llc::savePOD(output, PlayState));
 			for(uint32_t iPlayer = 0; iPlayer < PlayState.Constants.Players; ++iPlayer) {
-				llc_necs(::llc::saveView(output, Pilots[iPlayer].Name));
-				llc_necs(::llc::savePOD(output, Pilots[iPlayer].Color));
+				if_fail_fe(::llc::saveView(output, Pilots[iPlayer].Name));
+				if_fail_fe(::llc::savePOD(output, Pilots[iPlayer].Color));
 			}
-			llc_necs(::llc::saveView(output, ShipControllers));
-			llc_necs(ShipState.Save(output));
+			if_fail_fe(::llc::saveView(output, ShipControllers));
+			if_fail_fe(ShipState.Save(output));
 			return 0;
 		}
 
 		::llc::err_t						Load					(::llc::vcu0_t & input) {
 			::std::lock_guard						lock(LockUpdate);
 			::llc::view<const ::ghg::SPlayState>	readPlayState			= {};
-			llc_necs(::llc::loadPOD(input, PlayState));
-			llc_necs(Pilots.resize(PlayState.Constants.Players));
+			if_fail_fe(::llc::loadPOD(input, PlayState));
+			if_fail_fe(Pilots.resize(PlayState.Constants.Players));
 			for(uint32_t iPlayer = 0; iPlayer < Pilots.size(); ++iPlayer) {
-				llc_necall(::llc::loadLabel(input, Pilots[iPlayer].Name), "iPlayer %i", iPlayer);
-				llc_necall(::llc::loadPOD(input, Pilots[iPlayer].Color), "iPlayer %i", iPlayer);
+				if_fail_fef(::llc::loadLabel(input, Pilots[iPlayer].Name), "iPlayer %i", iPlayer);
+				if_fail_fef(::llc::loadPOD(input, Pilots[iPlayer].Color), "iPlayer %i", iPlayer);
 			}
 			ShipControllers.clear();
-			llc_necs(::llc::loadView(input, ShipControllers));
-			llc_necs(ShipState.Load(input));
+			if_fail_fe(::llc::loadView(input, ShipControllers));
+			if_fail_fe(ShipState.Load(input));
 			return 0;
 		}
 	};

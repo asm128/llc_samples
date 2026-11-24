@@ -100,7 +100,7 @@ static	::llc::err_t	processSystemEvent		(::ghg::SGalaxyHellApp & app, const ::ll
 ::llc::err_t			ghg::galaxyHellUpdate	(::ghg::SGalaxyHellApp & app, double lastTimeSeconds, const ::llc::pobj<::llc::SInput> & inputState, ::llc::vpobj<::llc::SEventSystem> systemEventsNew) {
 	if_true_vi(1, app.ActiveState == ::ghg::APP_STATE_Quit);
 
-	llc_necs(systemEventsNew.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
+	if_fail_fe(systemEventsNew.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
 
 	switch(app.ActiveState) {
 	case APP_STATE_Init		: {
@@ -120,7 +120,7 @@ static	::llc::err_t	processSystemEvent		(::ghg::SGalaxyHellApp & app, const ::ll
 
 		for(uint32_t iPlayer = 0; iPlayer < fileNames.size(); ++iPlayer) {
 			try {
-				llc_necall(app.Players[iPlayer].Load(fileNames[iPlayer]), "fileNames[iPlayer]: %s", fileNames[iPlayer].begin());
+				if_fail_fef(app.Players[iPlayer].Load(fileNames[iPlayer]), "fileNames[iPlayer]: %s", fileNames[iPlayer].begin());
 			}
 			catch (const sc_t * ) {
 				app.Players[iPlayer] = {};
