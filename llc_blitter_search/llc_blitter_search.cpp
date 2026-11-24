@@ -1934,9 +1934,21 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 	if(app.GUI.Controls.IsAction(app.SearchInput.IdText)) app.SearchFocused = true;
 	if(app.GUI.Controls.IsAction(app.ConsoleInput.IdText)) app.SearchFocused = false;
 	::llc::string searchBefore = app.SearchInput.Text;
+	::llc::view<cnst ::llc::pobj<::llc::SEventSystem>> inputEvents = app.Window.EventQueue;
+	::llc::TQueueSystemEvent filteredEvents = {};
+	cnst ::llc::SInput & input = *app.Window.Input;
+	cnst bool chordCurrent = input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Control] && input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Shift] && input.KeyboardCurrent.KeyState['S'];
+	cnst bool chordPrevious = input.KeyboardPrevious.KeyState[::llc::SYSTEM_KEY_Control] && input.KeyboardPrevious.KeyState[::llc::SYSTEM_KEY_Shift] && input.KeyboardPrevious.KeyState['S'];
+	if(chordCurrent || chordPrevious) {
+		::llc::view<::llc::pobj<::llc::SEventSystem>> frameEvents = app.Window.EventQueue;
+		if_fail_fe(frameEvents.for_each([&filteredEvents](cnst ::llc::pobj<::llc::SEventSystem> & event) -> ::llc::err_t {
+			rtrn event && event->Type == ::llc::SYSTEM_EVENT_Text ? 0 : filteredEvents.push_back(event);
+		}));
+		inputEvents = filteredEvents;
+	}
 	cnst ::llc::err_t consoleInput = app.SearchFocused
-		? app.SearchInput.Update(app.GUI, app.SearchInput.VirtualKeyboard, app.Window.EventQueue, app.ProcessableControls)
-		: app.ConsoleInput.Update(app.GUI, app.ConsoleInput.VirtualKeyboard, app.Window.EventQueue, app.ProcessableControls);
+		? app.SearchInput.Update(app.GUI, app.SearchInput.VirtualKeyboard, inputEvents, app.ProcessableControls)
+		: app.ConsoleInput.Update(app.GUI, app.ConsoleInput.VirtualKeyboard, inputEvents, app.ProcessableControls);
 	if_fail_fe(consoleInput);
 	if(searchBefore != app.SearchInput.Text) {
 		app.ProcessOffset = app.ServiceOffset = 0;
