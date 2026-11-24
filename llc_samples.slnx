@@ -7,6 +7,15 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="galaxy_hell/galaxy_hell.vcxproj" Id="6bcc32c5-95c9-4d90-8cb9-e29b2da2bfc2">
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="galaxy_hell_win32/galaxy_hell_win32.vcxproj" Id="0716fffd-c2c0-4b75-bc84-ccf18c2a1c5e">
+    <BuildDependency Project="galaxy_hell/galaxy_hell.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
   <Project Path="../llc/llc/llc.vcxproj" Id="830ab681-b788-47d4-9767-ba4e0792f682" />
   <Project Path="../llc/llc_engine/llc_engine.vcxproj" Id="b29f5da4-47fd-496d-be49-9ff25ad28c00" />
   <Project Path="../llc/llc_test_core/llc_test_core.vcxproj" Id="6ac63b34-f2af-481d-9f2f-d7336a272638">
@@ -69,6 +78,25 @@
     <BuildDependency Project="../llc/llc/llc.vcxproj" />
     <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
     <BuildDependency Project="../llc/lrt/lrt.vcxproj" />
+  </Project>
+  <Project Path="ssiege/ssiege.vcxproj" Id="2054e582-b7be-4568-93ce-de0dbc0c56eb">
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.client.win32/ssiege.client.win32.vcxproj" Id="968bf5b5-d090-4685-82bf-ebadbbf4e68c">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.server.win32/ssiege.server.win32.vcxproj" Id="aca370ac-6def-4387-8221-bc558dc9fdbe">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
+  </Project>
+  <Project Path="ssiege.win32/ssiege.win32.vcxproj" Id="8221a834-2765-4bcf-bd79-e181cf046c4c">
+    <BuildDependency Project="ssiege/ssiege.vcxproj" />
+    <BuildDependency Project="../llc/llc/llc.vcxproj" />
+    <BuildDependency Project="../llc/llc_engine/llc_engine.vcxproj" />
   </Project>
   <Project Path="tiled_terrain_editor/tiled_terrain_editor.vcxproj" Id="eb17b57e-3388-4885-898c-daab6b68e415">
     <BuildType Solution="Debug-MT|*" Project="Debug" />
