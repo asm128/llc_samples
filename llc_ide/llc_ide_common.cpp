@@ -1,3 +1,4 @@
+#include "llc_string_compose.h"
 #include "llc_ide_common.h"
 #include "llc_event_input.h"
 #include "llc_parse.h"
@@ -211,7 +212,7 @@ sttc llc::err_t fileViewerClipboardRead(string & content) {
 	if(!storage) { ::CloseClipboard(); rtrn -1; }
 	sc_c * bytes = (sc_c *)::GlobalLock(storage);
 	if(!bytes) { ::CloseClipboard(); rtrn -1; }
-	cnst llc::err_t result = content.append_string(vcst_t{bytes, (u2_t)-1});
+	cnst llc::err_t result = ::llc::append_string(content, vcst_t{bytes, (u2_t)-1});
 	::GlobalUnlock(storage);
 	::CloseClipboard();
 	rtrn 0 > result ? result : 0;

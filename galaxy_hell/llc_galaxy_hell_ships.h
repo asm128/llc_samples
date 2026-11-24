@@ -59,15 +59,15 @@ namespace ghg
 		::llc::apod<::llc::m4f2_t>			Transforms		= {}; // Ope per entity
 
 		::llc::err_t						Save			(::llc::au0_t & output) const { 
-			llc_necs(::llc::savePOD		(output, Global));
-			llc_necs(::llc::saveView	(output, Transforms));
+			if_fail_fe(::llc::savePOD		(output, Global));
+			if_fail_fe(::llc::saveView	(output, Transforms));
 			info_printf("Saved %s, %i", "Transforms"	, Transforms.size());
 			return 0; 
 		}
 
 		::llc::err_t						Load			(::llc::vcu0_t & input) { 
-			llc_necs(::llc::loadPOD	(input, Global		));
-			llc_necs(::llc::loadView(input, Transforms	));
+			if_fail_fe(::llc::loadPOD	(input, Global		));
+			if_fail_fe(::llc::loadView(input, Transforms	));
 			return 0; 
 		}
 	};
@@ -117,29 +117,29 @@ namespace ghg
 
 
 		::llc::err_t				Save				(::llc::au0_t & output)	const	{ 
-			llc_necs(SpaceshipManager.Save(output));
-			llc_necs(WeaponManager.Save(output));
+			if_fail_fe(SpaceshipManager.Save(output));
+			if_fail_fe(WeaponManager.Save(output));
 
-			llc_necs(::llc::saveView(output, ShipCoreEntity));
-			llc_necs(::llc::saveView(output, ShipPartEntity));
+			if_fail_fe(::llc::saveView(output, ShipCoreEntity));
+			if_fail_fe(::llc::saveView(output, ShipPartEntity));
 		
-			llc_necs(Engine.Save(output));
+			if_fail_fe(Engine.Save(output));
 
-			llc_necs(EntitySystem	.Save(output));
-			llc_necs(Scene			.Save(output));
+			if_fail_fe(EntitySystem	.Save(output));
+			if_fail_fe(Scene			.Save(output));
 			return 0; 
 		}
 		::llc::err_t				Load				(::llc::vcu0_t & input) { 
-			llc_necs(SpaceshipManager.Load(input));
-			llc_necs(WeaponManager.Load(input));
+			if_fail_fe(SpaceshipManager.Load(input));
+			if_fail_fe(WeaponManager.Load(input));
 
-			llc_necs(::llc::loadView(input, ShipCoreEntity));
-			llc_necs(::llc::loadView(input, ShipPartEntity));
+			if_fail_fe(::llc::loadView(input, ShipCoreEntity));
+			if_fail_fe(::llc::loadView(input, ShipPartEntity));
 
-			llc_necs(Engine.Load(input));
+			if_fail_fe(Engine.Load(input));
 
-			llc_necs(EntitySystem	.Load(input));
-			llc_necs(Scene			.Load(input));
+			if_fail_fe(EntitySystem	.Load(input));
+			if_fail_fe(Scene			.Load(input));
 			return 0; 
 		}
 	};

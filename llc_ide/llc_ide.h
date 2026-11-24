@@ -21,7 +21,7 @@ stct SSampleGUIViewport {
 	::llc::cid_t			Help			= ::llc::CID_INVALID;
 	::llc::cid_t			Performance		= ::llc::CID_INVALID;
 	::llc::cid_t			Exit			= ::llc::CID_INVALID;
-	::llc::astchar<96>		PerformanceText		= {};
+	::llc::astsc_t<96>		PerformanceText		= {};
 	::llc::string			FolderPath			= {};
 	::llc::SPathTree		FolderEntries		= {};
 	::llc::acid			FolderControls		= {};

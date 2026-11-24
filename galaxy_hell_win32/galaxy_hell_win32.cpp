@@ -55,8 +55,9 @@ static	::llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEv
 	case ::llc::EVENT_KEYBOARD_SysDown:
 		switch(screenEvent.Data[0]) {
 		case VK_RETURN:
-			if(GetAsyncKeyState(VK_MENU) & 0xFFF0)
-				llc_necs(::llc::fullScreenToggle(app.Framework.RootWindow));
+			if(GetAsyncKeyState(VK_MENU) & 0xFFF0) {
+				if_fail_fe(::llc::fullScreenToggle(app.Framework.RootWindow));
+			}
 			break;
 		}
 		break;
@@ -67,8 +68,8 @@ static	::llc::err_t	processKeyboardEvent	(::SApplication & app, const ::llc::SEv
 static	::llc::err_t	processSystemEvent	(::SApplication & app, const ::llc::SEventSystem & sysEvent) { 
 	switch(sysEvent.Type) {
 	default: break;
-	case ::llc::SYSTEM_EVENT_Screen		: llc_necs(::llc::eventExtractAndHandle<::llc::EVENT_SCREEN  >(sysEvent, [&app](const ::llc::SScreenEventView & screenEvent) { return ::processScreenEvent  (app, screenEvent); })); break;
-	case ::llc::SYSTEM_EVENT_Keyboard	: llc_necs(::llc::eventExtractAndHandle<::llc::EVENT_KEYBOARD>(sysEvent, [&app](const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { return ::processKeyboardEvent(app, screenEvent); })); break;
+	case ::llc::SYSTEM_EVENT_Screen		: if_fail_fe(::llc::eventExtractAndHandle<::llc::EVENT_SCREEN  >(sysEvent, [&app](const ::llc::SScreenEventView & screenEvent) { return ::processScreenEvent  (app, screenEvent); })); break;
+	case ::llc::SYSTEM_EVENT_Keyboard	: if_fail_fe(::llc::eventExtractAndHandle<::llc::EVENT_KEYBOARD>(sysEvent, [&app](const ::llc::SEventView<::llc::EVENT_KEYBOARD> & screenEvent) { return ::processKeyboardEvent(app, screenEvent); })); break;
 	}
 	return 0;
 }
@@ -178,7 +179,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 	mainWindow.Size			= {1280, 720};
 
 	if_true_e(::llc::failed(::llc::mainWindowCreate(mainWindow, framework.RuntimeValues.PlatformDetail, mainWindow.Input)));
-	llc_necs(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
+	if_fail_fe(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
 
 	srand((uint32_t)time(0));
 
@@ -226,7 +227,7 @@ bool ParseCommandLine( const sc_t *pchCmdLine, const sc_t **ppchServerAddress, c
 	::llc::SWindow				& mainWindow		= framework.RootWindow;
 	//::llc::STimer				timer;
 
-	llc_necs(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
+	if_fail_fe(mainWindow.EventQueue.for_each([&app](const ::llc::pobj<::llc::SEventSystem> & sysEvent) { return ::processSystemEvent(app, *sysEvent); }));
 
 	if_true_vi(::llc::APPLICATION_STATE_EXIT, 1 == ::ghg::galaxyHellUpdate(app.GalaxyHellApp, framework.FrameInfo.Seconds.LastFrame, mainWindow.Input, mainWindow.EventQueue));
 
