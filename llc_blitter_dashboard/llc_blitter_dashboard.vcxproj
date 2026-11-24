@@ -341,7 +341,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_blitter_dashboard.h" />
-    <ClInclude Include="llc_gui_composite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

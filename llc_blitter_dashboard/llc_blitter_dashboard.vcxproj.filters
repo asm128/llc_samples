@@ -9,6 +9,5 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="llc_blitter_dashboard.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="llc_gui_composite.h"><Filter>Header Files</Filter></ClInclude>
   </ItemGroup>
 </Project>
