@@ -1691,7 +1691,10 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 	if_fail_fe(::sampleGUIViewportCreate(app, 6, "CONSOLE", {{18, 682}, {1556, 160}}));
 	app.OpenSelected = ::llc::controlCreateChild(app.GUI, app.Viewports[0].IdControl);
 	if_true_fe(app.OpenSelected < 0);
-	app.GUI.Controls.Placement[app.OpenSelected].Area = {{214, 4}, {22, 20}};
+	app.GUI.Controls.Placement[app.OpenSelected].Area = {{0, 4}, {22, 20}};
+	app.GUI.Controls.Placement[app.OpenSelected].Align = ::llc::ALIGN_TOP_RIGHT;
+	app.GUI.Controls.Constraints[app.OpenSelected].DockToControl.Right = app.Viewports[0].IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
+	app.GUI.Controls.Constraints[app.Viewports[0].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].DockToControl.Right = app.OpenSelected;
 	app.GUI.Controls.Text[app.OpenSelected].Text = "O";
 	app.GUI.Controls.Text[app.OpenSelected].FontSelected = 7;
 	::sampleGUIControlThemeApply(app.GUI, app.OpenSelected, 0);
