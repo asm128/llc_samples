@@ -144,26 +144,6 @@ sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, 
 	});
 }
 
-sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
-	doubleClick = false;
-	if_fail_fe(events.for_each([&doubleClick](cnst ::llc::pobj<::llc::SEventSystem> & eventSystem) -> ::llc::err_t {
-		if(0 == eventSystem.get_ref() || eventSystem->Type != ::llc::SYSTEM_EVENT_Mouse)
-			rtrn 0;
-		::llc::SEView<::llc::EVENT_MOUSE> eventMouse = {};
-		if_fail_fe(eventSystem->ExtractChild(eventMouse));
-		if(eventMouse.Type != ::llc::EVENT_MOUSE_DoubleClick)
-			rtrn 0;
-		::llc::vcu0_t input = eventMouse.Data;
-		::llc::u0_t button = 0;
-		if_fail_fe(::llc::loadPOD(input, button));
-		if_true_fef(input.size(), "Unexpected mouse double-click payload tail:%u.", input.size());
-		if(0 == button)
-			doubleClick = true;
-		rtrn 0;
-	}));
-	rtrn 0;
-}
-
 sttc bool sampleGUIViewportPressed(cnst SSampleGUIViewport & app, cnst ::llc::SViewport & viewport) nxpt {
 	rtrn app.GUI.Controls.IsPressed(viewport.IdControl)
 		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE])
@@ -2040,7 +2020,7 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 		if_fail_fe(::consoleRowsRefresh(app));
 	}
 	bool doubleClick = false;
-	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
+	if_fail_fe(::llc::eventMouseDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
 	::llc::view<::llc::SViewport> viewports = app.Viewports;
 	if_fail_fe(viewports.enumerate([&app, &hoveredViewport](::llc::u2_t iViewport, ::llc::SViewport & viewport) -> ::llc::err_t {

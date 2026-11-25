@@ -100,26 +100,6 @@ sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, 
 		draw.Palettes[iState] = (::llc::s1_t)((theme % SAMPLE_GUI_THEME_COUNT) * ::llc::GUI_CONTROL_PALETTE_COUNT + iState);
 }
 
-sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
-	doubleClick = false;
-	for(::llc::u2_t iEvent = 0; iEvent < events.size(); ++iEvent) {
-		cnst ::llc::pobj<::llc::SEventSystem> & eventSystem = events[iEvent];
-		if(0 == eventSystem.get_ref() || eventSystem->Type != ::llc::SYSTEM_EVENT_Mouse)
-			continue;
-		::llc::SEView<::llc::EVENT_MOUSE> eventMouse = {};
-		if_fail_fe(eventSystem->ExtractChild(eventMouse));
-		if(eventMouse.Type != ::llc::EVENT_MOUSE_DoubleClick)
-			continue;
-		::llc::vcu0_t input = eventMouse.Data;
-		::llc::u0_t button = 0;
-		if_fail_fe(::llc::loadPOD(input, button));
-		if_true_fef(input.size(), "Unexpected mouse double-click payload tail:%u.", input.size());
-		if(0 == button)
-			doubleClick = true;
-	}
-	rtrn 0;
-}
-
 sttc bool sampleGUIViewportPressed(cnst SSampleGUIViewport & app, cnst ::llc::SViewport & viewport) nxpt {
 	rtrn ::llc::viewportIsPressed(app.GUI, viewport);
 }
@@ -517,7 +497,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	}
 	if_fail_fe(::sampleGUIViewportPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
-	if_fail_fe(::sampleGUIViewportDoubleClick(app.Window.EventQueue, doubleClick));
+	if_fail_fe(::llc::eventMouseDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
 	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
 		::llc::SViewport & viewport = app.Viewports[iViewport];
