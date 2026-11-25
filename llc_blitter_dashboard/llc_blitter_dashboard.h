@@ -1,5 +1,4 @@
 #include "llc_engine.h"
-#include "llc_range.h"
 #include "llc_window.h"
 #include "llc_gui_composite.h"
 #include "llc_path.h"
@@ -62,9 +61,8 @@ stct SBlitterDashboard {
 	SBlitterScroll			FileScrollX		= {};
 	bool					WordWrap		= false;
 	bool					SelectAll		= false;
-	::llc::apod<::llc::rangeu2_t>	TextSelections = {};
-	::llc::u2_t			SelectionAnchor	= (::llc::u2_t)-1;
-	::llc::u2_t			SelectionActive	= (::llc::u2_t)-1;
+	::llc::s3_t			SelectionAnchor	= -1;
+	::llc::s3_t			SelectionCursor	= -1;
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
 	::llc::astatic<::llc::astcid<::llc::GUI_VIEWPORT_ACTION_COUNT>, SAMPLE_GUI_VIEWPORT_COUNT>

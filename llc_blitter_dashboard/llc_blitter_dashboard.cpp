@@ -1,5 +1,4 @@
 #include "llc_blitter_dashboard.h"
-#include "../llc_file_selection.h"
 
 #include "llc_apod_serialize.h"
 #include "llc_app_impl.h"
@@ -258,14 +257,12 @@ sttc ::llc::err_t desktopFileRowsRefresh(SBlitterDashboard & app) {
 			app.GUI.Controls.SetSelected(id, false);
 			::llc::apod<::llc::STextState> & states = app.GUI.Controls.TextState[id];
 			if_fail_fe(states.resize(text.size(), ::llc::STextState{}));
-			cnst ::llc::s3_t rowByte = ::desktopRowByte(app, line) - app.FileWindowStart + (app.WordWrap ? 0 : app.FileColumnOffset);
+			cnst ::llc::s3_t rowByte = ::desktopRowByte(app, line) + (app.WordWrap ? 0 : app.FileColumnOffset);
+			cnst ::llc::s3_t selectedBegin = ::llc::min(app.SelectionAnchor, app.SelectionCursor);
+			cnst ::llc::s3_t selectedEnd = ::llc::max(app.SelectionAnchor, app.SelectionCursor);
 			for(::llc::u2_t iCharacter = 0; iCharacter < text.size(); ++iCharacter) {
-				cnst ::llc::u2_t position = (::llc::u2_t)(rowByte + iCharacter);
-				bool selected = app.SelectAll;
-				for(::llc::u2_t iSelection = 0; !selected && iSelection < app.TextSelections.size(); ++iSelection) {
-					cnst ::llc::rangeu2_t selection = app.TextSelections[iSelection];
-					selected = selection.Count && position >= selection.Offset && (::llc::u3_t)position < (::llc::u3_t)selection.Offset + selection.Count;
-				}
+				cnst ::llc::s3_t position = rowByte + iCharacter;
+				cnst bool selected = app.SelectAll || (0 <= selectedBegin && selectedBegin <= position && position < selectedEnd);
 				states[iCharacter] = {};
 				states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, selected);
 				states[iCharacter].Flag = ::llc::setSwapColors(states[iCharacter].Flag, states[iCharacter].Mask, selected);
@@ -467,8 +464,7 @@ sttc ::llc::err_t desktopFolderOpen(SBlitterDashboard & app, ::llc::vcst_t path)
 	app.FileOffset = 0;
 	app.FileColumnOffset = 0;
 	app.SelectAll = false;
-	if_fail_fe(app.TextSelections.clear());
-	app.SelectionAnchor = app.SelectionActive = (::llc::u2_t)-1;
+	app.SelectionAnchor = app.SelectionCursor = -1;
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], true);
 	app.GUI.Controls.Text[app.Viewports[1].IdControls[::llc::VIEWPORT_CONTROL_TITLE]].Text = "FILE CONTENT";
@@ -486,10 +482,10 @@ sttc ::llc::s3_t desktopRowByte(cnst SBlitterDashboard & app, ::llc::u2_t row) {
 
 sttc ::llc::err_t desktopFileSelectionUpdate(SBlitterDashboard & app) {
 	cnst ::llc::SInput & input = *app.Window.Input;
-	::llc::u2_t characterOffset = 0;
-	bool overTextLine = false;
+	if(!input.ButtonDown(0) && !input.MouseCurrent.ButtonState[0])
+		rtrn 0;
 	cnst ::llc::u0_t characterWidth = ::llc::max((::llc::u0_t)1, app.GUI.Fonts[7]->CharSize.x);
-	for(::llc::u2_t iControl = 0; (input.ButtonDown(0) || input.MouseCurrent.ButtonState[0]) && iControl < app.FileControls.size(); ++iControl) {
+	for(::llc::u2_t iControl = 0; iControl < app.FileControls.size(); ++iControl) {
 		cnst ::llc::cid_t id = app.FileControls[iControl];
 		if(app.GUI.Controls.IsHidden(id) || false == ::llc::in_range(app.GUI.CursorPos.s1(), app.GUI.Controls.Area[id].Total.Global))
 			continue;
@@ -500,16 +496,18 @@ sttc ::llc::err_t desktopFileSelectionUpdate(SBlitterDashboard & app) {
 		cnst ::llc::s2_t mouseOffsetX = (::llc::s2_t)input.MouseCurrent.Position.x - app.GUI.Controls.Area[id].Text.Offset.x;
 		cnst ::llc::u2_t visibleColumn = 0 >= mouseOffsetX ? 0 : (::llc::u2_t)(mouseOffsetX / characterWidth);
 		cnst ::llc::u2_t firstColumn = app.WordWrap ? 0 : ::llc::min(app.FileColumnOffset, row.Text.size());
-		cnst ::llc::s3_t cursor = ::desktopRowByte(app, iRow) - app.FileWindowStart + firstColumn + ::llc::min(visibleColumn, row.Text.size() - firstColumn);
-		characterOffset = (::llc::u2_t)cursor;
-		overTextLine = true;
-		if(input.ButtonDown(0))
+		cnst ::llc::s3_t cursor = ::desktopRowByte(app, iRow) + firstColumn + ::llc::min(visibleColumn, row.Text.size() - firstColumn);
+		if(input.ButtonDown(0)) {
 			app.SelectAll = false;
+			app.SelectionAnchor = cursor;
+			app.SelectionCursor = -1;
+		}
+		if(0 <= app.SelectionAnchor && cursor != app.SelectionCursor) {
+			app.SelectionCursor = cursor;
+			rtrn ::desktopFileRowsRefresh(app);
+		}
 		break;
 	}
-	if_fail_fe(::fileViewerSelectionUpdate(app.TextSelections, app.SelectionAnchor, app.SelectionActive, false, input, characterOffset, overTextLine));
-	if(input.ButtonDown(0) || input.ButtonUp(0) || (input.MouseCurrent.ButtonState[0] && input.MouseCurrent.Position != input.MousePrevious.Position))
-		rtrn ::desktopFileRowsRefresh(app);
 	rtrn 0;
 }
 
@@ -569,8 +567,7 @@ sttc ::llc::err_t desktopFileWindowLoad(SBlitterDashboard & app, ::llc::s3_t cur
 	app.FileOffset = 0;
 	app.FileColumnOffset = 0;
 	app.SelectAll = false;
-	if_fail_fe(app.TextSelections.clear());
-	app.SelectionAnchor = app.SelectionActive = (::llc::u2_t)-1;
+	app.SelectionAnchor = app.SelectionCursor = -1;
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SAVE], true);
 	app.GUI.Controls.SetDisabled(app.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_SELECT_ALL], false);
 	::llc::vcst_t fileName = {};
@@ -666,16 +663,8 @@ sttc ::llc::err_t desktopFileWindowCheck(SBlitterDashboard & app) {
 }
 
 ::llc::err_t blitterDashboardUpdate(SBlitterDashboard & app, bool systemRequestedExit, double secondsLastFrame) {
-	if(systemRequestedExit || app.Window.Closed)
+	if(systemRequestedExit || app.Window.Closed || app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
-	if(app.Window.Input->KeyDown(::llc::SYSTEM_KEY_Escape)) {
-		if(false == app.SelectAll && 0 == app.TextSelections.size())
-			rtrn ::llc::APPLICATION_STATE_EXIT;
-		app.SelectAll = false;
-		if_fail_fe(app.TextSelections.clear());
-		app.SelectionAnchor = app.SelectionActive = (::llc::u2_t)-1;
-		if_fail_fe(::desktopFileRowsRefresh(app));
-	}
 	if(app.GUI.Controls.IsAction(app.Exit))
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::blitterDashboardPerformanceUpdate(app, secondsLastFrame));
@@ -853,11 +842,8 @@ stct SApplication {
 		app.Sample.WordWrap = !app.Sample.WordWrap;
 		app.Sample.GUI.Controls.SetSelected(app.Sample.ViewportActions[1][::llc::GUI_VIEWPORT_ACTION_WRAP], app.Sample.WordWrap);
 	}
-	if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
+	if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action)
 		app.Sample.SelectAll = true;
-		if_fail_fe(app.Sample.TextSelections.clear());
-		app.Sample.SelectionAnchor = app.Sample.SelectionActive = (::llc::u2_t)-1;
-	}
 	if(resized || ::llc::GUI_VIEWPORT_ACTION_WRAP == action || ::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action || app.Sample.VisibleColumns != ::llc::guiViewportTextColumns(app.Sample.GUI, app.Sample.FileControls[0]))
 		if_fail_fe(::desktopTextRowsRebuild(app.Sample));
 	::llc::sleep(1);
