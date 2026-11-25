@@ -250,12 +250,8 @@ sttc ::llc::err_t sampleGUIComponentsActivate(SSampleGUIComponents & app, ::llc:
 	if_true_fe(iViewport >= app.Viewports.size());
 	cnst ::llc::cid_t idRoot = app.Viewports[iViewport].IdControl;
 	::llc::acid & desktopChildren = app.GUI.Controls.Children[app.Desktop];
-	if(0 == desktopChildren.size() || desktopChildren[desktopChildren.size() - 1] != idRoot) {
-		cnst ::llc::err_t iChild = desktopChildren.find(idRoot);
-		if(iChild >= 0)
-			if_fail_fe(desktopChildren.remove((::llc::u2_t)iChild));
-		if_fail_fe(desktopChildren.push_back(idRoot));
-	}
+	if(0 == desktopChildren.size() || desktopChildren[desktopChildren.size() - 1] != idRoot)
+		if_fail_fe(::llc::controlToFront(app.GUI, idRoot));
 	for(::llc::u0_t iOther = 0; iOther < app.Viewports.size(); ++iOther) {
 		cnst bool active = iOther == iViewport;
 		app.GUI.Controls.SetSelected(app.Viewports[iOther].IdControl, active);
