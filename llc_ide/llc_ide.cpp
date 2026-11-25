@@ -41,10 +41,6 @@ sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, 
 	gui.Controls.Draw[idControl].ColorTheme = themes[theme % SAMPLE_GUI_THEME_COUNT];
 }
 
-sttc ::llc::err_t sampleGUIViewportActivate(SSampleGUIViewport & app, ::llc::u0_t iViewport) {
-	rtrn ::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, iViewport);
-}
-
 sttc void sampleGUIViewportImageUpdate(::llc::img8bgra & image, ::llc::u0_t theme, ::llc::u2_t frameIndex) nxpt {
 	cnst ::llc::SColorBGRA tone = ::sampleGUIThemeColor(theme);
 	cnst ::llc::bgra background = ::sampleGUIShade(tone, 14);
@@ -397,7 +393,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	::llc::string initialFolder = {};
 	if_fail_fe(::llc::pathAbsolute(".", initialFolder));
 	if_fail_fe(::desktopFolderOpen(app, initialFolder));
-	if_fail_fe(::sampleGUIViewportActivate(app, 2));
+	if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 2));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
 	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
@@ -442,7 +438,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
 		if(::llc::viewportIsPressed(app.GUI, viewport))
-			if_fail_fe(::sampleGUIViewportActivate(app, iViewport));
+			if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
 		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
@@ -506,7 +502,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 				}
 				else {
 					if_fail_fe(::desktopFileOpen(app, path));
-					if_fail_fe(::sampleGUIViewportActivate(app, 1));
+					if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 1));
 				}
 			}
 			break;

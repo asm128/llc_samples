@@ -65,22 +65,6 @@ sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, 
 	gui.Controls.Draw[idControl].ColorTheme = themes[theme % SAMPLE_GUI_THEME_COUNT];
 }
 
-sttc ::llc::err_t sampleGUIViewportActivate(SSampleGUIViewport & app, ::llc::u0_t iViewport) {
-	if_true_fe(iViewport >= app.Viewports.size());
-	cnst ::llc::cid_t idRoot = app.Viewports[iViewport].IdControl;
-	::llc::acid & desktopChildren = app.GUI.Controls.Children[app.Desktop];
-	if(0 == desktopChildren.size() || desktopChildren[desktopChildren.size() - 1] != idRoot)
-		if_fail_fe(::llc::controlToFront(app.GUI, idRoot));
-	::llc::view<::llc::SViewport> viewports = app.Viewports;
-	if_fail_fe(viewports.enumerate([&app, iViewport](::llc::u2_t iOther, ::llc::SViewport & viewport) -> ::llc::err_t {
-		cnst bool active = iOther == iViewport;
-		app.GUI.Controls.SetSelected(viewport.IdControl, active);
-		app.GUI.Controls.SetSelected(viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE], active);
-		rtrn 0;
-	}));
-	rtrn 0;
-}
-
 sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t iViewport, ::llc::vcst_t title, cnst ::llc::rect2s1_t & area) {
 	if_true_fe(iViewport >= app.Viewports.size());
 	::llc::SViewport & viewport = app.Viewports[iViewport];
@@ -1638,7 +1622,7 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 	if(!app.IndexDatabasePath.size())
 		if_fail_fe(::llc::pathAbsolute("llc_blitter_search.index", app.IndexDatabasePath));
 #endif
-	if_fail_fe(::sampleGUIViewportActivate(app, 0));
+	if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 0));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
 	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
@@ -1937,7 +1921,7 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
 		if(::llc::viewportIsPressed(app.GUI, viewport))
-			if_fail_fe(::sampleGUIViewportActivate(app, (::llc::u0_t)iViewport));
+			if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, (::llc::u0_t)iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
 		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
@@ -2037,7 +2021,7 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 	}));
 	if(app.GUI.Controls.IsAction(app.OpenSelected) && app.SelectedFile.size()) {
 		if_fail_fe(::desktopFileOpen(app, app.SelectedFile));
-		if_fail_fe(::sampleGUIViewportActivate(app, 1));
+		if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 1));
 	}
 	::llc::u2_t resultRow = 0;
 	if_fail_fe(app.FileResultControls.for_each([&](cnst ::llc::cid_t & id) -> ::llc::err_t {
