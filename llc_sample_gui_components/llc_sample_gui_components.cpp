@@ -219,20 +219,6 @@ sttc ::llc::err_t sampleVirtualKeyboardUpdate(SSampleGUIComponents & app, bool &
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, idInputBox);
 }
 
-sttc ::llc::err_t sampleGUIComponentsActivate(SSampleGUIComponents & app, ::llc::u0_t iViewport) {
-	if_true_fe(iViewport >= app.Viewports.size());
-	cnst ::llc::cid_t idRoot = app.Viewports[iViewport].IdControl;
-	::llc::acid & desktopChildren = app.GUI.Controls.Children[app.Desktop];
-	if(0 == desktopChildren.size() || desktopChildren[desktopChildren.size() - 1] != idRoot)
-		if_fail_fe(::llc::controlToFront(app.GUI, idRoot));
-	for(::llc::u0_t iOther = 0; iOther < app.Viewports.size(); ++iOther) {
-		cnst bool active = iOther == iViewport;
-		app.GUI.Controls.SetSelected(app.Viewports[iOther].IdControl, active);
-		app.GUI.Controls.SetSelected(app.Viewports[iOther].IdControls[::llc::VIEWPORT_CONTROL_TITLE], active);
-	}
-	rtrn 0;
-}
-
 sttc void sampleGUIComponentsImageUpdate(::llc::img8bgra & image, ::llc::u0_t theme, ::llc::u2_t frameIndex) nxpt {
 	cnst ::llc::SColorBGRA tone = ::sampleGUIThemeColor(theme);
 	cnst ::llc::bgra background = ::sampleGUIShade(tone, 14);
@@ -402,7 +388,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if_fail_fe(::sampleGUIComponentsCreate(app, 0, "AZURE CPU SURFACE", {{80, 92}, {420, 250}}));
 	if_fail_fe(::sampleGUIComponentsCreate(app, 1, "AMBER CPU SURFACE", {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIComponentsCreate(app, 2, "MONO CPU SURFACE", {{754, 104}, {360, 230}}));
-	if_fail_fe(::sampleGUIComponentsActivate(app, 2));
+	if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 2));
 	if_fail_fe(::sampleGUIComponentsControlsSetup(app));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
@@ -449,7 +435,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
 		if(::llc::viewportIsPressed(app.GUI, viewport))
-			if_fail_fe(::sampleGUIComponentsActivate(app, iViewport));
+			if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
 		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
