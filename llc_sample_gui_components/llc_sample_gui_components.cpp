@@ -239,13 +239,6 @@ sttc ::llc::err_t sampleGUIComponentsDoubleClick(cnst ::llc::TQueueSystemEvent &
 	rtrn 0;
 }
 
-sttc bool sampleGUIComponentsPressed(cnst SSampleGUIComponents & app, cnst ::llc::SViewport & viewport) nxpt {
-	rtrn app.GUI.Controls.IsPressed(viewport.IdControl)
-		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE])
-		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET])
-		;
-}
-
 sttc ::llc::err_t sampleGUIComponentsActivate(SSampleGUIComponents & app, ::llc::u0_t iViewport) {
 	if_true_fe(iViewport >= app.Viewports.size());
 	cnst ::llc::cid_t idRoot = app.Viewports[iViewport].IdControl;
@@ -475,7 +468,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 		cnst ::llc::cid_t idTitle = viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE];
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
-		if(::sampleGUIComponentsPressed(app, viewport))
+		if(::llc::viewportIsPressed(app.GUI, viewport))
 			if_fail_fe(::sampleGUIComponentsActivate(app, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);

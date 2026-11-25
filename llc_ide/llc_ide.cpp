@@ -61,10 +61,6 @@ sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & e
 	rtrn 0;
 }
 
-sttc bool sampleGUIViewportPressed(cnst SSampleGUIViewport & app, cnst ::llc::SViewport & viewport) nxpt {
-	rtrn ::llc::viewportIsPressed(app.GUI, viewport);
-}
-
 sttc ::llc::err_t sampleGUIViewportActivate(SSampleGUIViewport & app, ::llc::u0_t iViewport) {
 	rtrn ::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, iViewport);
 }
@@ -465,7 +461,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 		cnst ::llc::cid_t idTitle = viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE];
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
-		if(::sampleGUIViewportPressed(app, viewport))
+		if(::llc::viewportIsPressed(app.GUI, viewport))
 			if_fail_fe(::sampleGUIViewportActivate(app, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
