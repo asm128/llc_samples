@@ -441,15 +441,15 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	panelPlacement.Align = ::llc::ALIGN_BOTTOM_LEFT;
 	panelPlacement.Margin = {};
 	panelPlacement.Border = {};
-	app.GUI.Controls.Draw[app.ComponentsPanel].NoBorder = true;
-	app.GUI.Controls.Draw[app.ComponentsPanel].NoClient = true;
+	app.GUI.Controls.States[app.ComponentsPanel].Mask = ::llc::bit_set(app.GUI.Controls.States[app.ComponentsPanel].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+	app.GUI.Controls.States[app.ComponentsPanel].Mask = ::llc::bit_set(app.GUI.Controls.States[app.ComponentsPanel].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	::sampleGUIControlThemeApply(app.GUI, app.ComponentsPanel, 2);
 
 	if_fail_fe(::sampleCheckBoxCreate(app.CheckBox, app.GUI, app.ComponentsPanel, {{0, 0}, {32, 32}}));
 	cnst ::llc::cid_t idCheckBoxLabel = ::sampleGUIComponentsControlCreate(app, "CHECK BOX | ENTER / SPACE", {{38, 0}, {212, 32}});
 	if_true_fe(idCheckBoxLabel < 0);
-	app.GUI.Controls.Draw[idCheckBoxLabel].NoBorder = true;
-	app.GUI.Controls.Draw[idCheckBoxLabel].NoClient = true;
+	app.GUI.Controls.States[idCheckBoxLabel].Mask = ::llc::bit_set(app.GUI.Controls.States[idCheckBoxLabel].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+	app.GUI.Controls.States[idCheckBoxLabel].Mask = ::llc::bit_set(app.GUI.Controls.States[idCheckBoxLabel].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	app.GUI.Controls.Text[idCheckBoxLabel].Align = ::llc::ALIGN_CENTER_LEFT;
 	::sampleGUIControlThemeApply(app.GUI, idCheckBoxLabel, 0);
 
@@ -476,8 +476,8 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 	app.Desktop = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Desktop < 0);
-	app.GUI.Controls.Draw[app.Desktop].NoBorder = true;
-	app.GUI.Controls.Draw[app.Desktop].NoClient = true;
+	app.GUI.Controls.States[app.Desktop].Mask = ::llc::bit_set(app.GUI.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+	app.GUI.Controls.States[app.Desktop].Mask = ::llc::bit_set(app.GUI.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	app.GUI.Controls.Constraints[app.Desktop].AttachSizeToControl = {app.Desktop, app.Desktop};
 	::sampleGUIControlThemeApply(app.GUI, app.Desktop, 2);
 	app.Help = ::llc::controlCreateChild(app.GUI, app.Desktop);

@@ -84,7 +84,8 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 	gui.SelectedFont = 8;
 	if_fail_fe(app.Desktop = ::llc::controlCreate(gui));
 	gui.Controls.Placement[app.Desktop].Border = gui.Controls.Placement[app.Desktop].Margin = {};
-	gui.Controls.Draw[app.Desktop].NoBorder = gui.Controls.Draw[app.Desktop].NoClient = true;
+	gui.Controls.States[app.Desktop].Mask = ::llc::bit_set(gui.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+	gui.Controls.States[app.Desktop].Mask = ::llc::bit_set(gui.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	gui.Controls.Constraints[app.Desktop].AttachSizeToControl = {app.Desktop, app.Desktop};
 	// Keep palette additions local; the GUI defaults are shared by other consumers.
 	::llc::pobj<::llc::SGUIColors> colors;
@@ -114,7 +115,7 @@ sttc ::llc::err_t sampleGeometryGUISetup(SSampleGeometry & app) {
 		if_fail_fe(::llc::controlTextSet(gui, viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE], titles[i]));
 		cnst ::llc::cid_t client = viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET];
 		gui.Controls.Draw[client].ColorTheme = app.ClientTheme;
-		gui.Controls.Draw[client].NoBorder = true;
+		gui.Controls.States[client].Mask = ::llc::bit_set(gui.Controls.States[client].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
 		gui.Controls.Images[client].ImageAlign = ::llc::ALIGN_CENTER;
 	}
 	::llc::cid_t help;

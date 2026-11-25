@@ -30,8 +30,8 @@ static	::llc::err_t			dialogCreateCommon		(::llc::SDialog & dialogLoad, const ::
 	dialogLoad						= {};
 	dialogLoad.Input				= inputState;
 	dialogLoad.GUI->CursorPos		= cursorPos;
-	dialogLoad.GUI->Controls.Draw[0].NoClient	= true;
-	dialogLoad.GUI->Controls.Draw[0].NoBorder	= true;
+	dialogLoad.GUI->Controls.States[0].Mask = ::llc::bit_set(dialogLoad.GUI->Controls.States[0].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
+	dialogLoad.GUI->Controls.States[0].Mask = ::llc::bit_set(dialogLoad.GUI->Controls.States[0].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
 	::guiSetupCommon(*dialogLoad.GUI);
 	dialogLoad.Update();
 	return 0;
@@ -66,8 +66,8 @@ static	::llc::err_t			uiPlayerSetupHome		(::ghg::SUIPlayer & uiPlayer, ::llc::po
 	for(uint32_t iButton = 0, iStop = ::llc::get_value_count<::ghg::UI_PROFILE>() - 1, iOffset = playerDialog.Root + 1 + ghg::UI_PROFILE_Name; iButton < iStop; ++iButton) {
 		playerGUI.Controls.Placement	[iOffset + iButton].Margin				= {}; 
 		//playerGUI.Controls.Controls		[iButton].Border				= {2, 2, 2, 2};
-		//playerGUI.Controls.Draw			[iOffset + iButton].NoBorder		= true;
-		playerGUI.Controls.Draw			[iOffset + iButton].NoClient		= true;
+		//playerGUI.Controls.States[iOffset + iButton].Mask = ::llc::bit_set(playerGUI.Controls.States[iOffset + iButton].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+		playerGUI.Controls.States[iOffset + iButton].Mask = ::llc::bit_set(playerGUI.Controls.States[iOffset + iButton].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	}
 	for(uint32_t iButton = 0, iStop = ::llc::get_value_count<::ghg::UI_PROFILE>() - 1, iOffset = playerDialog.Root + 1 + ghg::UI_PROFILE_Score; iButton < iStop; ++iButton) {
 		playerGUI.Controls.Placement[iOffset + iButton].Area.Offset.y		-= int16_t(16 * iButton);
@@ -120,8 +120,8 @@ static	::llc::err_t	uiPlayerSetupPlay	(::ghg::SUIPlayer & uiPlayer, ::llc::pobj<
 	for(uint32_t iButton = 0, iStop = ::llc::get_value_count<::ghg::UI_PROFILE>() - 1, iOffset = playerDialog.Root + 1 + ghg::UI_PROFILE_Name; iButton < iStop; ++iButton) {
 		playerGUI.Controls.Placement[iOffset + iButton].Margin		= {}; 
 		//playerGUI.Controls.Controls	[iOffset + iButton].Border	= {};
-		//playerGUI.Controls.Draw		[iOffset + iButton].NoBorder	= true;
-		playerGUI.Controls.Draw		[iOffset + iButton].NoClient	= true;
+		//playerGUI.Controls.States[iOffset + iButton].Mask = ::llc::bit_set(playerGUI.Controls.States[iOffset + iButton].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+		playerGUI.Controls.States[iOffset + iButton].Mask = ::llc::bit_set(playerGUI.Controls.States[iOffset + iButton].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 		//playerGUI.Controls.Constraints[iOffset + iButton].AttachSizeToControl.x	= ::llc::cid_t(iOffset + iButton + 1);
 	}
 	for(uint32_t iButton = 0, iStop = ::llc::get_value_count<::ghg::UI_PROFILE>() - 1, iOffset = playerDialog.Root + 1 + ghg::UI_PROFILE_Score; iButton < iStop; ++iButton) {
@@ -188,12 +188,12 @@ static	::llc::err_t	uiPlayerSetupPlay	(::ghg::SUIPlayer & uiPlayer, ::llc::pobj<
 		playerGUI.Controls.Text		[viewport.Viewport + 1].Align	= ::llc::ALIGN_CENTER; //iPlayer ? ::llc::ALIGN_CENTER_RIGHT : ::llc::ALIGN_CENTER_LEFT;
 		playerGUI.Controls.Text		[viewport.Viewport + 2].Align	= ::llc::ALIGN_CENTER; //iPlayer ? ::llc::ALIGN_CENTER_RIGHT : ::llc::ALIGN_CENTER_LEFT;
 
-		playerGUI.Controls.Draw	[viewport.Viewport + 0].NoClient	= 
-		playerGUI.Controls.Draw	[viewport.Viewport + 1].NoClient	= 
-		playerGUI.Controls.Draw	[viewport.Viewport + 2].NoClient	= true;
-		playerGUI.Controls.Draw	[viewport.Viewport + 0].NoBorder	= true;
-		playerGUI.Controls.Draw	[viewport.Viewport + 1].NoBorder	= true;
-		//playerGUI.Controls.Draw	[viewport.Viewport + 2].NoBorder	= true;
+		playerGUI.Controls.States[viewport.Viewport + 0].Mask &= ~::llc::GUI_CONTROL_FLAG_DrawClient;
+		playerGUI.Controls.States[viewport.Viewport + 1].Mask &= ~::llc::GUI_CONTROL_FLAG_DrawClient;
+		playerGUI.Controls.States[viewport.Viewport + 2].Mask &= ~::llc::GUI_CONTROL_FLAG_DrawClient;
+		playerGUI.Controls.States[viewport.Viewport + 0].Mask = ::llc::bit_set(playerGUI.Controls.States[viewport.Viewport + 0].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+		playerGUI.Controls.States[viewport.Viewport + 1].Mask = ::llc::bit_set(playerGUI.Controls.States[viewport.Viewport + 1].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+		//playerGUI.Controls.States[viewport.Viewport + 2].Mask = ::llc::bit_set(playerGUI.Controls.States[viewport.Viewport + 2].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
 
 		::llc::m4f2_t				& matrixProjection	= viewport.MatrixProjection;
 		matrixProjection.FieldOfView(::llc::math_pi * .25, MODULE_CAMERA_SIZE.x / (double)MODULE_CAMERA_SIZE.y, 0.01, 500.0);
@@ -485,8 +485,8 @@ static	::llc::err_t	uiPlayerUpdateHome	(::ghg::SUIPlayer & uiPlayer, uint16_t iP
 		(*playerGUI.Colors->Palette)[colorCombo[::llc::UI_CONTROL_AREA_TEXT_FACE	]] = shipColor;
 		(*playerGUI.Colors->Palette)[colorCombo[::llc::UI_CONTROL_AREA_BACKGROUND	]] = shipColor;
 		playerGUI.Controls.Draw[uiPlayer.InputBox.IdText].ColorTheme = controlDraw.ColorTheme;
-		playerGUI.Controls.Draw[uiPlayer.InputBox.IdText].NoClient = true;
-		//playerGUI.Controls.Draw[uiPlayer.InputBox.IdText].NoBorder = true;
+		playerGUI.Controls.States[uiPlayer.InputBox.IdText].Mask = ::llc::bit_set(playerGUI.Controls.States[uiPlayer.InputBox.IdText].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
+		//playerGUI.Controls.States[uiPlayer.InputBox.IdText].Mask = ::llc::bit_set(playerGUI.Controls.States[uiPlayer.InputBox.IdText].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
 
 	}
 	return 0;

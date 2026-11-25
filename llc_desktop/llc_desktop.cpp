@@ -345,8 +345,8 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
 	app.Desktop = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Desktop < 0);
-	app.GUI.Controls.Draw[app.Desktop].NoBorder = true;
-	app.GUI.Controls.Draw[app.Desktop].NoClient = true;
+	app.GUI.Controls.States[app.Desktop].Mask = ::llc::bit_set(app.GUI.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawBorder, false);
+	app.GUI.Controls.States[app.Desktop].Mask = ::llc::bit_set(app.GUI.Controls.States[app.Desktop].Mask, ::llc::GUI_CONTROL_FLAG_DrawClient, false);
 	app.GUI.Controls.Constraints[app.Desktop].AttachSizeToControl = {app.Desktop, app.Desktop};
 	::sampleGUIControlThemeApply(app.GUI, app.Desktop, 2);
 	app.Help = ::llc::controlCreateChild(app.GUI, app.Desktop);
