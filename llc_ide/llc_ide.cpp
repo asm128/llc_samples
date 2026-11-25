@@ -1,4 +1,5 @@
 #include "llc_ide.h"
+#include "../llc_file_selection.h"
 
 #include "llc_apod_serialize.h"
 #include "llc_app_impl.h"
@@ -336,28 +337,10 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 	}
 	if(input.ButtonDown(0) && overTextLine) {
 		editor.Cursor = cursor;
-		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
-			editor.SelectionAnchor = characterOffset;
-			cnst ::llc::err_t iSelection = editor.TextSelections.push_back({characterOffset, 0});
-			if_fail_fe(iSelection);
-			editor.SelectionActive = (::llc::u2_t)iSelection;
-		}
 	}
-	if(input.MouseCurrent.ButtonState[0] && (::llc::u2_t)-1 != editor.SelectionAnchor && editor.SelectionActive < editor.TextSelections.size() && overTextLine) {
+	if(input.MouseCurrent.ButtonState[0] && overTextLine)
 		editor.Cursor = cursor;
-		::llc::rangeu2_t & selection = editor.TextSelections[editor.SelectionActive];
-		selection.Offset = ::llc::min(editor.SelectionAnchor, characterOffset);
-		selection.Count = ::llc::max(editor.SelectionAnchor, characterOffset) - selection.Offset;
-	}
-	if(input.ButtonUp(0) && (::llc::u2_t)-1 != editor.SelectionAnchor) {
-		if(editor.SelectionActive < editor.TextSelections.size() && 0 == editor.TextSelections[editor.SelectionActive].Count && false == editor.CapsSelectionMode)
-			if_fail_fe(editor.TextSelections.remove(editor.SelectionActive));
-		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
-			editor.SelectionAnchor = (::llc::u2_t)-1;
-			editor.SelectionActive = (::llc::u2_t)-1;
-		}
-	}
-	rtrn 0;
+	rtrn ::fileViewerSelectionUpdate(editor.TextSelections, editor.SelectionAnchor, editor.SelectionActive, editor.CapsSelectionMode, input, characterOffset, overTextLine);
 }
 
 sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) {
