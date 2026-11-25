@@ -57,91 +57,12 @@ stct SGramRoute {
 };
 
 stxp ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
-stxp ::llc::u0_t PALETTE_SHADE_COUNT = 16;
-
-sttc ::llc::SColorBGRA sampleGUIThemeColor(::llc::u0_t theme) nxpt {
-	stxp ::llc::SColorBGRA colors[SAMPLE_GUI_THEME_COUNT] =
-		{ {248, 208,  72}
-		, { 32, 176, 248}
-		, {232, 232, 232}
-		};
-	rtrn colors[theme % SAMPLE_GUI_THEME_COUNT];
-}
-
-sttc ::llc::SColorBGRA sampleGUIShade(::llc::SColorBGRA color, ::llc::u0_t shade) nxpt {
-	shade = ::llc::min(shade, (::llc::u0_t)(PALETTE_SHADE_COUNT - 1));
-	rtrn color * ((PALETTE_SHADE_COUNT - (::llc::f2_t)shade) / PALETTE_SHADE_COUNT);
-}
-
-sttc ::llc::SColorBGRA sampleGUIDesaturate(::llc::SColorBGRA color) nxpt {
-	cnst ::llc::u0_t gray = (::llc::u0_t)(((::llc::u2_t)color.r + color.g + color.b) / 3);
-	rtrn
-		{ (::llc::u0_t)((color.b + (::llc::u1_t)gray * 2) / 3)
-		, (::llc::u0_t)((color.g + (::llc::u1_t)gray * 2) / 3)
-		, (::llc::u0_t)((color.r + (::llc::u1_t)gray * 2) / 3)
-		};
-}
-
-sttc ::llc::u0_t sampleGUIStateShade(::llc::u0_t state) nxpt {
-	stxp ::llc::u0_t shades[::llc::GUI_CONTROL_PALETTE_COUNT] = {8, 10, 5, 11, 4, 7, 2, 7, 1, 13};
-	rtrn shades[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
-}
-
-sttc ::llc::u0_t sampleGUIStateBorderOffset(::llc::u0_t state) nxpt {
-	stxp ::llc::u0_t offsets[::llc::GUI_CONTROL_PALETTE_COUNT] = {5, 1, 7, 3, 0, 1, 7, 3, 5, 5};
-	rtrn offsets[state % ::llc::GUI_CONTROL_PALETTE_COUNT];
-}
-
-sttc ::llc::SColorBGRA sampleGUITextColor(::llc::SColorBGRA background) nxpt {
-	cnst ::llc::u2_t luminance = (::llc::u2_t)background.r * 299 + (::llc::u2_t)background.g * 587 + (::llc::u2_t)background.b * 114;
-	rtrn ::sampleGUIShade({255, 255, 255}, luminance > 150000 ? 15 : 1);
-}
-
-sttc ::llc::err_t sampleGUIResourcesCreate(::llc::SGUI & gui) {
-	if_true_fe(0 == gui.Colors.create());
-	if_fail_fe(gui.Colors->Palettes.resize(SAMPLE_GUI_THEME_COUNT * ::llc::GUI_CONTROL_PALETTE_COUNT));
-	::llc::view<::llc::astatic<::llc::bgra, ::llc::UI_CONTROL_AREA_COUNT>> palettes = gui.Colors->Palettes;
-	if_fail_fe(palettes.enumerate([&](::llc::u2_t iPalette, ::llc::astatic<::llc::bgra, ::llc::UI_CONTROL_AREA_COUNT> & palette) -> ::llc::err_t {
-		cnst ::llc::u0_t iTheme = (::llc::u0_t)(iPalette / ::llc::GUI_CONTROL_PALETTE_COUNT);
-		cnst ::llc::u0_t iState = (::llc::u0_t)(iPalette % ::llc::GUI_CONTROL_PALETTE_COUNT);
-		::llc::SColorBGRA tone = ::sampleGUIThemeColor(iTheme);
-		if(iState == ::llc::GUI_CONTROL_PALETTE_DISABLED || iState == ::llc::GUI_CONTROL_PALETTE_SELECTED_DISABLED)
-			tone = ::sampleGUIDesaturate(tone);
-		cnst ::llc::u0_t shade = ::sampleGUIStateShade(iState);
-		cnst ::llc::SColorBGRA base = ::sampleGUIShade(tone, shade);
-		cnst ::llc::u0_t borderOffset = ::sampleGUIStateBorderOffset(iState);
-		cnst ::llc::u0_t borderShade = shade > 7
-			? (::llc::u0_t)(shade > borderOffset ? shade - borderOffset : 0)
-			: (::llc::u0_t)::llc::min((::llc::u2_t)shade + borderOffset, (::llc::u2_t)PALETTE_SHADE_COUNT - 1);
-		cnst ::llc::SColorBGRA borderColor = ::sampleGUIShade(tone, borderShade);
-		::llc::view<::llc::bgra> areas = palette;
-		if_fail_fe(areas.fill(::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 5, (::llc::u2_t)PALETTE_SHADE_COUNT - 1))));
-		palette[::llc::UI_CONTROL_AREA_BACKGROUND] = ::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 6, (::llc::u2_t)PALETTE_SHADE_COUNT - 1));
-		palette[::llc::UI_CONTROL_AREA_CLIENT] = base;
-		palette[::llc::UI_CONTROL_AREA_BORDER_LEFT] = borderColor;
-		palette[::llc::UI_CONTROL_AREA_BORDER_TOP] = borderColor;
-		palette[::llc::UI_CONTROL_AREA_BORDER_RIGHT] = borderColor;
-		palette[::llc::UI_CONTROL_AREA_BORDER_BOTTOM] = borderColor;
-		palette[::llc::UI_CONTROL_AREA_TEXT_BACKGROUND] = ::sampleGUIShade(tone, (::llc::u0_t)::llc::min((::llc::u2_t)shade + 2, (::llc::u2_t)PALETTE_SHADE_COUNT - 1));
-		palette[::llc::UI_CONTROL_AREA_TEXT_FACE] = ::sampleGUITextColor(base);
-		rtrn 0;
-	}));
-	::llc::SRasterFontManager fonts = {};
-	if_fail_fe(::llc::rasterFontDefaults(fonts));
-	gui.Fonts = fonts.Fonts;
-	rtrn 0;
-}
 
 sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, ::llc::u0_t theme) nxpt {
 	if(::llc::controlInvalid(gui, idControl))
 		rtrn;
-	::llc::SControlDraw & draw = gui.Controls.Draw[idControl];
-	draw.UseNewPalettes = true;
-	::llc::view<::llc::s1_t> palettes = draw.Palettes;
-	(void)palettes.enumerate([theme](::llc::u2_t iState, ::llc::s1_t & palette) -> ::llc::err_t {
-		palette = (::llc::s1_t)((theme % SAMPLE_GUI_THEME_COUNT) * ::llc::GUI_CONTROL_PALETTE_COUNT + iState);
-		rtrn 0;
-	});
+	stxp int16_t themes[] = {::llc::GUI_THEME_DARK_BLUE, ::llc::GUI_THEME_DARK_SLATE, ::llc::GUI_THEME_DARK_CHROME};
+	gui.Controls.Draw[idControl].ColorTheme = themes[theme % SAMPLE_GUI_THEME_COUNT];
 }
 
 sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
@@ -1644,8 +1565,8 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
 	app.GUI.SelectedFont = 7;
-	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_3D;
-	if_fail_fe(::sampleGUIResourcesCreate(app.GUI));
+	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_Flat;
+	app.GUI.ThemeDefault = ::llc::GUI_THEME_DARK_CHROME - 1;
 	app.Desktop = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Desktop < 0);
 	app.GUI.Controls.Draw[app.Desktop].NoBorder = true;
@@ -1721,7 +1642,6 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 		if_fail_fe(::llc::guiCreateControlList(app.GUI, ::llc::DIRECTION_DOWN, {labels, ::llc::size(labels)}, target, row, ::llc::ALIGN_CENTER_LEFT, app.ConsoleControls));
 		if_fail_fe(app.ConsoleControls.for_each([&app](cnst ::llc::cid_t & id) -> ::llc::err_t { app.GUI.Controls.Text[id].FontSelected = 7; rtrn 0; }));
 		if_fail_fe(::llc::inputBoxCreate(app.ConsoleInput, app.GUI, target));
-		if_fail_fe(app.GUI.Controls.Draw.for_each([](::llc::SControlDraw & draw) -> ::llc::err_t { draw.UseNewPalettes = true; rtrn 0; }));
 		app.ConsoleInput.MaxLength = 4096;
 		app.ConsoleInput.Edit(app.GUI, true);
 		app.GUI.Controls.SetHidden(app.ConsoleInput.VirtualKeyboard.IdRoot, true);

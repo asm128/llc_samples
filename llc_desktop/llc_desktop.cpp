@@ -33,7 +33,7 @@ sttc ::llc::SColorBGRA sampleGUIShade(::llc::SColorBGRA color, ::llc::u0_t shade
 sttc void sampleGUIControlThemeApply(::llc::SGUI & gui, ::llc::cid_t idControl, ::llc::u0_t theme) nxpt {
 	if(::llc::controlInvalid(gui, idControl))
 		rtrn;
-	stxp ::llc::s1_t themes[] = {::llc::ASCII_COLOR_CYAN * 16 + 9, ::llc::ASCII_COLOR_YELLOW * 16 + 9, ::llc::ASCII_COLOR_LIGHTGREY * 16 + 9};
+	stxp int16_t themes[] = {::llc::GUI_THEME_DARK_BLUE, ::llc::GUI_THEME_DARK_SLATE, ::llc::GUI_THEME_DARK_CHROME};
 	gui.Controls.Draw[idControl].ColorTheme = themes[theme % SAMPLE_GUI_THEME_COUNT];
 }
 
@@ -282,6 +282,8 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 
 ::llc::err_t sampleGUIViewportSetup(SSampleGUIViewport & app) {
 	app.GUI.SelectedFont = 7;
+	app.GUI.ColorModeDefault = ::llc::GUI_COLOR_MODE_Flat;
+	app.GUI.ThemeDefault = ::llc::GUI_THEME_DARK_CHROME - 1;
 	app.Desktop = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Desktop < 0);
 	app.GUI.Controls.Draw[app.Desktop].NoBorder = true;
