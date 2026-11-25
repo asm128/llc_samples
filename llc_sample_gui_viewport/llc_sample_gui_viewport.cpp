@@ -118,23 +118,27 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, "AMBER CPU SURFACE", {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 2, "MONO CPU SURFACE", {{754, 104}, {360, 230}}));
 	if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 2));
-	app.Performance = ::llc::controlCreate(app.GUI);
+	app.Performance = ::llc::controlCreate(app.GUI, [](::llc::SControlState &, ::llc::apod<::llc::STextState> &, ::llc::SControlConstraints &, ::llc::SControlPlacement & placement, ::llc::SControlArea &, ::llc::SControlDraw &, ::llc::SControlText & text, ::llc::SControlImage &) {
+		placement.Area = {{0, 14}, {360, 36}};
+		placement.Align = ::llc::ALIGN_CENTER_BOTTOM;
+		placement.Border = {1, 1, 1, 1};
+		placement.Margin = {1, 1, 1, 1};
+		text.Text = "FPS --    Frame -- ms";
+		text.FontSelected = 2;
+		rtrn 0;
+	});
 	if_true_fe(app.Performance < 0);
-	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
-	app.GUI.Controls.Placement[app.Performance].Align = ::llc::ALIGN_CENTER_BOTTOM;
-	app.GUI.Controls.Placement[app.Performance].Border = {1, 1, 1, 1};
-	app.GUI.Controls.Placement[app.Performance].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Performance].Text = "FPS --    Frame -- ms";
-	app.GUI.Controls.Text[app.Performance].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Performance, 2);
-	app.Exit = ::llc::controlCreate(app.GUI);
+	app.Exit = ::llc::controlCreate(app.GUI, [](::llc::SControlState &, ::llc::apod<::llc::STextState> &, ::llc::SControlConstraints &, ::llc::SControlPlacement & placement, ::llc::SControlArea &, ::llc::SControlDraw &, ::llc::SControlText & text, ::llc::SControlImage &) {
+		placement.Area = {{18, 18}, {96, 36}};
+		placement.Align = ::llc::ALIGN_BOTTOM_RIGHT;
+		placement.Border = {2, 2, 2, 2};
+		placement.Margin = {1, 1, 1, 1};
+		text.Text = "EXIT";
+		text.FontSelected = 2;
+		rtrn 0;
+	});
 	if_true_fe(app.Exit < 0);
-	app.GUI.Controls.Placement[app.Exit].Area = {{18, 18}, {96, 36}};
-	app.GUI.Controls.Placement[app.Exit].Align = ::llc::ALIGN_BOTTOM_RIGHT;
-	app.GUI.Controls.Placement[app.Exit].Border = {2, 2, 2, 2};
-	app.GUI.Controls.Placement[app.Exit].Margin = {1, 1, 1, 1};
-	app.GUI.Controls.Text[app.Exit].Text = "EXIT";
-	app.GUI.Controls.Text[app.Exit].FontSelected = 2;
 	::sampleGUIControlThemeApply(app.GUI, app.Exit, 1);
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
