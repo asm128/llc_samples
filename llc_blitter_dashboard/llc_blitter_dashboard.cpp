@@ -499,6 +499,8 @@ sttc ::llc::err_t desktopFileSelectionUpdate(SBlitterDashboard & app) {
 		cnst ::llc::s2_t mouseOffsetX = (::llc::s2_t)input.MouseCurrent.Position.x - app.GUI.Controls.Area[id].Text.Offset.x;
 		cnst ::llc::u2_t visibleColumn = 0 >= mouseOffsetX ? 0 : (::llc::u2_t)(mouseOffsetX / characterWidth);
 		cnst ::llc::u2_t firstColumn = app.WordWrap ? 0 : ::llc::min(app.FileColumnOffset, row.Text.size());
+		if(firstColumn >= row.Text.size())
+			continue;
 		cnst ::llc::s3_t cursor = ::desktopRowByte(app, iRow) - app.FileWindowStart + firstColumn + ::llc::min(visibleColumn, row.Text.size() - firstColumn);
 		characterOffset = (::llc::u2_t)cursor;
 		overTextLine = true;
