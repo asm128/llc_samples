@@ -9,6 +9,7 @@
 #include "llc_cstring.h"
 #include "llc_framework.h"
 #include "llc_gui_control_list.h"
+#include "llc_json_expression.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
 #include "llc_string_compose.h"
@@ -18,6 +19,7 @@
 #include "llc_parse.h"
 #include <climits>
 #include <algorithm>
+#include <filesystem>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -28,6 +30,7 @@
 #endif
 
 stxp ::llc::u2_t DESKTOP_VISIBLE_ROWS = 20;
+stxp ::llc::vcst_c SCREENSHOT_PATH_DEFAULT = "d:/enterprise/logs/screenshots";
 stxp ::llc::u2_t DESKTOP_FILE_MAX_BYTES = 1024 * 1024;
 stxp ::llc::u2_t SEARCH_INDEX_MAGIC = 0x3249424C;
 stxp ::llc::u2_t SEARCH_SHARD_MAGIC = 0x3349424C;
@@ -1931,9 +1934,21 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 	if(app.GUI.Controls.IsAction(app.SearchInput.IdText)) app.SearchFocused = true;
 	if(app.GUI.Controls.IsAction(app.ConsoleInput.IdText)) app.SearchFocused = false;
 	::llc::string searchBefore = app.SearchInput.Text;
+	::llc::view<cnst ::llc::pobj<::llc::SEventSystem>> inputEvents = app.Window.EventQueue;
+	::llc::TQueueSystemEvent filteredEvents = {};
+	cnst ::llc::SInput & input = *app.Window.Input;
+	cnst bool chordCurrent = input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Control] && input.KeyboardCurrent.KeyState[::llc::SYSTEM_KEY_Shift] && input.KeyboardCurrent.KeyState['S'];
+	cnst bool chordPrevious = input.KeyboardPrevious.KeyState[::llc::SYSTEM_KEY_Control] && input.KeyboardPrevious.KeyState[::llc::SYSTEM_KEY_Shift] && input.KeyboardPrevious.KeyState['S'];
+	if(chordCurrent || chordPrevious) {
+		::llc::view<::llc::pobj<::llc::SEventSystem>> frameEvents = app.Window.EventQueue;
+		if_fail_fe(frameEvents.for_each([&filteredEvents](cnst ::llc::pobj<::llc::SEventSystem> & event) -> ::llc::err_t {
+			rtrn event && event->Type == ::llc::SYSTEM_EVENT_Text ? 0 : filteredEvents.push_back(event);
+		}));
+		inputEvents = filteredEvents;
+	}
 	cnst ::llc::err_t consoleInput = app.SearchFocused
-		? app.SearchInput.Update(app.GUI, app.SearchInput.VirtualKeyboard, app.Window.EventQueue, app.ProcessableControls)
-		: app.ConsoleInput.Update(app.GUI, app.ConsoleInput.VirtualKeyboard, app.Window.EventQueue, app.ProcessableControls);
+		? app.SearchInput.Update(app.GUI, app.SearchInput.VirtualKeyboard, inputEvents, app.ProcessableControls)
+		: app.ConsoleInput.Update(app.GUI, app.ConsoleInput.VirtualKeyboard, inputEvents, app.ProcessableControls);
 	if_fail_fe(consoleInput);
 	if(searchBefore != app.SearchInput.Text) {
 		app.ProcessOffset = app.ServiceOffset = 0;
@@ -2159,6 +2174,7 @@ sttc ::llc::err_t fileIndexSearchSharded(SFileSearchWork & work) {
 stct SApplication {
 	::llc::SFramework	Framework;
 	SSampleGUIViewport	Sample;
+	::llc::string		ScreenshotDirectory = {};
 	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	::llc::u2_t		FrameIndex = 0;
 
@@ -2169,6 +2185,15 @@ stct SApplication {
 };
 
 ::llc::err_t setup(SApplication & app) {
+	::llc::vcst_t screenshotPath = SCREENSHOT_PATH_DEFAULT;
+	::std::error_code configError = {};
+	if(::std::filesystem::exists("llc_config.json", configError) && 0 <= ::llc::jsonFileRead(app.Framework.JSONConfig, "llc_config.json")) {
+		::llc::vcst_t configuredPath = {};
+		if(0 <= ::llc::jsonExpressionResolve("screenshot_path", app.Framework.JSONConfig.Reader, 0, configuredPath) && configuredPath.size())
+			screenshotPath = configuredPath;
+	}
+	if(::llc::failed(::llc::pathNormalize(screenshotPath, app.ScreenshotDirectory)) || ::llc::failed(::llc::pathCreate(app.ScreenshotDirectory)))
+		app.ScreenshotDirectory = SCREENSHOT_PATH_DEFAULT;
 	if(::llc::argsOptionIndex(app.Framework.RuntimeValues.EntryPointArgs, "index") >= 0) {
 		::llc::vcst_t value = {};
 		if_fail_fe(::llc::argsOptionValue(app.Framework.RuntimeValues.EntryPointArgs, "index", value));
@@ -2210,6 +2235,7 @@ stct SApplication {
 		if_fail_fe(::llc::fileFromMemory(app.Sample.OpenFile, app.Sample.FileBytes.cc()));
 	if(resized || ::llc::GUI_VIEWPORT_ACTION_WRAP == action || ::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action || app.Sample.VisibleColumns != ::llc::guiViewportTextColumns(app.Sample.GUI, app.Sample.FileControls[0]))
 		if_fail_fe(::desktopTextRowsRebuild(app.Sample));
+	if_fail_fe(::llc::windowScreenshotHotkey(app.Framework.RootWindow, app.Framework.RuntimeValues.EntryPointArgs.ProgramName, app.ScreenshotDirectory));
 	::llc::sleep(1);
 	rtrn resultSample;
 }

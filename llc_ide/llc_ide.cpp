@@ -1,4 +1,5 @@
 #include "llc_ide.h"
+#include "../llc_file_selection.h"
 
 #include "llc_apod_serialize.h"
 #include "llc_app_impl.h"
@@ -7,10 +8,14 @@
 #include "llc_cstring.h"
 #include "llc_framework.h"
 #include "llc_gui_control_list.h"
+#include "llc_json_expression.h"
+#include "llc_path.h"
 #include "llc_runtime.h"
 #include "llc_system_key.h"
+#include <filesystem>
 
 stxp ::llc::u2_t DESKTOP_VISIBLE_ROWS = 20;
+stxp ::llc::vcst_c SCREENSHOT_PATH_DEFAULT = "d:/enterprise/logs/screenshots";
 stxp ::llc::u2_t DESKTOP_FILE_MAX_BYTES = 1024 * 1024;
 
 stxp ::llc::u0_t SAMPLE_GUI_THEME_COUNT = 3;
@@ -332,28 +337,10 @@ sttc ::llc::err_t desktopEditorSelectionUpdate(SSampleGUIViewport & app) {
 	}
 	if(input.ButtonDown(0) && overTextLine) {
 		editor.Cursor = cursor;
-		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
-			editor.SelectionAnchor = characterOffset;
-			cnst ::llc::err_t iSelection = editor.TextSelections.push_back({characterOffset, 0});
-			if_fail_fe(iSelection);
-			editor.SelectionActive = (::llc::u2_t)iSelection;
-		}
 	}
-	if(input.MouseCurrent.ButtonState[0] && (::llc::u2_t)-1 != editor.SelectionAnchor && editor.SelectionActive < editor.TextSelections.size() && overTextLine) {
+	if(input.MouseCurrent.ButtonState[0] && overTextLine)
 		editor.Cursor = cursor;
-		::llc::rangeu2_t & selection = editor.TextSelections[editor.SelectionActive];
-		selection.Offset = ::llc::min(editor.SelectionAnchor, characterOffset);
-		selection.Count = ::llc::max(editor.SelectionAnchor, characterOffset) - selection.Offset;
-	}
-	if(input.ButtonUp(0) && (::llc::u2_t)-1 != editor.SelectionAnchor) {
-		if(editor.SelectionActive < editor.TextSelections.size() && 0 == editor.TextSelections[editor.SelectionActive].Count && false == editor.CapsSelectionMode)
-			if_fail_fe(editor.TextSelections.remove(editor.SelectionActive));
-		if(false == editor.CapsSelectionMode || editor.SelectionActive >= editor.TextSelections.size() || editor.TextSelections[editor.SelectionActive].Count) {
-			editor.SelectionAnchor = (::llc::u2_t)-1;
-			editor.SelectionActive = (::llc::u2_t)-1;
-		}
-	}
-	rtrn 0;
+	rtrn ::fileViewerSelectionUpdate(editor.TextSelections, editor.SelectionAnchor, editor.SelectionActive, editor.CapsSelectionMode, input, characterOffset, overTextLine);
 }
 
 sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) {
@@ -639,6 +626,7 @@ sttc ::llc::err_t desktopFileOpen(SSampleGUIViewport & app, ::llc::vcst_t path) 
 stct SApplication {
 	::llc::SFramework	Framework;
 	SSampleGUIViewport	Sample;
+	::llc::string		ScreenshotDirectory = {};
 	::llc::img8bgra	ClientImages[SAMPLE_GUI_VIEWPORT_COUNT] = {};
 	::llc::u2_t		FrameIndex = 0;
 
@@ -649,6 +637,15 @@ stct SApplication {
 };
 
 ::llc::err_t setup(SApplication & app) {
+	::llc::vcst_t screenshotPath = SCREENSHOT_PATH_DEFAULT;
+	::std::error_code configError = {};
+	if(::std::filesystem::exists("llc_config.json", configError) && 0 <= ::llc::jsonFileRead(app.Framework.JSONConfig, "llc_config.json")) {
+		::llc::vcst_t configuredPath = {};
+		if(0 <= ::llc::jsonExpressionResolve("screenshot_path", app.Framework.JSONConfig.Reader, 0, configuredPath) && configuredPath.size())
+			screenshotPath = configuredPath;
+	}
+	if(::llc::failed(::llc::pathNormalize(screenshotPath, app.ScreenshotDirectory)) || ::llc::failed(::llc::pathCreate(app.ScreenshotDirectory)))
+		app.ScreenshotDirectory = SCREENSHOT_PATH_DEFAULT;
 	::llc::SWindow & window = app.Framework.RootWindow;
 	window.Size = {1280, 720};
 	if_null_ve(-1, window.BackBuffer.create());
@@ -695,6 +692,7 @@ stct SApplication {
 	else if(::llc::GUI_VIEWPORT_ACTION_SELECT_ALL == action) {
 		if_fail_fe(::desktopFileRowsRefresh(app.Sample));
 	}
+	if_fail_fe(::llc::windowScreenshotHotkey(app.Framework.RootWindow, app.Framework.RuntimeValues.EntryPointArgs.ProgramName, app.ScreenshotDirectory));
 	::llc::sleep(1);
 	rtrn resultSample;
 }
