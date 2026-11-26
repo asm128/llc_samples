@@ -278,6 +278,26 @@ sttc ::llc::err_t sampleVirtualKeyboardUpdate(SSampleGUIComponents & app, bool &
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, idInputBox);
 }
 
+sttc ::llc::err_t sampleGUIComponentsDoubleClick(cnst ::llc::TQueueSystemEvent & events, bool & doubleClick) {
+	doubleClick = false;
+	for(::llc::u2_t iEvent = 0; iEvent < events.size(); ++iEvent) {
+		cnst ::llc::pobj<::llc::SEventSystem> & eventSystem = events[iEvent];
+		if(0 == eventSystem.get_ref() || eventSystem->Type != ::llc::SYSTEM_EVENT_Mouse)
+			continue;
+		::llc::SEView<::llc::EVENT_MOUSE> eventMouse = {};
+		if_fail_fe(eventSystem->ExtractChild(eventMouse));
+		if(eventMouse.Type != ::llc::EVENT_MOUSE_DoubleClick)
+			continue;
+		::llc::vcu0_t input = eventMouse.Data;
+		::llc::u0_t button = 0;
+		if_fail_fe(::llc::loadPOD(input, button));
+		if_true_fef(input.size(), "Unexpected mouse double-click payload tail:%u.", input.size());
+		if(0 == button)
+			doubleClick = true;
+	}
+	rtrn 0;
+}
+
 sttc bool sampleGUIComponentsPressed(cnst SSampleGUIComponents & app, cnst ::llc::SViewport & viewport) nxpt {
 	rtrn app.GUI.Controls.IsPressed(viewport.IdControl)
 		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE])
@@ -511,7 +531,7 @@ sttc ::llc::err_t sampleGUIComponentsControlsSetup(SSampleGUIComponents & app) {
 		rtrn ::llc::APPLICATION_STATE_EXIT;
 	if_fail_fe(::sampleGUIComponentsPerformanceUpdate(app, secondsLastFrame));
 	bool doubleClick = false;
-	if_fail_fe(::llc::eventMouseDoubleClick(app.Window.EventQueue, doubleClick));
+	if_fail_fe(::sampleGUIComponentsDoubleClick(app.Window.EventQueue, doubleClick));
 	::llc::u2_t hoveredViewport = app.Viewports.size();
 	for(::llc::u0_t iViewport = 0; iViewport < app.Viewports.size(); ++iViewport) {
 		::llc::SViewport & viewport = app.Viewports[iViewport];
