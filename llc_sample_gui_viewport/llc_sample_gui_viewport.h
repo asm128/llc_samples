@@ -20,10 +20,6 @@ stct SSampleGUIViewport {
 	::llc::astsc_t<96>		PerformanceText		= {};
 	::llc::astatic<::llc::SViewport, SAMPLE_GUI_VIEWPORT_COUNT>
 						Viewports		= {};
-	::llc::astatic<::llc::n2s1_t, SAMPLE_GUI_VIEWPORT_COUNT>
-						UnfoldedSize		= {};
-	::llc::astatic<bool, SAMPLE_GUI_VIEWPORT_COUNT>
-						Folded			= {};
 };
 
 ::llc::err_t	sampleGUIViewportSetup				(SSampleGUIViewport & app);

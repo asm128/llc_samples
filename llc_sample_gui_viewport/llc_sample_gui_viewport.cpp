@@ -110,31 +110,6 @@ sttc ::llc::err_t sampleGUIViewportDoubleClick(cnst ::llc::TQueueSystemEvent & e
 	rtrn 0;
 }
 
-sttc bool sampleGUIViewportPressed(cnst SSampleGUIViewport & app, cnst ::llc::SViewport & viewport) nxpt {
-	rtrn app.GUI.Controls.IsPressed(viewport.IdControl)
-		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE])
-		|| app.GUI.Controls.IsPressed(viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET])
-		;
-}
-
-sttc ::llc::err_t sampleGUIViewportActivate(SSampleGUIViewport & app, ::llc::u0_t iViewport) {
-	if_true_fe(iViewport >= app.Viewports.size());
-	cnst ::llc::cid_t idRoot = app.Viewports[iViewport].IdControl;
-	::llc::acid & desktopChildren = app.GUI.Controls.Children[app.Desktop];
-	if(0 == desktopChildren.size() || desktopChildren[desktopChildren.size() - 1] != idRoot) {
-		cnst ::llc::err_t iChild = desktopChildren.find(idRoot);
-		if(iChild >= 0)
-			if_fail_fe(desktopChildren.remove((::llc::u2_t)iChild));
-		if_fail_fe(desktopChildren.push_back(idRoot));
-	}
-	for(::llc::u0_t iOther = 0; iOther < app.Viewports.size(); ++iOther) {
-		cnst bool active = iOther == iViewport;
-		app.GUI.Controls.SetSelected(app.Viewports[iOther].IdControl, active);
-		app.GUI.Controls.SetSelected(app.Viewports[iOther].IdControls[::llc::VIEWPORT_CONTROL_TITLE], active);
-	}
-	rtrn 0;
-}
-
 sttc void sampleGUIViewportImageUpdate(::llc::img8bgra & image, ::llc::u0_t theme, ::llc::u2_t frameIndex) nxpt {
 	cnst ::llc::SColorBGRA tone = ::sampleGUIThemeColor(theme);
 	cnst ::llc::bgra background = ::sampleGUIShade(tone, 14);
@@ -167,25 +142,7 @@ sttc ::llc::err_t sampleGUIViewportCreate(SSampleGUIViewport & app, ::llc::u0_t 
 	::sampleGUIControlThemeApply(app.GUI, viewport.IdControl, iViewport);
 	for(::llc::u0_t iControl = 0; iControl < viewport.IdControls.size(); ++iControl)
 		::sampleGUIControlThemeApply(app.GUI, viewport.IdControls[iControl], iViewport);
-	app.UnfoldedSize[iViewport] = area.Size;
-	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl);
-}
-
-sttc ::llc::err_t sampleGUIViewportFold(SSampleGUIViewport & app, ::llc::u0_t iViewport) {
-	if_true_fe(iViewport >= app.Viewports.size());
-	::llc::SViewport & viewport = app.Viewports[iViewport];
-	::llc::SControlPlacement & root = app.GUI.Controls.Placement[viewport.IdControl];
-	cnst ::llc::cid_t idClient = viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET];
-	if(app.Folded[iViewport]) {
-		root.Area.Size = app.UnfoldedSize[iViewport];
-		app.GUI.Controls.SetHidden(idClient, false);
-	}
-	else {
-		app.UnfoldedSize[iViewport] = root.Area.Size;
-		root.Area.Size.y = 30;
-		app.GUI.Controls.SetHidden(idClient, true);
-	}
-	app.Folded[iViewport] = false == app.Folded[iViewport];
+	viewport.UnfoldedSize = area.Size;
 	rtrn ::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl);
 }
 
@@ -221,7 +178,7 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 	if_fail_fe(::sampleGUIViewportCreate(app, 0, "AZURE CPU SURFACE", {{80, 92}, {420, 250}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 1, "AMBER CPU SURFACE", {{408, 184}, {430, 280}}));
 	if_fail_fe(::sampleGUIViewportCreate(app, 2, "MONO CPU SURFACE", {{754, 104}, {360, 230}}));
-	if_fail_fe(::sampleGUIViewportActivate(app, 2));
+	if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, 2));
 	app.Performance = ::llc::controlCreate(app.GUI);
 	if_true_fe(app.Performance < 0);
 	app.GUI.Controls.Placement[app.Performance].Area = {{0, 14}, {360, 36}};
@@ -257,8 +214,8 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 		cnst ::llc::cid_t idTitle = viewport.IdControls[::llc::VIEWPORT_CONTROL_TITLE];
 		cnst ::llc::cid_t idClose = viewport.IdControls[::llc::VIEWPORT_CONTROL_CLOSE];
 		cnst ::llc::cid_t idResize = viewport.IdControls[::llc::VIEWPORT_CONTROL_RESIZE_BOTTOM_RIGHT];
-		if(::sampleGUIViewportPressed(app, viewport))
-			if_fail_fe(::sampleGUIViewportActivate(app, iViewport));
+		if(::llc::viewportIsPressed(app.GUI, viewport))
+			if_fail_fe(::llc::viewportActivate(app.GUI, app.Desktop, app.Viewports, iViewport));
 		if(app.GUI.Controls.IsAction(idClose))
 			app.GUI.Controls.SetHidden(viewport.IdControl, true);
 		if(app.GUI.Controls.IsPressed(idTitle) && (app.Window.Input->MouseCurrent.Deltas.x || app.Window.Input->MouseCurrent.Deltas.y)) {
@@ -270,14 +227,14 @@ sttc ::llc::err_t sampleGUIViewportPerformanceUpdate(SSampleGUIViewport & app, d
 			cnst ::llc::n2s1_t delta = {(::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.x, (::llc::s1_t)app.Window.Input->MouseCurrent.Deltas.y};
 			app.GUI.Controls.Placement[viewport.IdControl].Area.Size += delta;
 			app.GUI.Controls.Placement[viewport.IdControls[::llc::VIEWPORT_CONTROL_TARGET]].Area.Size += delta;
-			app.UnfoldedSize[iViewport] = app.GUI.Controls.Placement[viewport.IdControl].Area.Size;
+			viewport.UnfoldedSize = app.GUI.Controls.Placement[viewport.IdControl].Area.Size;
 			if_fail_fe(::llc::controlMetricsInvalidate(app.GUI, viewport.IdControl));
 		}
 		if(app.GUI.Controls.IsHovered(idTitle))
 			hoveredViewport = iViewport;
 	}
 	if(doubleClick && hoveredViewport < app.Viewports.size())
-		if_fail_fe(::sampleGUIViewportFold(app, (::llc::u0_t)hoveredViewport));
+		if_fail_fe(::llc::viewportFold(app.GUI, app.Viewports[hoveredViewport]));
 	rtrn ::llc::guiUpdateMetrics(app.GUI, app.Window.Size, false);
 }
 
