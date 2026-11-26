@@ -266,9 +266,8 @@ sttc ::llc::err_t desktopFileRowsRefresh(SBlitterDashboard & app) {
 					cnst ::llc::rangeu2_t selection = app.TextSelections[iSelection];
 					selected = selection.Count && position >= selection.Offset && (::llc::u3_t)position < (::llc::u3_t)selection.Offset + selection.Count;
 				}
-				states[iCharacter] = {};
-				states[iCharacter].Flag = ::llc::setSelected(states[iCharacter].Flag, states[iCharacter].Mask, selected);
-				states[iCharacter].Flag = ::llc::setSwapColors(states[iCharacter].Flag, states[iCharacter].Mask, selected);
+				states[iCharacter].SetSelected(id, iCharacter, app.GUI.Controls.EventQueue, selected);
+				states[iCharacter].SetSwapColors(id, iCharacter, app.GUI.Controls.EventQueue, selected);
 			}
 		}
 	}

@@ -244,8 +244,8 @@ sttc ::llc::err_t desktopFileRowsRefresh(SSampleGUIViewport & app) {
 					break;
 				}
 			}
-			textStates[iCharacter].Flag = ::llc::setSelected(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
-			textStates[iCharacter].Flag = ::llc::setSwapColors(textStates[iCharacter].Flag, textStates[iCharacter].Mask, selected);
+			textStates[iCharacter].SetSelected(id, iCharacter, app.GUI.Controls.EventQueue, selected);
+			textStates[iCharacter].SetSwapColors(id, iCharacter, app.GUI.Controls.EventQueue, selected);
 		}
 	}
 	app.GUI.Controls.SetHidden(app.Editor.IdCursor, true);
